@@ -1,11 +1,44 @@
 # Progress Log
 
 이 파일은 새 채팅에서도 바로 이어가기 위한 기준 파일이다.
-매일 공부가 끝나면 아래 세 가지만 갱신한다.
+매일 공부가 끝나면 아래 세 가지와 운영 규칙을 기준으로 갱신한다.
 
 - Last completed: 마지막으로 완료한 Day
 - Current focus: 지금 이어갈 주제
 - Next task: 다음에 바로 시작할 작업
+
+---
+
+## Operating Rule
+
+공부 시작 전:
+- GitHub repo를 확인한다.
+- 사용자에게 먼저 아래 명령을 실행하게 한다.
+
+```bash
+cd /mnt/d/security-roadmap
+git pull
+```
+
+공부 끝난 후:
+- 사용자는 해당 Day 폴더에 산출물을 정리한다.
+- 사용자는 아래 흐름으로 산출물을 commit/push한다.
+
+```bash
+cd /mnt/d/security-roadmap
+git status
+git add .
+git commit -m "complete DayXXX"
+git push
+```
+
+그 다음:
+- ChatGPT가 `00_plan/progress_log.md`를 갱신한다.
+- 다음 공부 시작 전에는 다시 `git pull`부터 한다.
+
+Role split:
+- User: Day 폴더 산출물 정리 + commit/push
+- ChatGPT: `00_plan/progress_log.md` 갱신
 
 ---
 
