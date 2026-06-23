@@ -1,0 +1,34 @@
+[Day45 leak/parsing 방지 체크리스트]
+
+1. canary leak 검증:
+- canary & 0xff == 0 인지 확인한다.
+- 즉 마지막 바이트가 0x00인지 본다.
+- 단, 이것만으로는 충분하지 않다.
+- gdb에서 $rbp-0x8 값을 확인하고, FSB index로 leak한 값과 같은지 비교한다.
+
+2. PIE leak 검증:
+- leak 값이 바이너리 r-xp 범위 안에 있는지 확인한다.
+- pie_base = pie_leak - symbol_offset 계산 후 page aligned인지 확인한다.
+- pie_base & 0xfff == 0 이어야 한다.
+- 계산한 win/main 주소도 r-xp 범위 안에 있어야 한다.
+- 0x5로 시작하는지는 참고용 힌트일 뿐이다.
+
+3. parsing 검증:
+- leak 문자열에 hello, menu, prompt 같은 프로그램 출력이 섞이지 않았는지 확인한다.
+- split 기준이 정확한지 확인한다.
+- leak 개수가 예상과 맞는지 확인한다.
+- b"0x..." 형태의 bytes를 int(leak, 16)으로 변환했는지 확인한다.
+
+4. 같은 실행 여부 검증:
+- 이전 실행에서 얻은 canary, PIE base, libc base를 재사용하면 안 된다.
+- ASLR 때문에 실행할 때마다 값이 바뀐다.
+- leak, vmmap, gdb 확인은 반드시 같은 프로세스 기준으로 해야 한다.
+
+5. exploit 전 assert:
+- isinstance(canary, int)
+- isinstance(pie_leak, int)
+- isinstance(pie_base, int)
+- (canary & 0xff) == 0
+- (pie_base & 0xfff) == 0
+- binary_rx_start <= pie_leak < binary_rx_end
+- binary_rx_start <= win_addr < binary_rx_end

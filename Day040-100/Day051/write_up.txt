@@ -1,0 +1,50 @@
+##day51 fsb byte overwrite
+
+#목표
+전역변수 auth의 값을 fsb를 이용해 내가 원하는 값으로 변경
+조건문 통과, system(/bin/sh) 호출
+
+##개념
+
+취약점은 다음과 같음
+printf(buf);
+정상적인 코드는 포맷 스트링이 고정되어야 한다
+하지만 위 형태에서는 사용자가 입력한 %p, %n, %hhn 등이 그대로 해석됨
+
+%hhn 개념
+%n 은 지금까지 출력한 글자 수를 지정한 주소에 쓴다
+%hhn은 그 중 하위 1바이트만 쓴다 예를 들어 %127c%N$hhn 의 의미는
+127글자 출력, N번째 인자를 주소로 해석 그 주소에 1바이트로 write
+
+FSB offset
+payload안의 값이 printf 기준 몇 번째 인자로 해석되는지를 의미한다
+offset을 찾는 방식은
+AAAA.%1$p AAAA.%2$p AAAA.%3$p ... 이런식으로 반복 입력
+AAAA는 0x41414141 즉 주소와 같은 형태
+출력에서 41414141가 보이는 인덱스를 찾으면 그 위치가 fsb offset이다 printf가 사용자가 넣은
+주소를 몇 번째 인자로 해석하는가
+
+즉 최종적인 목표는 printf(buf) 가 있을 때 fsb offset을 찾고 그 위치에 전역변수 auth의 주소를
+넣는다 %hhn을 이용 내가 원하는 값을 1바이트로 auth의 주소에 넣는다
+그럼 필요한 값은 auth의 주소와 조건문을 통과할수 있는 값
+
+target 주소와 목표 값 찾기
+어셈블리를 직접 보면
+movzbl ...(%rip), %eax # target byte load 
+cmp $0x7f, %al
+이런 부분이 중요
+첫번째 줄은 전역변수의 값을 al에 로드
+두 번째 줄 0x7f와 al 의 값을 비교
+
+전역변수 주소와 목표 값을 얻을 수 있다
+
+##exploit 구조
+
+입력이 한개인 구조기 때문에 바로 payload를 넣어야 하는데 pwn툴에서 자동 payload를 
+만들 수 있다.
+
+payload = fmtstr_payload(offset, {auth: 0x7f}, write_size = "byte")
+offset은 fsb offset , write size는 1바이트니까 byte 길어지면 short 등을 사용
+
+##검증
+exploit 프로그램 실행 후 system(/bin/sh)호출 성공

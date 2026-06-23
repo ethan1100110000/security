@@ -1,0 +1,25 @@
+##day44
+pie canary on 상태에서 ret2win
+
+##목표
+pie base 와 canary 값을 구해 win 함수 호출
+
+프로그램 1차입력에서 fsb확인 2차 입력에서 stack smashing detected 출력 bof 확인
+find 프로그램을 이용해 카나리와 pie idx 후보 추림 후보 선정 기준은 day42/43 과 같음 인덱스 확정도 동일
+
+pie leak 값을 확인했더니 main leak인것을 확인함
+
+##payload 구조
+1차 f"%{canary_idx}$p.%{pie_idx}$p"
+카나리값과 pie leak
+split(b".") 으로 각각 파싱
+
+pie leak 은 main leak 이기 때문에 elf.symbols 로 main offset 구함
+pie_leak - main_offset = pie_base
+
+2차 패딩 + 카나리 + 8바이트 더미 + win
+
+##실패
+WIN 출력으로 win 함수 실행은 성공했지만 열린 쉘에 명령 입력을 실패 gdb에서 win 함수 진입시 rsp % 16의 값이 0x0 인것을 확인
+ret 가젯 추가 gdb에서 win 함수 진입시에 rsp % 16 = 0x8 확인
+WIN 출력 쉘에 명령 입력 성공

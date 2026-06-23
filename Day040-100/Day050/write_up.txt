@@ -1,0 +1,72 @@
+##day50 mini exam
+
+##보호기법
+canary pie nx on
+
+##ROPgadget
+ret 가젯 있음
+pop 가젯 없음
+win 함수 존재할것이다 추정
+objdump로 함수 목록 확인
+.text 만 보임 elf section인듯 함수 심볼들이 보이지 않는다 main함수 offset 추정 필요
+
+elf 실행 흐름은 대략
+_start
+__libc_start_main(main, ..., ....)
+main()
+
+즉 _start 에서 __libc_start_main을 호출하기 이전에 rdi에 넣는 주소가 main
+objdump에서 확인했을때 .text 영역에서 첫번째 call / call   *0x2eff(%rip)        # 3fc0 <__cxa_finalize@plt+0x2f30> 을 보면
+함수 포인터를 통해 간접 호출하는 방식 _start의 전형적인 패턴이라 바로 위에있는
+lea    0x23b(%rip),%rdi        # 12f6 <__cxa_finalize@plt+0x266> 이 구문이 rdi에 main 주소를 넣는 구문이라고 볼 수 있겠다
+즉 main offset은 12f6
+
+이제 main의 구조를 보자
+objdump -d -M intel ./day50_exam \
+  --start-address=0x12f6 \
+  --stop-address=0x138c
+main offset 의 시작부터 main이 끝나고 그 다음까지 넉넉하게 잡은 범위로 검색을 해보자
+main의 구조를 봤을때 프로그램 내부 함수 2개를 호출하는 형식
+    1358:       e8 05 ff ff ff          call   1262 <__cxa_finalize@plt+0x1d2>
+    135d:       e8 73 fe ff ff          call   11d5 <__cxa_finalize@plt+0x145>
+나머지 call은 setvbuf, puts call이기 때문에 넘어가고 함수 call을 봐야 한다 내부 함수 2개 확정 이제 저 두 함수의 구조를 보자
+main을 확인했던것과 같이
+
+함수 시작부터 main함수까지
+objdump -d -M intel ./day50_exam \
+  --start-address=0x1262 \
+  --stop-address=0x12f6
+
+함수 시작부터 다음 함수까지
+objdump -d -M intel ./day50_exam \
+  --start-address=0x11d5 \
+  --stop-address=0x1262
+
+각 범위를 설정해 살펴보면 fsb 함수하나 bof함수 하나인것을 알수 있었다 카나리가 켜져있기 때문에 카나리 offset도 확인할 수 있는데 bof함수의 read를 봤을때 rbx - 0x50 즉 입력 버퍼의 시작점이 rbx - 0x50인것 0x50은 10진수로 80 버퍼의 시작점 부터 saved rbp까지의 거리가 80 rbp - 0x8은 카나리값이기때문에 여기서 찾는 offset은 0x50 - 0x8 = 72 이다
+
+##exploit구조
+카나리, pie 인덱스를 넣고 pie leak을 확인 .text 의 시작 offset이 leak된걸 확인했다 함수 심볼이 없기 때문에 pie offset = 0x10a0 으로 고정 pie leak - pie offset = pie base
+
+pop rdi 가젯이 없기 때문에 심볼은 안보이지만 win 함수가 있을것이다
+objdump에서 확인해보니 system@plt call 확인 bin/sh나 flag가 있는지 확인을위해
+strings -tx ./day50_exam | grep -E "sh|flag|cat|win|secret|done" 입력
+   2014 /bin/sh
+   3060 .shstrtab
+   3098 .gnu.hash
+ 11af:       48 8d 05 5e 0e 00 00    lea    rax,[rip+0xe5e]        # 2014 <__cxa_finalize@plt+0xf84>
+2014는 /bin/sh 즉 system(/bin/sh) 를 호출하는 함수가 있다 11af는 그 함수의 offset
+win = pie base + 0x11af
+
+##payload 구조
+
+1차에선 fsb로 카나리, pie base를 구했으니 2차 bof에서
+패딩 + 카나리 + 더미 + ret + win
+
+##1차 시도
+실패 카나리 pie 등 값 출력해보니 정상적으로 보임 gdb에서 win진입시 rsp 정렬이 깨지는 것 확인
+stack aligment
+
+##2차 시도
+패딩 + 카나리 + 더미 + win
+ret을 빼고 진행
+성공 쉘 열리고 명령 입력도 성공

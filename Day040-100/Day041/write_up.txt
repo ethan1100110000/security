@@ -1,0 +1,33 @@
+# Day41 - FSB Leak
+
+## 보호기법
+Canary, PIE, NX enabled.
+
+## 취약점
+printf(name) 때문에 format string 취약점 발생.
+
+## 목표
+쉘 획득이 아니라 FSB를 이용해 canary와 PIE 주소를 leak하고 검증한다.
+
+## leak 결과
+canary index = ?
+PIE index = 31 또는 37
+main leak = ?
+pie_base = main_leak - main_offset
+
+## 검증
+canary는 gdb에서 $rbp-0x8 값과 비교하여 일치 확인.
+PIE leak은 vmmap의 day41 r-xp 영역 안에 있었고,
+main offset 0x1301을 빼니 page aligned base가 나왔다.
+vmmap 확인을 위해서 printf에 브레이크를 걸어 확인 꼭 printf일 필요는 없다 프로그램이 실행되었다면 이미 매핑된 상태기
+때문에 vmmap으로 piebase 와 r-xp 의 범위 확인 이후 후보인덱스 입력, 출력확인
+printf에 브레이크를 거는 이유는 fsb발생지점이 어디인지 구분하기 위함
+
+## 실패 케이스
+main leak을 pie_base로 착각했다.
+assert pie_base & 0xfff == 0 조건을 추가해서 방지했다.
+
+## 결론
+FSB leak 자동화 성공.
+canary와 PIE base 계산을 검증했다.
+

@@ -1,0 +1,59 @@
+##day46 pie off ret2libc
+
+##목표
+libc base leak이후 system, binsh 주소를 구해 system(/bin/sh) 호출
+
+보안기법은 nx만 on 되어있음 rop가젯명령으로 ret, pop rdi 가젯이 있는걸 확인
+프로그램이 어떤식으로 동작하는지 보기위해 프로그램 실행 근데 실패함
+원인은 제공된 파일 id-2.28.so 가 동적링커로 사용되는데 이 동적링커가 함께 제공된 libc-2.28.so 바이너리를 불러와야 하는데
+libc.so.6 이런 파일명을 사용 다운로드 받은 바이너리 파일명은 libc-2.28.so 동적링커가 제공된 바이너리를 못잡음 = 시스템 바이너리
+사용 프로그램 실행 터짐
+
+해결
+ln -sf libc-2.28.so libc.so.6
+libc.so.6 라는 이름을 찾으면 libc-2.28.so를 사용하게 만든다
+실행은 이렇게
+./ld-2.28.so --library-path "$PWD" ./ret2the-unknown
+제공된  ld-2.28.so 로 실행하고 공유 라이브러리는 현재 폴더에서 먼저 찾아라
+
+ld-2.28.so
+→ 현재 폴더에서 libc.so.6 검색
+→ libc.so.6은 libc-2.28.so를 가리킴
+→ 제공 libc 로드 성공
+→ 프로그램 정상 실행
+
+프로그램 동작은 1차 입력 여기서 bof확인 이후 rob said i'd need this to get there: 71c91f51e560 이런 출력 주소값은 매 실행마다
+달라지는데 뒤에 560은 동일 gdb(gdb에서 실행도 gdb --args ./ld-2.28.so --library-path "$PWD" ./ret2the-unknown 이런식) 에서 vmmap으로 libc 범위를 확인 leak처럼 보이는 값이 libc leak 일거라고 추정
+여기서 문제는 libc함수 중 어떤 함수의 leak인가 파이썬 프로그램으로 먼저 puts printf read 함수의 offset을 찾고 leak된값에서 offset을
+뺀 후에 하위 12바이트가 000인지 확인
+출력 결과 printf leak일 가능성이 매우 높다
+
+leak - printf offset으로 libc base 구함
+
+##payload 구조
+
+입력을 처음 한번만 받는구조에 leak되는 값은 입력 이후에 나오기 때문에 다시 main으로 복귀하는 방식으로 가야함
+pie가 꺼져있기 때문에 elf.symbols로 main 주소 leak
+gdb 에서 패턴을 넣어 offset = 40 확인
+1차 payload = 패딩 + main
+1차에서는 얻을 값은 없고 다시 main으로 돌아가는것만 필요하기 때문에 main만 넣었음
+leak된 값 16진수 정수형으로 파싱 printf offset 빼기
+libc base로 system, binsh 주소 구함
+2차 payload = 패딩 + ret + pop_rdi + binsh + system
+
+system(/bin/sh) 호출 성공
+명령 입력 성공
+
+##실패사례
+printf offset 이 아니라 puts offset을 빼서 사용해보았다
+[*] puts : 0x71910
+[*] printf : 0x58560
+[*] read : 0xea450
+[*] leak : 0x71c91f51e560
+[*] main : 0x401186
+[*] libc : 0x71c91f4acc50
+[*] ret      : 0x40101a
+[*] pop rdi  : 0x4012a3
+[*] system   : 0x71c91f4f1610
+[*] binsh    : 0x71c91f62e169
+libc base의 하위12바이트가 000으로 정렬되지 않은 모습 당연히 system, binsh의 주소도 틀렸을 것 실패
