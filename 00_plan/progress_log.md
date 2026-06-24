@@ -44,9 +44,9 @@ Role split:
 
 ## Current Pointer
 
-- Last completed: Day051
-- Current focus: FSB write / format string exploitation 복기 및 확장
-- Next task: Day052 진행
+- Last completed: Day052
+- Current focus: FSB leak + write / GOT overwrite 완료, stripped PIE ELF 분석 루틴 복기
+- Next task: Day053 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -124,6 +124,14 @@ Role split:
 - Status: done
 - Result: printf(buf) 기반 FSB offset 확인, %hhn / fmtstr_payload로 target byte overwrite 성공
 - Next: Day052
+
+### Day052
+- Topic: FSB leak + write / GOT overwrite
+- Status: done
+- Result: stripped PIE 바이너리에서 FSB로 PIE leak 후 base 계산, win 후보(0x1189)와 main offset(0x1226) 식별, exit@got offset(0x4028)을 runtime 주소로 보정해 `exit@got -> win` overwrite 성공
+- Files: Day040-100/Day052
+- Problems: PIE ON에서 GOT offset도 `pie_base + offset`으로 보정해야 함을 재확인. stripped 상태에서는 심볼명 대신 `_start`, `__libc_start_main`, `system@plt`, `strings -tx`, `readelf -rW`, `objdump -d -M intel`로 함수 역할을 판단해야 함.
+- Next: Day053
 
 ---
 
