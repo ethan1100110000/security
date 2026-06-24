@@ -40,6 +40,11 @@ Role split:
 - User: Day 폴더 산출물 정리 + commit/push
 - ChatGPT: `00_plan/progress_log.md` 갱신
 
+Default pwn/reversing study routine:
+- 새 보안 프로젝트 채팅에서도 pwn/reversing 문제를 풀 때는 단순히 BOF/FSB 등 명확한 취약점을 exploit하는 데서 끝내지 않는다.
+- 매 문제마다 다음 루틴을 기본으로 적용한다: 입력 지점 확인 → 입력값 data flow 추적 → 검증/제한 위치 확인 → 위험 sink 확인 → 취약점 root cause 설명 → 소스 없이 찾는 방법 설명 → exploitability 판단 → exploit 작성/검증.
+- 사용자가 별도로 생략하라고 하지 않는 한, write-up 또는 복기 단계에 root cause와 discovery 관점을 포함한다.
+
 ---
 
 ## Current Pointer
