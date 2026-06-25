@@ -1,0 +1,106 @@
+##day53 stack pivot
+
+##목표
+bof에서 overflow 의 크기가 충분하지 않을때 bss나 data writable 영역을 사용하여 win함수 호출
+
+##개념
+가장 핵심적인 것은 rsp가 bss나 data 즉 fake stack을 가리켜야하는것
+이번 실습에선 leave ret 가젯, bss를 사용함
+leave 는 내부적으로 rsp = rbp, rbp = [rsp] rsp + 8을 한다 ret은 rip = [rsp]니까
+이제 전체적인 흐름을 보자
+
+1차입력은 전역변수 fake stack 입력이니까 더미값 , aligment일 수 있으니 ret, win 주소 를 입력해서
+bss를 세팅해놓고
+2차 입력
+패딩먼저 여기서 중요한 점은 leave ret을 사용해야 하기 때문에 saved rbp까지 덮어버리면
+익스플로잇이 터진다 buf의 크기만큼 패딩을 넣고 두번째 leave ret에서 사용될 saved rbp에 들어가는
+더미값이 있는 위치 즉 fake stack의 주소를 넣고 saved rip에는 leave ret 가젯을 넣는다
+
+그런데 여기서 문제점 bss의 주소가 0x404040인데 404040부터 404080까지는 stdout, stdin 등의 정보가 있고 404080부터 404380 까지 즉 0x300의 크기가 전역변수 fake stack 의 크기다
+근데 더미값 ret win을 404080부터 넣게 되면 
+더미값은 404080 - 404088
+ret은 404088 - 404090
+win은 404090 - 404098
+이렇게 되는데 win 함수를 호출하면 rsp가 win이 있는 404090을 가리키게 된다 win 함수에서
+push/call을 하면 rsp가 줄어들기 때문에 fake stack 범위 밖으로 나가버릴수가 있는것
+그래서 fake stack의 시작점에 0x200을 더해 더미, ret, win을 404280부터 넣는다 이러면 rsp가 
+win이 있는 위치에서 줄어들더라도 fake stack 밖으로 나갈확률이 줄어든다
+
+다시 돌아와서 1차 입력이후 2차 입력에서 saved rbp = fake stack, saved rip = leave ret으로 세팅
+여기서 첫번째 leave가 실행된다 함수가 끝날즘에는 leave ret을 하기 때문에 내가 입력한 leave ret이 아니라 원래 실행되어야 하는 것 그러면 rbp = fake stack rip = leave ret 여기서
+saved rbp, saved rip 와 rbp, rip를 헷갈렸는데 rbp, rip는 saved rbp, saved rip를 가리키는 포인터임
+rbp -> saved rbp인 것 그래서 첫번째 leave ret의 동작을 풀어서 설명하면
+rsp = saved rbp = fake stack, rbp = [rsp] ,rsp + 8 즉 rsp = leave ret 이제 ret 하면 rip = leave ret
+rip = leave ret이니까 leave ret 한번 더 실행
+rsp = fake stack, rbp = fake stack(더미) rsp = fake stack + 8 ret 하면 rip = [fake stack + 8]
+rsp = fake stack + 16 
+fake stack + 8에 있는건 ret이니까 실행하면 rip = fake stack + 16 = win , rsp = fake stack + 24
+win 호출
+
+fake stack과 [fake stack] 을 구분해야 한다 첫번째 leave ret에서는 rbp에 fake stack이 들어가는 것
+두번째 leave ret에서는 rbp 에 [fake stack] 이 들어간다
+왜? leave ret은 rsp = rbp, rbp = [rsp], rsp+8 이니까
+즉 rsp = fake stack, rbp = [fake stack] 이고 첫번째 leave ret에서 rsp는 bss안을 가리키는게 아니기 때문에 2차payload에 넣은 그니까 스택에서
+padding
+fake stack <- rsp
+leave ret
+이면 rsp + 8은
+padding
+fake stack 
+leave ret <- rsp
+이렇게 됨
+ret도 rip = [rsp] 니까 rip = leave ret
+2차에서 rsp가 왜 bss안을 가리키냐 rbp는 이제 bss안에 있는 값을 가리키고 있기 때문에
+그걸 rsp에 넣고 +8하면 rbp에 넣은 더미값에 +8해서 ret 가젯을 가리킨다
+
+찐막
+결국 진짜 흐름은 saved rbp = fake stack 1차 leave ret 하면 rbp = fake stack 2차 leave ret 하면 rbp = [fake stack]
+
+*******찐찐막 이거만 이해하면 거의 다임*********
+첫번째 leave 하기 전 rbp는 saved rbp를 가리키는 어떤 값
+[rbp] = saved rbp = fake 였음 여기서 leave 하면
+rsp = rbp
+rbp = [rsp] 니까 지금 [rsp] 는 [rbp] = saved rbp = fake
+즉 , rbp = fake가 되는거임
+2차 leave하면 rsp = rbp = fake 가 되고 rbp = [rsp] 즉 [rsp] = [fake] 이기때문에 rbp = [fake]가 되는거다
+
+## payload 구조
+개념에서 설명했듯
+1차 입력은 fake stack 전역변수의 시작 위치가 아닌 + 0x200 한 위치까지 "\x00"을 넣고
+더미값 writable한 안전한 더미 를 넣는다 fake = 404280 으로 두고 더미를 fake + 0x100 
+0x100에 큰 의미없음 그냥 안전한 아무 더미나 넣은거임
+ret , win 순서대로 입력
+2차
+rbp에 fake rip에 leave ret 입력 rbp에 더미값이 있는 위치를 넣어야 하니까 fake
+더미값이 있는 위치에서 +8을 해야 ret으로 가고 win으로 가니까
+
+##검증
+win함수 호출 성공
+
+nm -n ./day53_pivot | grep ' [Bb] '
+이런 명령으로 bss내부 전역변수와 다른것의 크기를 볼 수 있었음
+
+##day53-2 전역변수와 전역변수 입력이 없는경우
+
+##개념
+fake stack같은 전역변수와 입력이 없는 경우에는 read plt 호출과 bss내부 공간이 필요하다
+위에서 bss 시작점에는 stdout stdin 등이 있는걸 설명했는데 이걸 감안해서 bss내부 공간을 사용해야 하는데
+gdb에서 vmmap을 보자 어딜 봐야 하냐면 bss는 읽고 쓰는게 가능한 공간 즉 rw-p를 범위를 봐야한다
+          0x404000           0x405000 rw-p     1000    3000 day53_pivot
+안전하게 0x404500 정도를 사용해보자
+bss = 0x404500 으로 놓고
+leave ret, read plt, pop rdi, pop rsi, pop rdx, win, ret, offset 필요한 조각들을 모은다 pie나 카나리는 off니까 
+쉽게 알수있고
+
+##payload 구조
+이번에도 패딩은 saved rbp를 덮는게 아니기때문에 buf크기만큼만
+패딩 + bss + pop rdi + 0 + pop rsi + bss + pop rdx + 0x200 + read plt + leave ret
+
+1차 payload를 넣고나면 read plt 때문에 bss세팅이 끝난다 saved rbp = bss까지
+그리고 2차 payload를 원래 프로그램 입력에 넣는다 더미값 ret win
+2차 입력이 끝나면 첫번째 leave ret 
+rsp = bss, rbp = bss(saved rbp가 가리킨 값을 rbp가 가리킴)  rip는 이제 rop체인을 수행
+read plt 를 호출해서 2차 payload를 받아 bss에 작성한다 rop체인의 끝에는 leave ret이 있으니까
+마지막에는 결국 rbp = bss rip = leave ret 이 있고 bss에는 값들이 채워져있는
+day53-1과 같은 모양 이제 leave ret 두번이 차례로 실행되고 win함수가 호출된다
+

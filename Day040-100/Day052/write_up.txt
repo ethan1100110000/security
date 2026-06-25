@@ -1,0 +1,38 @@
+##day52 fsb leak + got overwrite
+
+##보호기법
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+
+##목표
+fsb를 이용해 pie base leak + fmt offset을 알아내고 exit_got에 win 함수 overwrite
+
+##개념
+RELRO:      Partial RELRO 상태일떄 got overwrite가 가능하기 때문에 프로그램 마지막에 호출하는
+exit()를 이용해 win 함수를 호출
+알아내야할 것은 pie base, win offset, exit_got offset, fmt offset
+
+find 프로그램을 사용해 pie idx, fmt offset을 구했다 프로그램 심볼이 안보이는 상태기 때문에
+.text의 첫번째 call에서 rdi에 들어간 값을 main offset으로 추정 find 프로그램에서 나온 pie idx 후보 중 main leak을 발견 pie base 확정
+
+win함수 offset은 심볼이 없기 때문에 어셈블리에서 system_plt호출 확인
+ lea    rax,[rip+0xe70]        # 2013 <__cxa_finalize@plt+0xf83> 이런 구문을 발견했는데
+strings -tx ./day52_got 명령으로 확인해보니 2013은 /bin/sh 인것을 확인
+win함수 후보 강력
+readelf -rW ./day52_got 명령으로 exit_got offset을 확인
+
+##exploit 구조
+이번 실습 프로그램에서는 입력이 2개인데 모두 fsb인것을 확인 main으로 다시 복귀할 필요 없음
+1차 payload 에서 pie_idx를 입력으로 넣고 pie base leak
+2차 payload는 fmt offset 사용 exit_got에 win주소를 write 이때 주소는 8바이트기때문에
+short를 사용해서 2바이트씩 적었다
+
+##결과
+1차 시도에서 실패 원인은 exit_got 에  pie_bsae를 더하지않음
+2차시도 성공
+
+이번 실습에서 exit got을 overwrite한 이유는 puts 나 printf는 프로그램 종료시 한번 호출되는게
+아니라 2차 payload에서 win함수로 덮고 난 이후에 여러번 호출되고있기때문에 마지막에 한번
+호출되는 exit가 안전
