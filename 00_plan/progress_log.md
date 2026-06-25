@@ -49,9 +49,9 @@ Default pwn/reversing study routine:
 
 ## Current Pointer
 
-- Last completed: Day052
-- Current focus: FSB leak + write / GOT overwrite 완료, stripped PIE ELF 분석 루틴 복기
-- Next task: Day053 진행
+- Last completed: Day053
+- Current focus: Stack pivot 기본형/심화형 완료, leave; ret 기반 pivot 흐름 정리
+- Next task: Day053 CS Fundamentals 진행: stack frame, rbp/rsp, call/ret, prologue/epilogue 복기
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -137,6 +137,14 @@ Default pwn/reversing study routine:
 - Files: Day040-100/Day052
 - Problems: PIE ON에서 GOT offset도 `pie_base + offset`으로 보정해야 함을 재확인. stripped 상태에서는 심볼명 대신 `_start`, `__libc_start_main`, `system@plt`, `strings -tx`, `readelf -rW`, `objdump -d -M intel`로 함수 역할을 판단해야 함.
 - Next: Day053
+
+### Day053
+- Topic: Stack pivot 기본형 + hard staged read
+- Status: done
+- Result: 기본형에서 `.bss` 전역 `fake_stack`에 fake chain `[dummy rbp][ret][win]`을 구성하고, stage2 BOF로 `saved rbp = fake_addr`, `saved rip = leave; ret`를 넣어 pivot 흐름을 검증했다. hard형에서는 전역 fake stack 입력 없이 1차 ROP로 `read(0, fake_addr, size)`를 호출해 writable 영역에 fake stack을 작성한 뒤, ROP chain 마지막의 `leave; ret`로 pivot해 win 실행에 성공했다.
+- Files: Day040-100/Day053
+- Problems: `rbp`와 `[rbp]`, `fake_addr`와 `[fake_addr]`를 구분하는 것이 핵심이었다. 첫 번째 `leave`는 `rbp = fake_addr`를 만들고, 두 번째 `leave`는 `rsp = fake_addr`, `rbp = [fake_addr]`를 만든다. `.bss`/RW 영역 시작점은 stdout/stdin/stderr나 런타임 데이터가 있을 수 있고, fake stack 시작점이 너무 낮으면 함수 내부 `push/call`로 `rsp`가 낮은 주소로 내려가 터질 수 있어 fake stack을 writable 영역 안쪽에 배치해야 한다. `read` 입력에는 `sendline()`보다 `send()`가 안정적이며, `sendline()`의 남은 `\n`이 다음 `read`에 섞일 수 있음을 확인했다.
+- Next: Day053 CS Fundamentals
 
 ---
 
