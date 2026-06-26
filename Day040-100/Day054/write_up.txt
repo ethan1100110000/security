@@ -1,0 +1,31 @@
+## Day54 Pivot ret2libc
+
+## 목표
+작은 BOF 상황에서 stack pivot으로 rsp를 .bss fake stack으로 옮기고, ROP chain을 연결해 libc leak 후 system("/bin/sh") 호출.
+
+## 실습 요약
+- 1차 입력: fake_stack1에 puts leak ROP chain 작성
+- BOF: saved rbp = fake_stack1, saved rip = leave; ret
+- puts(puts_got)으로 libc puts 주소 leak
+- libc_base = leaked_puts - puts_offset 계산
+- main 복귀 후 2차 입력이 fake_stack2로 들어가는 것을 disas로 확인
+- 2차 BOF: saved rbp = fake_stack2, saved rip = leave; ret
+- fake_stack2의 ret + pop rdi + /bin/sh + system chain 실행 성공
+
+## 실패 원인 및 수정
+처음에는 main 복귀 후 2차 ROP chain이 fake_stack2에 작성되는데도 pivot 주소를 fake_stack1로 넣었다.
+그 결과 이전 leak chain을 다시 타고 main으로 계속 복귀했다.
+
+disas vuln에서 round_no 분기와 read 직전 rsi를 확인해 2차 입력 목적지가 fake_stack2임을 확인했고, pivot 주소를 fake_stack2로 수정해 성공했다.
+
+## CS 기초 정리 Day53-54
+- PIE base와 libc base는 page aligned라 하위 12비트가 0이어야 한다.
+- PIE base는 .text 시작 주소가 아니라 ELF 첫 매핑 시작 주소다.
+- .text/.plt는 r-xp 코드 영역이다.
+- .data/.bss/GOT 일부는 rw-p 데이터 영역이다.
+- fake stack은 실행 코드가 아니라 ROP 주소 목록을 저장하는 공간이므로 rw-p면 충분하다.
+- NX는 writable 영역의 직접 실행을 막지만, ROP는 r-xp 영역의 기존 코드/gadget을 ret으로 따라가기 때문에 가능하다.
+
+## 결과
+Day54 pivot ret2libc 성공.
+Day53 CS(page alignment / PIE base)와 Day54 CS(ELF segment / vmmap 권한) 완료.
