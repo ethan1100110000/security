@@ -49,9 +49,9 @@ Default pwn/reversing study routine:
 
 ## Current Pointer
 
-- Last completed: Day053
-- Current focus: Stack pivot 기본형/심화형 완료, leave; ret 기반 pivot 흐름 정리
-- Next task: Day054 진행 전 Day53 stack pivot 복습 + CS Fundamentals 묶음 진행: virtual memory, page alignment, PIE base
+- Last completed: Day054
+- Current focus: Pivot ret2libc 완료, Day53-54 CS Fundamentals 완료
+- Next task: Day055 진행 전 Day54 pivot ret2libc 흐름 짧게 복습 후 시작
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -145,6 +145,14 @@ Default pwn/reversing study routine:
 - Files: Day040-100/Day053
 - Problems: `rbp`와 `[rbp]`, `fake_addr`와 `[fake_addr]`를 구분하는 것이 핵심이었다. 첫 번째 `leave`는 `rbp = fake_addr`를 만들고, 두 번째 `leave`는 `rsp = fake_addr`, `rbp = [fake_addr]`를 만든다. `.bss`/RW 영역 시작점은 stdout/stdin/stderr나 런타임 데이터가 있을 수 있고, fake stack 시작점이 너무 낮으면 함수 내부 `push/call`로 `rsp`가 낮은 주소로 내려가 터질 수 있어 fake stack을 writable 영역 안쪽에 배치해야 한다. `read` 입력에는 `sendline()`보다 `send()`가 안정적이며, `sendline()`의 남은 `\n`이 다음 `read`에 섞일 수 있음을 확인했다.
 - Next: Day054 진행 전 Day53 복습 + CS Fundamentals 묶음(virtual memory, page alignment, PIE base)
+
+### Day054
+- Topic: Pivot ret2libc + Day53-54 CS Fundamentals
+- Status: done
+- Result: 작은 BOF에서 `leave; ret`로 `.bss` fake stack에 pivot한 뒤, 1차 chain으로 `puts(puts_got)` leak, libc base 계산, main 복귀, 2차 chain으로 `system("/bin/sh")` 호출에 성공했다. Day53 CS(page alignment / PIE base)와 Day54 CS(ELF segment / vmmap 권한)도 함께 완료했다.
+- Files: Day040-100/Day054
+- Problems: main 복귀 후 2차 입력은 `round_no` 분기 때문에 `fake_stack2`로 들어가는데 처음에는 다시 `fake_stack1`로 pivot해서 leak chain 루프가 반복됐다. `disas vuln`에서 `round_no` 분기와 `read` 직전 `rsi`를 확인해 입력 목적지와 pivot 주소를 맞춰 해결했다. fake stack은 실행 코드가 아니라 ROP 주소 목록이므로 `rw-p`면 충분하고, 실제 실행은 `.text/.plt/libc`의 `r-xp` 영역에서 일어난다는 점을 정리했다.
+- Next: Day055
 
 ---
 
