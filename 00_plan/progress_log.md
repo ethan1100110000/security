@@ -49,9 +49,9 @@ Default pwn/reversing study routine:
 
 ## Current Pointer
 
-- Last completed: Day054
-- Current focus: Pivot ret2libc 완료, Day53-54 CS Fundamentals 완료
-- Next task: Day055 진행 전 Day54 pivot ret2libc 흐름 짧게 복습 후 시작
+- Last completed: Day055
+- Current focus: Day52/Day54 write-up 품질 보강, saved RIP overwrite와 leave; ret pivot 복습 완료
+- Next task: Day056 진행 전 Day55 보강 내용 짧게 복습 후 시작
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -153,6 +153,14 @@ Default pwn/reversing study routine:
 - Files: Day040-100/Day054
 - Problems: main 복귀 후 2차 입력은 `round_no` 분기 때문에 `fake_stack2`로 들어가는데 처음에는 다시 `fake_stack1`로 pivot해서 leak chain 루프가 반복됐다. `disas vuln`에서 `round_no` 분기와 `read` 직전 `rsi`를 확인해 입력 목적지와 pivot 주소를 맞춰 해결했다. fake stack은 실행 코드가 아니라 ROP 주소 목록이므로 `rw-p`면 충분하고, 실제 실행은 `.text/.plt/libc`의 `r-xp` 영역에서 일어난다는 점을 정리했다.
 - Next: Day055
+
+### Day055
+- Topic: FSB/Pivot write-up 품질 보강 + saved RIP overwrite 복습
+- Status: done
+- Result: Day52 FSB GOT overwrite와 Day54 pivot ret2libc의 write-up 보강 포인트를 정리했다. Day52에서는 exit@got 선택 이유, PIE ON에서 GOT/function offset 보정, %hn으로 2바이트씩 나눠 쓰는 이유를 복습했다. Day54에서는 NX ON에서도 ROP pivot이 가능한 이유, 소스 없이 read 인자의 rsi와 disas vuln으로 fake_stack1/fake_stack2를 확인하는 방법, 2차 chain 저장 위치와 pivot 대상 주소 불일치 실패 원인을 정리했다. saved rbp/saved rip의 역할과 leave; ret pivot 흐름도 복습했다.
+- Files: Day040-100/Day055/review_notes.txt
+- Problems: 2차 입력이 fake_stack2에 저장되는데 pivot을 fake_stack1로 반복하면 이전 puts leak chain이 다시 실행되어 main 복귀 루프가 생긴다는 점을 재확인했다. saved rbp는 fake stack 주소로, saved rip는 leave; ret gadget으로 덮어야 pivot이 성립한다.
+- Next: Day056
 
 ---
 
