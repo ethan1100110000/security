@@ -1,0 +1,50 @@
+## Day55 Review Notes
+
+## Scope
+CS 정리는 제외하고, Day52 FSB GOT overwrite와 Day54 pivot ret2libc write-up 보강용 핵심만 정리한다.
+
+## Day52 FSB GOT overwrite 보강
+
+### exit@got를 선택한 이유
+GOT overwrite 대상은 호출 타이밍이 중요하다. puts나 printf는 2차 payload 이후에도 여러 번 호출될 수 있거나, 호출 흐름이 상황에 따라 달라질 수 있다. 이 상태에서 puts@got 또는 printf@got를 win으로 덮으면 중간 입출력 흐름이 깨질 위험이 있다.
+
+반면 exit는 프로그램 종료 지점에서 안정적으로 호출된다. 따라서 exit@got를 win 주소로 덮으면 정상 종료 흐름에서 win으로 제어 흐름을 넘길 수 있다.
+
+### PIE ON에서 주소 보정
+PIE ON 바이너리에서는 readelf나 pwntools로 확인한 GOT/function 주소가 런타임 절대주소가 아니라 ELF 내부 offset이다. 따라서 FSB leak으로 PIE base를 먼저 구한 뒤 다음처럼 보정해야 한다.
+
+- exit_got_runtime = pie_base + exit_got_offset
+- win_runtime = pie_base + win_offset
+
+이 보정을 하지 않으면 엉뚱한 주소에 write하게 된다.
+
+### %hn으로 나눠 쓰는 이유
+64비트 주소 전체를 %n으로 한 번에 쓰려면 출력 길이를 매우 큰 값까지 맞춰야 하므로 비효율적이고 불안정하다. 그래서 target 주소를 2바이트 단위로 나누고 %hn을 사용해 exit@got, exit@got+2, exit@got+4, exit@got+6에 win 주소 조각을 순서대로 기록한다.
+
+## Day54 Pivot ret2libc 보강
+
+### NX ON에서도 pivot ROP가 가능한 이유
+NX는 writable 영역의 직접 실행을 막는 보호기법이다. Day54의 fake stack은 실행 코드가 아니라 ROP gadget 주소 목록을 저장하는 공간이다. ret이 .bss에 적힌 주소를 rip로 가져가고, 실제 실행은 .text/.plt/libc의 r-xp 영역에서 일어난다. 따라서 NX가 켜져 있어도 ROP pivot은 가능하다.
+
+### 소스 없이 fake_stack1/fake_stack2 확인
+소스 없이도 read@plt에 breakpoint를 걸고 호출 직전 레지스터를 확인해 입력 목적지를 알 수 있다. x86-64 호출 규약상 read(fd, buf, size)에서 rsi가 buf 주소이므로, 1차 read의 rsi는 fake_stack1, main 복귀 후 2차 read의 rsi는 fake_stack2임을 확인했다.
+
+또한 disas vuln에서 round_no 분기를 확인해 round_no == 0이면 fake_stack1, round_no != 0이면 fake_stack2가 선택되는 흐름을 확인했다.
+
+### 실패 원인
+실패 원인은 2차 chain 저장 위치와 pivot 대상 주소 불일치였다. main 복귀 후 2차 입력은 round_no 분기 때문에 fake_stack2에 들어갔는데, pivot payload에서는 saved rbp를 다시 fake_stack1로 설정했다. 그 결과 fake_stack2의 system chain이 실행되지 않고 fake_stack1에 남아 있던 puts leak chain이 반복 실행되었다.
+
+수정 후에는 2차 pivot payload에서 saved rbp를 fake_stack2로 설정해 system("/bin/sh") chain 실행에 성공했다.
+
+## Saved RBP / Saved RIP 복습
+saved rbp는 함수가 끝날 때 복구할 이전 rbp 값이고, saved rip는 ret이 꺼내서 rip로 넣을 복귀 주소다.
+
+leave; ret 기반 pivot에서는 둘 다 중요하다.
+
+- saved rbp = fake stack 주소
+- saved rip = leave; ret gadget 주소
+
+첫 번째 함수 epilogue의 leave; ret는 rbp를 fake stack 주소로 만들고, rip를 leave_ret으로 바꾼다. 두 번째 leave_ret 실행 시 rsp가 fake stack으로 이동하고, 이후 ret이 fake stack에 적힌 ROP gadget 주소들을 따라간다.
+
+## Result
+Day52 FSB GOT overwrite와 Day54 pivot ret2libc의 write-up 보강 포인트를 정리했다. saved RIP overwrite와 leave; ret pivot에서 saved rbp/saved rip의 역할도 복습했다.
