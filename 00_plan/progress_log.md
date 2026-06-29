@@ -49,9 +49,9 @@ Default pwn/reversing study routine:
 
 ## Current Pointer
 
-- Last completed: Day055
-- Current focus: Day52/Day54 write-up 품질 보강, saved RIP overwrite와 leave; ret pivot 복습 완료
-- Next task: Day056 진행 전 Day55 보강 내용 짧게 복습 후 시작
+- Last completed: Day056
+- Current focus: ret2csu 기본/Hard 변형 풀이 완료, calling convention 기반 ROP 인자 전달 복습 완료
+- Next task: Day057 진행 전 ret2csu hard 흐름과 rdi/rsi/rdx 인자 전달 5분 복습 후 ROP 문제 B + 실패 케이스 문서화 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -161,6 +161,14 @@ Default pwn/reversing study routine:
 - Files: Day040-100/Day055/review_notes.txt
 - Problems: 2차 입력이 fake_stack2에 저장되는데 pivot을 fake_stack1로 반복하면 이전 puts leak chain이 다시 실행되어 main 복귀 루프가 생긴다는 점을 재확인했다. saved rbp는 fake stack 주소로, saved rip는 leave; ret gadget으로 덮어야 pivot이 성립한다.
 - Next: Day056
+
+### Day056
+- Topic: ROP Emporium ret2csu + custom ret2csu hard + calling convention 복습
+- Status: done
+- Result: ROP Emporium `ret2csu` 개념을 복구하고, `__libc_csu_init`의 pop gadget과 call gadget을 이용해 레지스터 인자 전달 흐름을 정리했다. 이어 custom stripped/no PIE/NX/Full RELRO ret2csu hard 문제를 풀었다. 1차 csu chain으로 `read(0, bss, 8)`을 호출해 writable `.bss`에 `win` 주소를 저장하고, 2차 csu chain에서 `r12=bss`, `rbx=0`으로 `call [bss]`를 수행해 `win(arg1,arg2,arg3)` 호출에 성공했다. CS로 x86-64 calling convention을 복습하며 `rdi/rsi/rdx` 인자 전달, `read`, `write`, `system`, `execve`의 레지스터 세팅 차이를 정리했다.
+- Files: Day040-100/Day056
+- Problems: `call [r12+rbx*8]`는 `r12` 자체를 호출하는 것이 아니라 `r12+rbx*8` 위치의 8바이트 함수 포인터를 읽어 호출한다. 따라서 `r12=win`이 아니라 `[bss]=win`, `r12=bss` 구조가 필요했다. `rbx=0`, `rbp=1`로 csu loop를 1회만 돌리고, `csu_call` 이후 `add rsp,8`과 6개의 pop을 처리하기 위해 cleanup dummy 7개가 필요함을 확인했다. 기본 ret2csu에서는 `mov edi,r13d` 때문에 64비트 첫 번째 인자를 온전히 넣기 어렵고, hard 변형에서는 staged read 후 indirect call 방식으로 해결했다. staged read에는 `sendline(p64(win))`보다 `send(p64(win))`이 적절함도 확인했다. Mac Docker에서는 Apple Silicon 기본 ARM64 컨테이너로 x86-64 ELF 실행이 안 되어 `--platform linux/amd64`가 필요했으며, 이후 WSL에서 동일한 방식으로 성공했다.
+- Next: Day057 ROP 문제 B + 실패 케이스 문서화, 가능하면 PIE ON + no FSB 우회/partial overwrite 입문 보강
 
 ---
 
