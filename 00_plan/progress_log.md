@@ -49,9 +49,9 @@ Default pwn/reversing study routine:
 
 ## Current Pointer
 
-- Last completed: Day056
-- Current focus: ret2csu 기본/Hard 변형 풀이 완료, calling convention 기반 ROP 인자 전달 복습 완료
-- Next task: Day057 진행 전 ret2csu hard 흐름과 rdi/rsi/rdx 인자 전달 5분 복습 후 ROP 문제 B + 실패 케이스 문서화 진행
+- Last completed: Day057
+- Current focus: ret2csu + xchg pivot + PIE/Canary 복합 문제 2개 성공, CS Fundamentals는 Day58로 이월
+- Next task: Day058 Canary/PIE/libc/pivot 통합 체크 + shellcode, 추가로 pivot 방식 이론 비교(leave;ret, xchg, pop rsp, mov rsp, add rsp/ret sled) 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -169,6 +169,14 @@ Default pwn/reversing study routine:
 - Files: Day040-100/Day056
 - Problems: `call [r12+rbx*8]`는 `r12` 자체를 호출하는 것이 아니라 `r12+rbx*8` 위치의 8바이트 함수 포인터를 읽어 호출한다. 따라서 `r12=win`이 아니라 `[bss]=win`, `r12=bss` 구조가 필요했다. `rbx=0`, `rbp=1`로 csu loop를 1회만 돌리고, `csu_call` 이후 `add rsp,8`과 6개의 pop을 처리하기 위해 cleanup dummy 7개가 필요함을 확인했다. 기본 ret2csu에서는 `mov edi,r13d` 때문에 64비트 첫 번째 인자를 온전히 넣기 어렵고, hard 변형에서는 staged read 후 indirect call 방식으로 해결했다. staged read에는 `sendline(p64(win))`보다 `send(p64(win))`이 적절함도 확인했다. Mac Docker에서는 Apple Silicon 기본 ARM64 컨테이너로 x86-64 ELF 실행이 안 되어 `--platform linux/amd64`가 필요했으며, 이후 WSL에서 동일한 방식으로 성공했다.
 - Next: Day057 ROP 문제 B + 실패 케이스 문서화, 가능하면 PIE ON + no FSB 우회/partial overwrite 입문 보강
+
+### Day057
+- Topic: ret2csu + xchg pivot 복합 문제 2개 풀이
+- Status: done
+- Result: custom Problem 1에서 No PIE/No Canary/NX/Full RELRO 환경의 heap fake stack + `xchg rax,rsp; ret` pivot + ret2csu staged indirect call을 성공했다. stack payload는 `pop rax; ret`, heap leak 주소, `xchg rax,rsp; ret`로 pivot만 수행하고, heap payload가 실제 ret2csu chain을 담당했다. 1차 csu로 `read(0, slot, 8)`을 호출해 `.bss` slot에 `win` 주소를 저장하고, 2차 csu에서 `r12=slot`, `call [slot]`로 `win(arg1,arg2,arg3)` 호출에 성공했다. custom Problem 2에서는 PIE ON/Canary ON 환경에서 FSB로 canary와 PIE code pointer를 leak하고, PIE base 계산 후 gadget/GOT/.bss/win 주소를 보정하고 canary를 보존한 뒤 같은 xchg pivot + ret2csu 구조로 성공했다.
+- Files: Day040-100/Day057
+- Problems: `xchg rax,rsp; ret` pivot에서는 fake stack 첫 qword가 dummy rbp가 아니라 첫 RIP가 되어야 한다. 반대로 `leave; ret` pivot은 fake stack 첫 qword가 dummy rbp이고 두 번째 qword가 첫 RIP다. ret2csu의 `call [r12+rbx*8]` 때문에 `r12=read@plt` 또는 `r12=win`처럼 함수 주소를 직접 넣으면 실패하고, `r12=read@got` 또는 `r12=slot`처럼 함수 포인터가 저장된 메모리 주소를 넣어야 한다. Full RELRO에서는 GOT overwrite는 불가능하지만 GOT read/call은 가능하며, 쓰기 대상은 writable `.bss` slot이어야 한다. CS Fundamentals는 시간 부족으로 Day58에 통합 체크와 함께 이월한다.
+- Next: Day058 Canary/PIE/libc/pivot 통합 체크 + shellcode, pivot 방식 이론 비교 추가
 
 ---
 
