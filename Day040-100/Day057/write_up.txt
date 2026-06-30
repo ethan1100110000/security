@@ -1,0 +1,480 @@
+# Day57 - ret2csu + xchg pivot 복합 문제 풀이
+
+## 1. 목표
+
+Day57의 목표는 `ret2csu`와 stack pivot을 복합적으로 사용하는 문제를 풀면서, 기존에 익숙했던 `leave; ret` pivot 외에 `xchg rax, rsp; ret` 방식의 pivot을 실습하는 것이었다.
+
+오늘 풀이한 문제는 두 개다.
+
+* Problem 1: No PIE / No Canary 환경에서 ret2csu + xchg pivot
+* Problem 2: PIE ON / Canary ON 환경에서 FSB leak + canary 보존 + PIE base 계산 + ret2csu + xchg pivot
+
+오늘 CS Fundamentals는 시간이 부족해서 진행하지 않았고, Day58의 `Canary/PIE/libc/pivot 통합 체크 + shellcode` 항목에 묶어서 진행하기로 했다.
+
+---
+
+## 2. Problem 1 요약
+
+### 보호기법
+
+Problem 1은 비교적 쉬운 버전이다.
+
+* PIE OFF
+* Canary OFF
+* NX ON
+* Full RELRO
+
+PIE가 꺼져 있으므로 binary 내부 gadget, `.got`, `.bss`, `win` 함수 주소를 PIE base 계산 없이 그대로 사용할 수 있다.
+
+Canary도 없기 때문에 BOF payload에서 canary를 보존할 필요가 없다.
+
+NX는 켜져 있지만, heap에 shellcode를 실행하는 것이 아니라 ROP chain을 저장하고 실제 실행은 `.text` 영역의 gadget과 함수에서 일어나므로 문제가 되지 않는다.
+
+Full RELRO가 켜져 있어 GOT overwrite는 불가능하지만, 이번 문제는 GOT를 덮는 것이 아니라 `read@got`을 읽어서 `read`를 호출하는 구조이므로 Full RELRO를 우회할 필요는 없다.
+
+---
+
+## 3. Problem 1 핵심 구조
+
+Problem 1의 핵심은 두 입력의 역할을 분리하는 것이다.
+
+```text
+1번째 입력: heap에 들어갈 fake ROP chain
+2번째 입력: stack BOF로 rsp를 heap으로 pivot
+3번째 입력: ret2csu의 read(0, slot, 8)이 기다리는 win 주소 8바이트
+```
+
+즉, stack payload는 긴 ROP chain을 직접 실행하지 않는다.
+
+stack payload는 오직 heap으로 pivot하는 역할만 한다.
+
+```text
+padding
+pop rax; ret
+heap_addr
+xchg rax, rsp; ret
+```
+
+이후 `xchg rax, rsp; ret`가 실행되면 다음과 같은 상태가 된다.
+
+```text
+rax = 기존 rsp
+rsp = heap_addr
+ret → [heap_addr] 값을 RIP로 사용
+```
+
+따라서 `xchg` 방식의 pivot에서는 heap fake stack의 첫 qword가 dummy rbp가 아니라 바로 첫 번째 실행할 gadget이어야 한다.
+
+```text
+[heap_addr]     = csu_pop
+[heap_addr+8]   = rbx
+[heap_addr+16]  = rbp
+...
+```
+
+이 점이 `leave; ret` pivot과 다르다.
+
+`leave; ret` pivot에서는 fake stack 첫 qword가 dummy rbp이고, 두 번째 qword가 첫 RIP다.
+
+```text
+leave; ret pivot:
+[fake_stack]     = dummy rbp
+[fake_stack+8]   = first RIP
+
+xchg rax,rsp; ret pivot:
+[fake_stack]     = first RIP
+[fake_stack+8]   = next value
+```
+
+---
+
+## 4. Problem 1 ret2csu 흐름
+
+Problem 1의 `win` 함수는 인자를 3개 받는다.
+
+일반 ROP에서 `pop rdx; ret` gadget이 없거나 제한적이면 세 번째 인자인 `rdx`를 세팅하기 어렵다. 그래서 `__libc_csu_init` 안의 gadget을 이용해 `rdi`, `rsi`, `rdx`를 맞춘다.
+
+ret2csu에서 사용하는 구조는 다음과 같다.
+
+```text
+csu_pop:
+pop rbx
+pop rbp
+pop r12
+pop r13
+pop r14
+pop r15
+ret
+```
+
+```text
+csu_call:
+mov rdx, r15
+mov rsi, r14
+mov edi, r13d
+call qword ptr [r12 + rbx*8]
+add rbx, 1
+cmp rbp, rbx
+...
+add rsp, 8
+pop rbx
+pop rbp
+pop r12
+pop r13
+pop r14
+pop r15
+ret
+```
+
+인자 전달은 다음과 같다.
+
+```text
+r13d → edi/rdi → 1번째 인자
+r14  → rsi     → 2번째 인자
+r15  → rdx     → 3번째 인자
+```
+
+그리고 호출 대상은 `r12` 자체가 아니라 `[r12 + rbx*8]`이다.
+
+따라서 `r12`에는 함수 주소를 직접 넣는 것이 아니라, 함수 주소가 들어있는 메모리 주소를 넣어야 한다.
+
+---
+
+## 5. Problem 1 1차 ret2csu
+
+1차 ret2csu의 목적은 다음 호출을 만드는 것이다.
+
+```c
+read(0, slot, 8);
+```
+
+여기서 `slot`은 `.bss` 안의 writable memory를 사용했다.
+
+`slot`은 실행할 코드가 아니라 `win` 함수 주소 8바이트를 저장할 함수 포인터 저장 공간이다.
+
+```text
+slot = .bss + 안전한 offset
+```
+
+1차 csu 세팅은 다음과 같다.
+
+```text
+rbx = 0
+rbp = 1
+r12 = read@got
+r13 = 0
+r14 = slot
+r15 = 8
+```
+
+주의할 점은 `r12 = read@plt`가 아니라 `r12 = read@got`이라는 것이다.
+
+`csu_call`은 다음 형태이기 때문이다.
+
+```asm
+call qword ptr [r12 + rbx*8]
+```
+
+따라서 `r12 = read@got`이면 `[read@got]`에 들어있는 실제 `read` 주소를 읽어서 call할 수 있다.
+
+반대로 `r12 = read@plt`로 넣으면 `[read@plt]` 위치의 명령어 바이트를 함수 포인터처럼 읽으려 하므로 잘못된 주소로 call하게 된다.
+
+---
+
+## 6. csu_call 이후 cleanup dummy
+
+`csu_call` 이후에는 바로 다음 gadget으로 넘어가는 것이 아니라 내부 cleanup 코드가 실행된다.
+
+```asm
+add rsp, 0x8
+pop rbx
+pop rbp
+pop r12
+pop r13
+pop r14
+pop r15
+ret
+```
+
+따라서 `csu_call` 뒤에는 dummy 값 7개가 필요하다.
+
+```text
+dummy 1개: add rsp, 0x8로 소비
+dummy 6개: pop rbx, rbp, r12, r13, r14, r15로 소비
+```
+
+구조는 다음과 같다.
+
+```text
+csu_call
+dummy
+dummy
+dummy
+dummy
+dummy
+dummy
+dummy
+next_gadget
+```
+
+이 cleanup dummy를 빼거나 개수를 틀리면 다음 gadget 주소가 맞지 않아서 ROP chain이 깨진다.
+
+---
+
+## 7. Problem 1 2차 ret2csu
+
+1차 `read(0, slot, 8)`이 실행되면 세 번째 입력으로 `p64(win)`을 보낸다.
+
+이때는 `sendline(p64(win))`이 아니라 `send(p64(win))`을 사용해야 한다.
+
+이유는 `read(0, slot, 8)`이 정확히 8바이트를 읽기 때문이다.
+
+`sendline()`은 뒤에 newline을 추가하므로 남은 `\n`이 이후 입력이나 실행 흐름에 섞일 수 있다.
+
+```python
+p.send(p64(win))
+```
+
+이후 메모리 상태는 다음과 같다.
+
+```text
+[slot] = win
+```
+
+2차 ret2csu는 `win(arg1, arg2, arg3)`을 호출하기 위한 chain이다.
+
+하지만 `r12 = win`으로 직접 넣으면 안 된다.
+
+`csu_call`은 `call [r12 + rbx*8]`이므로, `r12`에는 `win` 주소가 들어있는 메모리 주소가 필요하다.
+
+따라서 2차 세팅은 다음과 같다.
+
+```text
+rbx = 0
+rbp = 1
+r12 = slot
+r13 = arg1
+r14 = arg2
+r15 = arg3
+```
+
+이렇게 하면 다음 호출이 된다.
+
+```text
+call [slot]
+```
+
+그리고 `[slot]`에는 이미 `win` 주소가 들어 있으므로 최종적으로 다음 함수 호출이 성립한다.
+
+```c
+win(arg1, arg2, arg3);
+```
+
+Problem 1은 다음 메시지를 확인하면서 성공했다.
+
+```text
+[+] P1 win: arguments are correct
+```
+
+---
+
+## 8. Problem 1 실패 케이스
+
+### 실패 케이스: r12에 read@plt를 넣은 경우
+
+잘못된 세팅:
+
+```text
+r12 = read@plt
+```
+
+실패 원인:
+
+`csu_call`은 `call r12`가 아니라 다음 형태다.
+
+```asm
+call qword ptr [r12 + rbx*8]
+```
+
+즉, `r12`에 들어있는 값을 직접 함수 주소로 사용하는 것이 아니라, `r12`가 가리키는 메모리 안의 8바이트 값을 읽어 함수 포인터로 사용한다.
+
+따라서 `read@plt`를 넣으면 `read@plt` 위치의 instruction bytes를 함수 포인터처럼 해석하려고 해서 잘못된 주소로 call하게 된다.
+
+정답은 다음과 같다.
+
+```text
+r12 = read@got
+```
+
+`read@got`에는 실제 `read` 함수 주소가 들어있으므로 `call [read@got]` 형태가 정상적으로 동작한다.
+
+---
+
+## 9. Problem 2 요약
+
+Problem 2는 더 어려운 버전이다.
+
+보호기법은 다음과 같다.
+
+* PIE ON
+* Canary ON
+* NX ON
+* Full RELRO
+
+Problem 1과 달리 PIE와 Canary가 켜져 있으므로, 단순히 고정 주소로 exploit을 구성할 수 없다.
+
+먼저 FSB leak을 이용해서 canary와 PIE code pointer를 leak해야 한다.
+
+그 다음 PIE base를 계산하고, 모든 binary 내부 주소를 PIE base 기준으로 보정해야 한다.
+
+---
+
+## 10. Problem 2 핵심 흐름
+
+Problem 2의 전체 흐름은 다음과 같다.
+
+```text
+1. FSB로 canary leak
+2. FSB로 PIE code pointer leak
+3. PIE base 계산
+4. heap 주소 leak 확인
+5. heap에 fake ROP chain 작성
+6. stack BOF payload에서 canary 원본 보존
+7. saved RIP를 pop rax; ret로 덮음
+8. rax = heap_addr
+9. xchg rax, rsp; ret로 heap fake stack으로 pivot
+10. heap ROP chain에서 ret2csu 실행
+11. read(0, slot, 8)로 slot에 win 주소 저장
+12. call [slot]로 win(arg1,arg2,arg3) 호출
+```
+
+Problem 2의 핵심은 Problem 1의 exploit 구조에 PIE base 계산과 canary 보존이 추가된 것이다.
+
+---
+
+## 11. Canary 보존
+
+Canary가 켜져 있으므로 BOF payload에서 canary 값을 덮으면 함수 epilogue에서 stack smashing이 탐지된다.
+
+따라서 BOF payload는 다음 구조를 가져야 한다.
+
+```text
+padding_to_canary
+leaked_canary
+saved_rbp_dummy
+pop rax; ret
+heap_addr
+xchg rax, rsp; ret
+```
+
+중요한 점은 leak한 canary 원본을 그대로 다시 넣어야 한다는 것이다.
+
+Canary의 하위 1바이트는 일반적으로 `0x00`이므로, leak 값이 canary인지 확인할 때 다음 조건도 참고할 수 있다.
+
+```text
+canary & 0xff == 0
+```
+
+---
+
+## 12. PIE base 계산
+
+PIE가 켜져 있으면 binary 내부 주소가 실행마다 바뀐다.
+
+따라서 FSB로 leak한 code pointer에서 해당 symbol 또는 instruction offset을 빼서 PIE base를 계산해야 한다.
+
+일반 형태는 다음과 같다.
+
+```text
+pie_base = leaked_code_pointer - known_offset
+```
+
+이후 모든 binary 내부 주소는 다음처럼 계산한다.
+
+```text
+runtime_addr = pie_base + static_offset
+```
+
+예를 들어 다음 주소들이 모두 PIE 보정 대상이다.
+
+```text
+csu_pop
+csu_call
+read@got
+.bss slot
+win
+pop rax; ret
+xchg rax, rsp; ret
+```
+
+Problem 1에서는 PIE OFF라서 이 보정이 필요 없었지만, Problem 2에서는 PIE base를 적용하지 않으면 gadget이나 GOT 주소가 전부 틀어진다.
+
+---
+
+## 13. Problem 2에서 Full RELRO의 의미
+
+Problem 2도 Full RELRO가 켜져 있다.
+
+Full RELRO에서는 GOT overwrite가 불가능하다.
+
+하지만 이번 exploit은 GOT를 덮지 않는다.
+
+`read@got`은 ret2csu의 indirect call 대상으로 사용하기 위해 읽기만 한다.
+
+실제로 쓰는 대상은 `.bss`의 `slot`이다.
+
+```text
+read@got → 읽어서 read 호출
+slot     → win 주소 저장
+```
+
+따라서 Full RELRO가 있어도 exploit 구조는 성립한다.
+
+---
+
+## 14. Problem 2 성공 의미
+
+Problem 2를 성공했다는 것은 다음 요소를 모두 연결했다는 뜻이다.
+
+```text
+FSB leak
+→ canary leak
+→ PIE leak
+→ PIE base 계산
+→ canary 보존 BOF
+→ xchg rax,rsp pivot
+→ heap fake stack
+→ ret2csu 1차 read
+→ ret2csu 2차 call [slot]
+→ win 인자 검증 통과
+```
+
+즉 Day57의 핵심 목표였던 다음 약점을 보완했다.
+
+```text
+ret2csu가 복합 문제에서 흔들리는 문제
+leave; ret 말고 다른 pivot 방식이 어려운 문제
+PIE/canary가 섞이면 주소 계산과 payload 구조가 복잡해지는 문제
+```
+
+---
+
+## 15. 오늘 정리
+
+Day57에서 확인한 핵심은 다음과 같다.
+
+첫째, `xchg rax, rsp; ret` pivot에서는 fake stack 첫 qword가 dummy rbp가 아니라 바로 첫 RIP다.
+
+둘째, ret2csu의 call gadget은 `call [r12 + rbx*8]` 형태이므로 `r12`에는 함수 주소가 아니라 함수 포인터가 저장된 메모리 주소를 넣어야 한다.
+
+셋째, Full RELRO가 켜져 있어도 GOT overwrite만 막힐 뿐, GOT를 읽어서 함수 호출에 사용하는 것은 가능하다.
+
+넷째, PIE ON 환경에서는 gadget, GOT, `.bss`, `win` 주소를 모두 PIE base로 보정해야 한다.
+
+다섯째, Canary ON 환경에서는 BOF payload 안에 leak한 canary 원본을 정확히 보존해야 한다.
+
+여섯째, staged read에서 정확히 8바이트를 넣어야 하는 경우 `sendline()`보다 `send()`가 적절하다.
+
+Day57은 ret2csu, xchg pivot, PIE, canary가 섞인 복합 문제를 성공시킨 날이다.
+
+CS Fundamentals는 시간 부족으로 Day58에 `Canary/PIE/libc/pivot 통합 체크 + shellcode`와 함께 묶어서 진행한다.
