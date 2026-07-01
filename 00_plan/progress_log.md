@@ -49,9 +49,9 @@ Default pwn/reversing study routine:
 
 ## Current Pointer
 
-- Last completed: Day057
-- Current focus: ret2csu + xchg pivot + PIE/Canary 복합 문제 2개 성공, CS Fundamentals는 Day58로 이월
-- Next task: Day058 Canary/PIE/libc/pivot 통합 체크 + shellcode, 추가로 pivot 방식 이론 비교(leave;ret, xchg, pop rsp, mov rsp, add rsp/ret sled) 진행
+- Last completed: Day058
+- Current focus: Canary/PIE/libc/pivot 통합 체크 + shellcode 전략 정리, Day57-58 CS Fundamentals 완료
+- Next task: Day059 미니시험 2 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -177,6 +177,14 @@ Default pwn/reversing study routine:
 - Files: Day040-100/Day057
 - Problems: `xchg rax,rsp; ret` pivot에서는 fake stack 첫 qword가 dummy rbp가 아니라 첫 RIP가 되어야 한다. 반대로 `leave; ret` pivot은 fake stack 첫 qword가 dummy rbp이고 두 번째 qword가 첫 RIP다. ret2csu의 `call [r12+rbx*8]` 때문에 `r12=read@plt` 또는 `r12=win`처럼 함수 주소를 직접 넣으면 실패하고, `r12=read@got` 또는 `r12=slot`처럼 함수 포인터가 저장된 메모리 주소를 넣어야 한다. Full RELRO에서는 GOT overwrite는 불가능하지만 GOT read/call은 가능하며, 쓰기 대상은 writable `.bss` slot이어야 한다. CS Fundamentals는 시간 부족으로 Day58에 통합 체크와 함께 이월한다.
 - Next: Day058 Canary/PIE/libc/pivot 통합 체크 + shellcode, pivot 방식 이론 비교 추가
+
+### Day058
+- Topic: Canary/PIE/libc/pivot 통합 체크 + shellcode + Day57-58 CS Fundamentals
+- Status: done
+- Result: `pwn_integrated_checklist.md`에 Canary/PIE/NX/RELRO 기준 exploit 전략 분기, ret2libc leak 흐름, puts leak과 write leak 차이, NX OFF shellcode 판단, execve shellcode 레지스터, pivot 방식 비교를 정리했다. `leave; ret`, `xchg reg,rsp; ret`, `pop rsp; ret`, `mov rsp,reg; ret`, `add rsp,imm; ret`의 fake stack 구조 차이를 비교했고, FSB leak + BOF + PIE/Canary + libc leak + main 복귀 + 2차 system 구조를 통합 체크했다. 추가 고난도 Q/A로 raw bytes leak 파싱, libc base 계산, system 내부 movaps alignment crash, PIE ON ret2csu 주소 보정, staged read 입력 타이밍을 점검했다. Day57 CS인 보호기법별 우회 전략 분류와 Day58 CS인 syscall vs libc 함수 차이도 함께 완료했다.
+- Files: Day040-100/Day058/pwn_integrated_checklist.md
+- Problems: raw leak은 ASCII hex가 아니므로 `int(..., 16)`이 아니라 `u64(leak.ljust(8, b"\x00"))`로 복구해야 한다. PIE ON에서는 `.text`, `.plt`, `.got`, `.bss`, csu gadget, win offset에 PIE base를 더해야 하지만 canary, heap leak, libc leak, 단순 인자에는 더하면 안 된다. Full RELRO는 GOT overwrite를 막지만 GOT read/leak/call은 가능하다. `system` 내부 `movaps`에서 터지면 `/bin/sh` 주소보다 stack alignment를 먼저 의심하고, 필요하면 `ret` gadget으로 `rsp` 정렬을 바꾼다. `execve` syscall은 libc `system`과 달리 `rax=59`, `rdi/rsi/rdx` 세팅과 `syscall` 명령이 핵심이다.
+- Next: Day059 미니시험 2
 
 ---
 
