@@ -186,6 +186,29 @@ Default pwn/reversing study routine:
 - Problems: raw leak은 ASCII hex가 아니므로 `int(..., 16)`이 아니라 `u64(leak.ljust(8, b"\x00"))`로 복구해야 한다. PIE ON에서는 `.text`, `.plt`, `.got`, `.bss`, csu gadget, win offset에 PIE base를 더해야 하지만 canary, heap leak, libc leak, 단순 인자에는 더하면 안 된다. Full RELRO는 GOT overwrite를 막지만 GOT read/leak/call은 가능하다. `system` 내부 `movaps`에서 터지면 `/bin/sh` 주소보다 stack alignment를 먼저 의심하고, 필요하면 `ret` gadget으로 `rsp` 정렬을 바꾼다. `execve` syscall은 libc `system`과 달리 `rax=59`, `rdi/rsi/rdx` 세팅과 `syscall` 명령이 핵심이다.
 - Next: Day059 미니시험 2
 
+### Day059
+- Topic: Mini Exam 2: FSB leak, pivot, ret2libc, ret2csu
+- Status: done
+- Result: P1은 FSB로 canary/PIE/stack leak 후 stack buffer 앞부분을 fake stack으로 사용해 `leave; ret` pivot, libc leak, main 복귀, 2차 `system("/bin/sh")` 흐름을 완성했다. P2는 FSB로 PIE/canary/heap leak 후 heap fake stack + `xchg rax,rsp; ret` pivot + ret2csu `call [win_slot]` 구조를 정리했다. 원본 P2는 switch read 크기가 saved RIP까지 닿지 않아 `day59_p2_fixed` 기준 성공 처리했다.
+- Files: Day040-100/Day059
+- Problems: `chain:` 입력은 BOF가 아니라 `read(0, heap_buf, 0x500)`였으므로 canary가 필요 없고 heap fake stack 데이터만 들어간다. `switch:` 입력에서만 canary 보존과 pivot trigger가 필요하다. ret2csu는 `r12=win`이 아니라 `[win_slot]=win`, `r12=win_slot` 구조가 필요하다. read 크기와 buffer offset을 어셈블리로 비교해 BOF 가능 여부를 먼저 검증해야 한다.
+- Next: Day060 Month2 portfolio summary
+
+### Day060
+- Topic: Month2 portfolio summary + reproduction verification
+- Status: done
+- Result: `month2_portfolio_readme.md`를 작성해 Day41~Day59 핵심 기법, 대표 실습, 검증 체크리스트, failure cases, CS review, next month plan을 정리했다. Day44, Day46, Day50 exploit을 clean run으로 재현해 Verified 처리했고, Day59/60 산출물을 GitHub에 커밋/푸시했다.
+- Files: Day040-100/Day060/month2_portfolio_readme.md
+- Problems: 포트폴리오 정리에서는 성공 케이스뿐 아니라 실패 원인과 검증 명령을 남겨야 한다. `.gdb_history` 같은 디버깅 기록은 필요하면 비우거나 write-up에 핵심 확인만 옮기는 방식이 낫다.
+- Next: Day061 Heap intro
+
+### Day061
+- Topic: Heap intro: malloc/free, UAF, double free, heap overflow, tcache
+- Status: done
+- Result: 문제 바이너리 없이 heap 개념을 문답형으로 점검했다. stack pointer 변수와 heap chunk의 차이, `free()`가 포인터를 NULL로 만들지 않는 점, dangling pointer, UAF read/write, alias pointer, double free, heap overflow, metadata, tcache LIFO 재사용, tcache poisoning 기본 흐름을 정리했다.
+- Files: Day040-100/Day061/heap_intro_notes.md
+- Problems: `free(p)`는 heap chunk를 allocator에 반납할 뿐 `p` 값을 자동으로 NULL로 바꾸지 않는다. `p=NULL`은 한 포인터의 재사용 실수는 줄이지만 alias pointer까지 해결하지 못한다. double free는 같은 chunk가 free list/tcache에 중복 등록되어 다음 malloc이 같은 주소를 중복 반환할 수 있는 문제다. tcache poisoning의 핵심은 다음 malloc이 돌려줄 주소를 조작하는 것이다.
+- Next: Day062 Heap UAF 기본 실습
 ---
 
 ## Update Template
