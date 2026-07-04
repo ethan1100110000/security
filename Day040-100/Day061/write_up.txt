@@ -1,0 +1,77 @@
+##day61 heap 입문
+
+heap이란? malloc 같은 동적할당시에 생성되는 메모리 공간
+사용 후에는 free로 할당 해제를 해줘야 한다
+변수 자체는 stack에 생기지만 메모리 공간은 heap에 생성
+##heap 취약점
+
+크게 3가지로 나뉘는데
+1. UAF(use after free)
+char* p =malloc(32) 로 동적할당을 했다고 가정해보자
+...
+...
+free(p)
+free로 할당 해제를 했어도 p에는 여전히 heap을 가리키고 있던 주소가 남아있다
+printf("%s", p) 하게 되면 해제된 heap 주소를 다시 읽는 것 이러면 나올 수 있는 상황은
+- 예전 데이터 출력
+- allocator meatdata 출력
+- 프로그램 터짐
+- 나중에 다른 malloc이 같은 주소를 재사용하게 되면 조작 가능
+
+dangling pointer
+
+char *p = malloc(32);
+free(p);
+
+char *q = malloc(32);
+strcpy(q, "BBBB");
+
+printf("%s\n", p);
+
+이런식이면 p에는 아직 주소값이 남아있기 때문에 q가 p와 같은 주소를 받았다면 p 로 조작 가능하다
+2. Double free
+말 그대로 free를 두 번 했을때 생길 수 있는 버그
+왜 문제가 되냐?
+free를 한번 하게되면 allocator에 이 chunk는 비었다고 등록됨
+free를 한번 더 하게되면 이미 비어있는 chunk를 또 비었다고 등록한다
+이후에 새로 malloc을 두번 했을때 둘 다 같은 주소를 받을 수 있다 왜냐면
+free를 두 번 함으로써 비어있는 chunk 목록에 같은 값이 두 번 들어가있는 거임
+새로 malloc하면서 빈 목록에서 꺼낼 때 같은 값이 두번 나올 수 있음
+
+3. Heap overflow
+bof와 정확히 같은 동작 목적이 다를 뿐
+a = malloc(32)
+read(0, a, 80)
+
+a의 크기보다 큰 값을 입력받는다 하면 a 옆에있는 공간까지 덮어버린다
+- 바로 뒤 b chunk 데이터 덮기
+- 뒤 chunk의 metadata 덮기
+- allocator 상태 꼬이기
+- 나중에 free/malloc 할때 crash 또는 흐름 꼬이기
+
+heap chunk는 malloc으로 할당된 크기보다 크게 할당되는데 이는
+metadata에
+chunk size
+이전 chunk 상태
+현재 chunk 사용/해제 상태 관련 flag
+free된 chunk면 다음/이전 free chunk 포인터
+이런 정보를 저장하기 위함이다 heap chunk: [ metadata ][ user data 32 bytes ] 이런식으로
+그리고 이 정보는 free를 했다고 지워지지 않고 allocator의 free list 포인터 저장 공간으로 재사용
+그래서 free 이후에 p를 다시 읽으면 
+예전 문자열, heap 관련 값, libc arena 포인터 가 보일 수 있다
+
+tcache 기본
+요즘 glibc에서 작은 chunk를 free하면 보통 tcache에 들어간다
+작은 chunk를 free 했을 때 tcache에 보관해두고 다음 malloc에서 빠르게 재사용하기 위함
+재사용 순서는 LIFO(Last in First out) 구조임 즉 먼저 들어간 chunk가 먼저 나오는 방식 이것도 성능 때문
+
+
+heap 취약점 핵심
+1. 어떤 크기로 malloc / free 되는지
+2. free 이후에 포인터를 다시 쓰는지
+3. 할당 크기보다 큰 입력을 받는지
+
+free해도 포인터 값은 NULL이 안 된다
+heap chunk는 재사용될 수 있다
+tcache는 LIFO로 재사용한다
+UAF write는 새 객체를 덮을 수 있다
