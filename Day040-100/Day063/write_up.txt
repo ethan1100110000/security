@@ -1,0 +1,127 @@
+# Day63 Heap - tcache bin / free list 검증
+
+Day63에서는 free된 chunk가 tcache bin에 어떤 순서로 저장되고, 이후 malloc에서 어떤 순서로 재사용되는지 gdb로 확인했다.
+
+## 1. tcache 구조
+
+tcache는 size class별로 free chunk를 저장하는 thread-local cache다.  
+같은 크기의 chunk들은 singly linked list 형태로 연결된다.
+
+실습에서는 같은 크기의 chunk 3개를 할당했다.
+
+```c
+a = malloc(0x30);
+b = malloc(0x30);
+c = malloc(0x30);
+
+이후 순서대로 free했다.
+
+free(a);
+free(b);
+free(c);
+
+tcache는 LIFO 구조이므로 마지막에 free된 chunk가 head가 된다.
+
+tcache[0x40] → c → b → a → NULL
+2. malloc 재사용 순서
+
+이 상태에서 다시 같은 크기로 malloc하면 tcache head부터 pop된다.
+
+d = malloc(0x30);
+
+결과는 다음과 같았다.
+
+d == c
+tcache[0x40] → b → a → NULL
+
+한 번 더 malloc하면:
+
+e == b
+tcache[0x40] → a → NULL
+
+마지막으로 한 번 더 malloc하면:
+
+f == a
+tcache[0x40] → empty
+
+즉 tcache는 다음 흐름으로 동작한다.
+
+free 순서:   a → b → c
+list 구조:   c → b → a → NULL
+malloc 순서: c → b → a
+3. raw memory와 safe-linking
+
+free된 chunk의 user data 첫 8바이트는 tcache next pointer 저장에 사용된다.
+
+하지만 glibc safe-linking 때문에 실제 next 주소가 그대로 저장되지 않고 encoding되어 저장된다.
+
+encoded_next = real_next ^ (chunk_addr >> 12);
+
+복원할 때는 다시 XOR 한다.
+
+real_next = encoded_next ^ (chunk_addr >> 12);
+
+예를 들어 c->next는 논리적으로 b를 가리킨다.
+
+c → b
+
+하지만 x/gx c로 보면 b 주소가 그대로 보이지 않고 encoded 값이 보인다.
+이 값을 c >> 12와 XOR하면 실제 next인 b 주소가 복원된다.
+
+4. stale tcache metadata
+
+d = malloc(0x30) 이후 d == c가 되었다.
+이때 c는 tcache에서 빠졌으므로 더 이상 free chunk가 아니다.
+
+하지만 malloc은 user data를 0으로 초기화하지 않는다.
+그래서 d의 첫 8바이트에는 과거 c가 free chunk였을 때의 encoded next 값이 남아 있었다.
+
+따라서 다음이 가능했다.
+
+x/gx d
+decode(d의 첫 8바이트) → b
+
+이것은 d가 아직 tcache에 있다는 뜻이 아니라, 이전 tcache metadata 흔적이 user data에 남아 있다는 뜻이다.
+
+같은 방식으로:
+
+d 안의 stale next decode → b
+e 안의 stale next decode → a
+f 안의 stale next decode → NULL
+
+을 확인했다.
+
+5. 실패 케이스
+
+safe-linking decode에서 중요한 점은 chunk_addr 기준이다.
+
+c->next를 복원할 때 encoded 값은 c 안에 저장되어 있다.
+따라서 반드시 c >> 12를 사용해야 한다.
+
+real_next = encoded_next ^ (c >> 12);
+
+실수로 b >> 12를 사용하면 key가 달라져 잘못된 주소가 나온다.
+
+실패 원인:
+encoded next가 저장된 현재 chunk 주소가 아니라,
+next로 가리켜지는 chunk 주소를 기준으로 decode함
+6. Summary
+
+Day63에서는 tcache bin이 LIFO 방식으로 동작한다는 것을 확인했다.
+
+free(a), free(b), free(c)
+→ tcache[0x40] = c → b → a → NULL
+
+이후 malloc을 반복하면:
+
+d == c
+e == b
+f == a
+
+순서로 재사용되었다.
+
+또한 free chunk의 user data 첫 8바이트에는 encoded next pointer가 저장되고, safe-linking 때문에 다음 식으로 복원해야 한다.
+
+real_next = encoded_next ^ (chunk_addr >> 12);
+
+마지막으로 malloc 이후에도 user data가 초기화되지 않기 때문에 stale tcache metadata가 남을 수 있고, 이를 통해 heap pointer leak이 가능하다는 점을 확인했다.
