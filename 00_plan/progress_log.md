@@ -13,7 +13,7 @@
 
 공부 시작 전:
 - GitHub repo를 확인한다.
-- 사용자에게 먼저 아래 명령을 실행하게 한다.
+- 사용자는 먼저 아래 명령을 실행한다.
 
 ```bash
 cd /mnt/d/security-roadmap
@@ -41,174 +41,62 @@ Role split:
 - ChatGPT: `00_plan/progress_log.md` 갱신
 
 Default pwn/reversing study routine:
-- 새 보안 프로젝트 채팅에서도 pwn/reversing 문제를 풀 때는 단순히 BOF/FSB 등 명확한 취약점을 exploit하는 데서 끝내지 않는다.
-- 매 문제마다 다음 루틴을 기본으로 적용한다: 입력 지점 확인 → 입력값 data flow 추적 → 검증/제한 위치 확인 → 위험 sink 확인 → 취약점 root cause 설명 → 소스 없이 찾는 방법 설명 → exploitability 판단 → exploit 작성/검증.
+- 매 문제마다 입력 지점 확인 → data flow 추적 → 검증/제한 위치 확인 → 위험 sink 확인 → root cause 설명 → 소스 없이 찾는 방법 설명 → exploitability 판단 → exploit 작성/검증 루틴을 기본으로 적용한다.
 - 사용자가 별도로 생략하라고 하지 않는 한, write-up 또는 복기 단계에 root cause와 discovery 관점을 포함한다.
 
 ---
 
 ## Current Pointer
 
-- Last completed: Day058
-- Current focus: Canary/PIE/libc/pivot 통합 체크 + shellcode 전략 정리, Day57-58 CS Fundamentals 완료
-- Next task: Day059 미니시험 2 진행
+- Last completed: Day063
+- Current focus: Day062-063 CS Fundamentals 정리
+- Next task: Day064 UAF 1: dangling pointer bug 재현
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
 
-## Daily Log
-
-### Day040
-- Topic: Canary + PIE + BOF
-- Status: done
-- Result: canary/PIE leak 후 PIE-adjusted win 진입 성공
-- Next: Day041 FSB leak
-
-### Day041
-- Topic: FSB leak lab
-- Status: done
-- Result: canary leak, PIE leak, PIE base 계산 검증
-- Next: Day042
-
-### Day042
-- Topic: Canary + BOF ret2win
-- Status: done
-- Result: canary 보존 + RIP 제어 성공
-- Next: Day043
-
-### Day043
-- Topic: PIE ON ret2win
-- Status: done
-- Result: PIE leak, PIE base 계산, win 진입 성공
-- Next: Day044
-
-### Day044
-- Topic: Canary + PIE + BOF
-- Status: done
-- Result: canary/PIE leak + BOF 성공
-- Next: Day045
-
-### Day045
-- Topic: Failure review + dynamic linking
-- Status: done
-- Result: canary/PIE/parsing/same-process leak 체크리스트 정리
-- Next: Day046
-
-### Day046
-- Topic: External PIE OFF ret2libc
-- Status: done
-- Result: ld/libc 매칭 문제 해결, ret2libc 성공
-- Next: Day047
-
-### Day047
-- Topic: External PIE ON ret2libc
-- Status: done
-- Result: PIE base 계산 + libc leak + system('/bin/sh') 성공
-- Next: Day048
-
-### Day048
-- Topic: Shellcode NX OFF
-- Status: done
-- Result: stack buffer leak, offset 136, execve('/bin/sh') shellcode 성공
-- Next: Day049
-
-### Day049
-- Topic: CS backlog / shellcode review
-- Status: done
-- Result: syscall vs libc, NX/execstack, execve register 정리
-- Next: Day050
-
-### Day050
-- Topic: FSB / pwn review
-- Status: done
-- Result: Day051 전 단계 복기
-- Next: Day051
-
-### Day051
-- Topic: FSB byte write
-- Status: done
-- Result: printf(buf) 기반 FSB offset 확인, %hhn / fmtstr_payload로 target byte overwrite 성공
-- Next: Day052
-
-### Day052
-- Topic: FSB leak + write / GOT overwrite
-- Status: done
-- Result: stripped PIE 바이너리에서 FSB로 PIE leak 후 base 계산, win 후보(0x1189)와 main offset(0x1226) 식별, exit@got offset(0x4028)을 runtime 주소로 보정해 `exit@got -> win` overwrite 성공
-- Files: Day040-100/Day052
-- Problems: PIE ON에서 GOT offset도 `pie_base + offset`으로 보정해야 함을 재확인. stripped 상태에서는 심볼명 대신 `_start`, `__libc_start_main`, `system@plt`, `strings -tx`, `readelf -rW`, `objdump -d -M intel`로 함수 역할을 판단해야 함.
-- Next: Day053
-
-### Day053
-- Topic: Stack pivot 기본형 + hard staged read
-- Status: done
-- Result: 기본형에서 `.bss` 전역 `fake_stack`에 fake chain `[dummy rbp][ret][win]`을 구성하고, stage2 BOF로 `saved rbp = fake_addr`, `saved rip = leave; ret`를 넣어 pivot 흐름을 검증했다. hard형에서는 전역 fake stack 입력 없이 1차 ROP로 `read(0, fake_addr, size)`를 호출해 writable 영역에 fake stack을 작성한 뒤, ROP chain 마지막의 `leave; ret`로 pivot해 win 실행에 성공했다.
-- Files: Day040-100/Day053
-- Problems: `rbp`와 `[rbp]`, `fake_addr`와 `[fake_addr]`를 구분하는 것이 핵심이었다. 첫 번째 `leave`는 `rbp = fake_addr`를 만들고, 두 번째 `leave`는 `rsp = fake_addr`, `rbp = [fake_addr]`를 만든다. `.bss`/RW 영역 시작점은 stdout/stdin/stderr나 런타임 데이터가 있을 수 있고, fake stack 시작점이 너무 낮으면 함수 내부 `push/call`로 `rsp`가 낮은 주소로 내려가 터질 수 있어 fake stack을 writable 영역 안쪽에 배치해야 한다. `read` 입력에는 `sendline()`보다 `send()`가 안정적이며, `sendline()`의 남은 `\n`이 다음 `read`에 섞일 수 있음을 확인했다.
-- Next: Day054 진행 전 Day53 복습 + CS Fundamentals 묶음(virtual memory, page alignment, PIE base)
-
-### Day054
-- Topic: Pivot ret2libc + Day53-54 CS Fundamentals
-- Status: done
-- Result: 작은 BOF에서 `leave; ret`로 `.bss` fake stack에 pivot한 뒤, 1차 chain으로 `puts(puts_got)` leak, libc base 계산, main 복귀, 2차 chain으로 `system("/bin/sh")` 호출에 성공했다. Day53 CS(page alignment / PIE base)와 Day54 CS(ELF segment / vmmap 권한)도 함께 완료했다.
-- Files: Day040-100/Day054
-- Problems: main 복귀 후 2차 입력은 `round_no` 분기 때문에 `fake_stack2`로 들어가는데 처음에는 다시 `fake_stack1`로 pivot해서 leak chain 루프가 반복됐다. `disas vuln`에서 `round_no` 분기와 `read` 직전 `rsi`를 확인해 입력 목적지와 pivot 주소를 맞춰 해결했다. fake stack은 실행 코드가 아니라 ROP 주소 목록이므로 `rw-p`면 충분하고, 실제 실행은 `.text/.plt/libc`의 `r-xp` 영역에서 일어난다는 점을 정리했다.
-- Next: Day055
-
-### Day055
-- Topic: FSB/Pivot write-up 품질 보강 + saved RIP overwrite 복습
-- Status: done
-- Result: Day52 FSB GOT overwrite와 Day54 pivot ret2libc의 write-up 보강 포인트를 정리했다. Day52에서는 exit@got 선택 이유, PIE ON에서 GOT/function offset 보정, %hn으로 2바이트씩 나눠 쓰는 이유를 복습했다. Day54에서는 NX ON에서도 ROP pivot이 가능한 이유, 소스 없이 read 인자의 rsi와 disas vuln으로 fake_stack1/fake_stack2를 확인하는 방법, 2차 chain 저장 위치와 pivot 대상 주소 불일치 실패 원인을 정리했다. saved rbp/saved rip의 역할과 leave; ret pivot 흐름도 복습했다.
-- Files: Day040-100/Day055/review_notes.txt
-- Problems: 2차 입력이 fake_stack2에 저장되는데 pivot을 fake_stack1로 반복하면 이전 puts leak chain이 다시 실행되어 main 복귀 루프가 생긴다는 점을 재확인했다. saved rbp는 fake stack 주소로, saved rip는 leave; ret gadget으로 덮어야 pivot이 성립한다.
-- Next: Day056
-
-### Day056
-- Topic: ROP Emporium ret2csu + custom ret2csu hard + calling convention 복습
-- Status: done
-- Result: ROP Emporium `ret2csu` 개념을 복구하고, `__libc_csu_init`의 pop gadget과 call gadget을 이용해 레지스터 인자 전달 흐름을 정리했다. 이어 custom stripped/no PIE/NX/Full RELRO ret2csu hard 문제를 풀었다. 1차 csu chain으로 `read(0, bss, 8)`을 호출해 writable `.bss`에 `win` 주소를 저장하고, 2차 csu chain에서 `r12=bss`, `rbx=0`으로 `call [bss]`를 수행해 `win(arg1,arg2,arg3)` 호출에 성공했다. CS로 x86-64 calling convention을 복습하며 `rdi/rsi/rdx` 인자 전달, `read`, `write`, `system`, `execve`의 레지스터 세팅 차이를 정리했다.
-- Files: Day040-100/Day056
-- Problems: `call [r12+rbx*8]`는 `r12` 자체를 호출하는 것이 아니라 `r12+rbx*8` 위치의 8바이트 함수 포인터를 읽어 호출한다. 따라서 `r12=win`이 아니라 `[bss]=win`, `r12=bss` 구조가 필요했다. `rbx=0`, `rbp=1`로 csu loop를 1회만 돌리고, `csu_call` 이후 `add rsp,8`과 6개의 pop을 처리하기 위해 cleanup dummy 7개가 필요함을 확인했다. 기본 ret2csu에서는 `mov edi,r13d` 때문에 64비트 첫 번째 인자를 온전히 넣기 어렵고, hard 변형에서는 staged read 후 indirect call 방식으로 해결했다. staged read에는 `sendline(p64(win))`보다 `send(p64(win))`이 적절함도 확인했다. Mac Docker에서는 Apple Silicon 기본 ARM64 컨테이너로 x86-64 ELF 실행이 안 되어 `--platform linux/amd64`가 필요했으며, 이후 WSL에서 동일한 방식으로 성공했다.
-- Next: Day057 ROP 문제 B + 실패 케이스 문서화, 가능하면 PIE ON + no FSB 우회/partial overwrite 입문 보강
-
-### Day057
-- Topic: ret2csu + xchg pivot 복합 문제 2개 풀이
-- Status: done
-- Result: custom Problem 1에서 No PIE/No Canary/NX/Full RELRO 환경의 heap fake stack + `xchg rax,rsp; ret` pivot + ret2csu staged indirect call을 성공했다. stack payload는 `pop rax; ret`, heap leak 주소, `xchg rax,rsp; ret`로 pivot만 수행하고, heap payload가 실제 ret2csu chain을 담당했다. 1차 csu로 `read(0, slot, 8)`을 호출해 `.bss` slot에 `win` 주소를 저장하고, 2차 csu에서 `r12=slot`, `call [slot]`로 `win(arg1,arg2,arg3)` 호출에 성공했다. custom Problem 2에서는 PIE ON/Canary ON 환경에서 FSB로 canary와 PIE code pointer를 leak하고, PIE base 계산 후 gadget/GOT/.bss/win 주소를 보정하고 canary를 보존한 뒤 같은 xchg pivot + ret2csu 구조로 성공했다.
-- Files: Day040-100/Day057
-- Problems: `xchg rax,rsp; ret` pivot에서는 fake stack 첫 qword가 dummy rbp가 아니라 첫 RIP가 되어야 한다. 반대로 `leave; ret` pivot은 fake stack 첫 qword가 dummy rbp이고 두 번째 qword가 첫 RIP다. ret2csu의 `call [r12+rbx*8]` 때문에 `r12=read@plt` 또는 `r12=win`처럼 함수 주소를 직접 넣으면 실패하고, `r12=read@got` 또는 `r12=slot`처럼 함수 포인터가 저장된 메모리 주소를 넣어야 한다. Full RELRO에서는 GOT overwrite는 불가능하지만 GOT read/call은 가능하며, 쓰기 대상은 writable `.bss` slot이어야 한다. CS Fundamentals는 시간 부족으로 Day58에 통합 체크와 함께 이월한다.
-- Next: Day058 Canary/PIE/libc/pivot 통합 체크 + shellcode, pivot 방식 이론 비교 추가
-
-### Day058
-- Topic: Canary/PIE/libc/pivot 통합 체크 + shellcode + Day57-58 CS Fundamentals
-- Status: done
-- Result: `pwn_integrated_checklist.md`에 Canary/PIE/NX/RELRO 기준 exploit 전략 분기, ret2libc leak 흐름, puts leak과 write leak 차이, NX OFF shellcode 판단, execve shellcode 레지스터, pivot 방식 비교를 정리했다. `leave; ret`, `xchg reg,rsp; ret`, `pop rsp; ret`, `mov rsp,reg; ret`, `add rsp,imm; ret`의 fake stack 구조 차이를 비교했고, FSB leak + BOF + PIE/Canary + libc leak + main 복귀 + 2차 system 구조를 통합 체크했다. 추가 고난도 Q/A로 raw bytes leak 파싱, libc base 계산, system 내부 movaps alignment crash, PIE ON ret2csu 주소 보정, staged read 입력 타이밍을 점검했다. Day57 CS인 보호기법별 우회 전략 분류와 Day58 CS인 syscall vs libc 함수 차이도 함께 완료했다.
-- Files: Day040-100/Day058/pwn_integrated_checklist.md
-- Problems: raw leak은 ASCII hex가 아니므로 `int(..., 16)`이 아니라 `u64(leak.ljust(8, b"\x00"))`로 복구해야 한다. PIE ON에서는 `.text`, `.plt`, `.got`, `.bss`, csu gadget, win offset에 PIE base를 더해야 하지만 canary, heap leak, libc leak, 단순 인자에는 더하면 안 된다. Full RELRO는 GOT overwrite를 막지만 GOT read/leak/call은 가능하다. `system` 내부 `movaps`에서 터지면 `/bin/sh` 주소보다 stack alignment를 먼저 의심하고, 필요하면 `ret` gadget으로 `rsp` 정렬을 바꾼다. `execve` syscall은 libc `system`과 달리 `rax=59`, `rdi/rsi/rdx` 세팅과 `syscall` 명령이 핵심이다.
-- Next: Day059 미니시험 2
+## Recent Daily Log
 
 ### Day059
 - Topic: Mini Exam 2: FSB leak, pivot, ret2libc, ret2csu
 - Status: done
-- Result: P1은 FSB로 canary/PIE/stack leak 후 stack buffer 앞부분을 fake stack으로 사용해 `leave; ret` pivot, libc leak, main 복귀, 2차 `system("/bin/sh")` 흐름을 완성했다. P2는 FSB로 PIE/canary/heap leak 후 heap fake stack + `xchg rax,rsp; ret` pivot + ret2csu `call [win_slot]` 구조를 정리했다. 원본 P2는 switch read 크기가 saved RIP까지 닿지 않아 `day59_p2_fixed` 기준 성공 처리했다.
+- Result: P1은 FSB로 canary/PIE/stack leak 후 stack buffer 앞부분을 fake stack으로 사용해 pivot, libc leak, main 복귀, 2차 system 흐름을 완성했다. P2는 FSB로 PIE/canary/heap leak 후 heap fake stack + xchg pivot + ret2csu indirect call 구조를 정리했다.
 - Files: Day040-100/Day059
-- Problems: `chain:` 입력은 BOF가 아니라 `read(0, heap_buf, 0x500)`였으므로 canary가 필요 없고 heap fake stack 데이터만 들어간다. `switch:` 입력에서만 canary 보존과 pivot trigger가 필요하다. ret2csu는 `r12=win`이 아니라 `[win_slot]=win`, `r12=win_slot` 구조가 필요하다. read 크기와 buffer offset을 어셈블리로 비교해 BOF 가능 여부를 먼저 검증해야 한다.
-- Next: Day060 Month2 portfolio summary
+- Problems: 입력별 목적지가 stack인지 heap인지 먼저 확인해야 한다. ret2csu indirect call은 함수 주소 자체가 아니라 함수 포인터가 저장된 메모리 주소를 기준으로 구성해야 한다.
+- Next: Day060
 
 ### Day060
 - Topic: Month2 portfolio summary + reproduction verification
 - Status: done
-- Result: `month2_portfolio_readme.md`를 작성해 Day41~Day59 핵심 기법, 대표 실습, 검증 체크리스트, failure cases, CS review, next month plan을 정리했다. Day44, Day46, Day50 exploit을 clean run으로 재현해 Verified 처리했고, Day59/60 산출물을 GitHub에 커밋/푸시했다.
+- Result: `month2_portfolio_readme.md`를 작성해 Day41~Day59 핵심 기법, 대표 실습, 검증 체크리스트, failure cases, CS review, next month plan을 정리했다. Day44, Day46, Day50 exploit을 clean run으로 재현해 Verified 처리했다.
 - Files: Day040-100/Day060/month2_portfolio_readme.md
-- Problems: 포트폴리오 정리에서는 성공 케이스뿐 아니라 실패 원인과 검증 명령을 남겨야 한다. `.gdb_history` 같은 디버깅 기록은 필요하면 비우거나 write-up에 핵심 확인만 옮기는 방식이 낫다.
-- Next: Day061 Heap intro
+- Problems: 포트폴리오 정리에서는 성공 케이스뿐 아니라 실패 원인과 검증 명령을 남겨야 한다.
+- Next: Day061
 
 ### Day061
 - Topic: Heap intro: malloc/free, UAF, double free, heap overflow, tcache
 - Status: done
-- Result: 문제 바이너리 없이 heap 개념을 문답형으로 점검했다. stack pointer 변수와 heap chunk의 차이, `free()`가 포인터를 NULL로 만들지 않는 점, dangling pointer, UAF read/write, alias pointer, double free, heap overflow, metadata, tcache LIFO 재사용, tcache poisoning 기본 흐름을 정리했다.
+- Result: stack pointer 변수와 heap chunk의 차이, `free()`가 포인터를 NULL로 만들지 않는 점, dangling pointer, UAF read/write, alias pointer, double free, heap overflow, metadata, tcache LIFO 재사용, tcache poisoning 기본 흐름을 정리했다.
 - Files: Day040-100/Day061/heap_intro_notes.md
-- Problems: `free(p)`는 heap chunk를 allocator에 반납할 뿐 `p` 값을 자동으로 NULL로 바꾸지 않는다. `p=NULL`은 한 포인터의 재사용 실수는 줄이지만 alias pointer까지 해결하지 못한다. double free는 같은 chunk가 free list/tcache에 중복 등록되어 다음 malloc이 같은 주소를 중복 반환할 수 있는 문제다. tcache poisoning의 핵심은 다음 malloc이 돌려줄 주소를 조작하는 것이다.
-- Next: Day062 Heap UAF 기본 실습
+- Problems: `free(p)`는 heap chunk를 allocator에 반납할 뿐 `p` 값을 자동으로 NULL로 바꾸지 않는다. `p=NULL`은 alias pointer까지 해결하지 못한다.
+- Next: Day062
+
+### Day062
+- Topic: Heap metadata: size/flag 관찰
+- Status: done
+- Result: `malloc(0x30)`의 실제 chunk size가 `0x40`이고 `size|flags=0x41`, `malloc(0x80)`의 실제 chunk size가 `0x90`이고 `size|flags=0x91`임을 gdb로 확인했다. user pointer 기준 `p-0x10=prev_size`, `p-0x8=size|flags` 구조와 `PREV_INUSE` 의미를 정리했다. `free(a)` 후 같은 size class의 `malloc(0x30)`에서 `d==a`가 되는 tcache 재사용과 UAF write/read 가능성을 확인했다.
+- Files: Day040-100/Day062/day62_heap.md
+- Problems: `PREV_INUSE`는 현재 chunk가 아니라 이전 chunk 상태를 나타낸다. `prev_size`는 `PREV_INUSE=0`일 때만 의미 있다. 작은 chunk가 tcache에 들어가면 즉시 coalescing되지 않아 다음 chunk의 `PREV_INUSE`가 바로 0으로 바뀌지 않을 수 있다.
+- Next: Day063
+
+### Day063
+- Topic: tcache bin/free list 검증
+- Status: done
+- Result: 같은 size class chunk `a,b,c`를 `free(a); free(b); free(c);` 순서로 해제했을 때 tcache list가 `c -> b -> a -> NULL`이 되는 LIFO 구조를 gdb `tcachebins`와 raw memory로 교차검증했다. 이후 `malloc(0x30)` 반복에서 `d==c`, `e==b`, `f==a` 순서로 pop되는 것을 확인했다. safe-linking 때문에 raw next 값은 encoded되어 저장되며 `real_next = encoded_next ^ (chunk_addr >> 12)`로 복원해야 함을 확인했다.
+- Files: Day040-100/Day063/day63_heap.md
+- Problems: safe-linking decode 시 next로 가리켜지는 chunk 주소가 아니라 encoded next가 저장된 현재 chunk 주소를 기준으로 `>> 12` 해야 한다. malloc 후에도 user data가 초기화되지 않아 stale tcache metadata가 남을 수 있고, 이를 잘못 해석하면 allocated chunk가 아직 tcache 안에 있다고 착각할 수 있다.
+- Next: Day062-063 CS Fundamentals 정리 후 Day064
+
 ---
 
 ## Update Template
