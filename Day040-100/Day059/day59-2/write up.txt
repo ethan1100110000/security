@@ -40,3 +40,5 @@ payload2 += p64(win) win주소를 넣어놓으면 [win_slot] = win 이 된다
 3차입력은 bof니까
 패딩 + 카나리 + 더미 + pop_rax + heap + xchg
 xchg 는 내부적으로 rsp = rax니까 rax에 heap을 넣어놓으면 rsp가 fake stack 즉 heap으로 넘어간다
+
+##검증
