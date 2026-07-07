@@ -48,22 +48,14 @@ Default pwn/reversing study routine:
 
 ## Current Pointer
 
-- Last completed: Day063
-- Current focus: Day062-063 CS Fundamentals 정리
-- Next task: Day064 UAF 1: dangling pointer bug 재현
+- Last completed: Day064
+- Current focus: UAF 1 완료, dangling pointer와 객체 lifetime 정리 완료
+- Next task: Day065 UAF 2 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
 
 ## Recent Daily Log
-
-### Day059
-- Topic: Mini Exam 2: FSB leak, pivot, ret2libc, ret2csu
-- Status: done
-- Result: P1은 FSB로 canary/PIE/stack leak 후 stack buffer 앞부분을 fake stack으로 사용해 pivot, libc leak, main 복귀, 2차 system 흐름을 완성했다. P2는 FSB로 PIE/canary/heap leak 후 heap fake stack + xchg pivot + ret2csu indirect call 구조를 정리했다.
-- Files: Day040-100/Day059
-- Problems: 입력별 목적지가 stack인지 heap인지 먼저 확인해야 한다. ret2csu indirect call은 함수 주소 자체가 아니라 함수 포인터가 저장된 메모리 주소를 기준으로 구성해야 한다.
-- Next: Day060
 
 ### Day060
 - Topic: Month2 portfolio summary + reproduction verification
@@ -95,7 +87,15 @@ Default pwn/reversing study routine:
 - Result: 같은 size class chunk `a,b,c`를 `free(a); free(b); free(c);` 순서로 해제했을 때 tcache list가 `c -> b -> a -> NULL`이 되는 LIFO 구조를 gdb `tcachebins`와 raw memory로 교차검증했다. 이후 `malloc(0x30)` 반복에서 `d==c`, `e==b`, `f==a` 순서로 pop되는 것을 확인했다. safe-linking 때문에 raw next 값은 encoded되어 저장되며 `real_next = encoded_next ^ (chunk_addr >> 12)`로 복원해야 함을 확인했다.
 - Files: Day040-100/Day063/day63_heap.md
 - Problems: safe-linking decode 시 next로 가리켜지는 chunk 주소가 아니라 encoded next가 저장된 현재 chunk 주소를 기준으로 `>> 12` 해야 한다. malloc 후에도 user data가 초기화되지 않아 stale tcache metadata가 남을 수 있고, 이를 잘못 해석하면 allocated chunk가 아직 tcache 안에 있다고 착각할 수 있다.
-- Next: Day062-063 CS Fundamentals 정리 후 Day064
+- Next: Day064
+
+### Day064
+- Topic: UAF 1 - dangling pointer bug 재현
+- Status: done
+- Result: `a`를 `free(a); a=NULL;` 처리해도 `alias=a`로 복사해둔 포인터에는 old heap 주소가 남는 것을 확인했다. 같은 size class로 `b`를 다시 할당하면 allocator가 같은 chunk를 재사용해 `alias==b`가 되고, `alias->name` write가 `b->name`을 덮는 UAF write primitive를 재현했다. 주소 관점과 객체 lifetime 관점을 분리해 정리했다.
+- Files: Day040-100/Day064/day64_heap.md
+- Problems: `a=NULL`은 alias pointer를 해결하지 못한다. 다른 size class로 재할당하면 `alias==b`가 안 되어 즉시 재현은 실패할 수 있지만, dangling pointer가 남아 있으므로 UAF bug 자체가 사라지는 것은 아니다. 이번 primitive는 double free나 heap overflow가 아니라 stale alias pointer 기반 UAF write다.
+- Next: Day065 UAF 2
 
 ---
 
