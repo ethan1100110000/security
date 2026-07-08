@@ -48,22 +48,14 @@ Default pwn/reversing study routine:
 
 ## Current Pointer
 
-- Last completed: Day064
-- Current focus: UAF 1 완료, dangling pointer와 객체 lifetime 정리 완료
-- Next task: Day065 UAF 2 진행
+- Last completed: Day065
+- Current focus: UAF leak primitive 완료, free 이후 포인터 재사용 위험 정리 완료
+- Next task: Day066 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
 
 ## Recent Daily Log
-
-### Day060
-- Topic: Month2 portfolio summary + reproduction verification
-- Status: done
-- Result: `month2_portfolio_readme.md`를 작성해 Day41~Day59 핵심 기법, 대표 실습, 검증 체크리스트, failure cases, CS review, next month plan을 정리했다. Day44, Day46, Day50 exploit을 clean run으로 재현해 Verified 처리했다.
-- Files: Day040-100/Day060/month2_portfolio_readme.md
-- Problems: 포트폴리오 정리에서는 성공 케이스뿐 아니라 실패 원인과 검증 명령을 남겨야 한다.
-- Next: Day061
 
 ### Day061
 - Topic: Heap intro: malloc/free, UAF, double free, heap overflow, tcache
@@ -95,7 +87,15 @@ Default pwn/reversing study routine:
 - Result: `a`를 `free(a); a=NULL;` 처리해도 `alias=a`로 복사해둔 포인터에는 old heap 주소가 남는 것을 확인했다. 같은 size class로 `b`를 다시 할당하면 allocator가 같은 chunk를 재사용해 `alias==b`가 되고, `alias->name` write가 `b->name`을 덮는 UAF write primitive를 재현했다. 주소 관점과 객체 lifetime 관점을 분리해 정리했다.
 - Files: Day040-100/Day064/day64_heap.md
 - Problems: `a=NULL`은 alias pointer를 해결하지 못한다. 다른 size class로 재할당하면 `alias==b`가 안 되어 즉시 재현은 실패할 수 있지만, dangling pointer가 남아 있으므로 UAF bug 자체가 사라지는 것은 아니다. 이번 primitive는 double free나 heap overflow가 아니라 stale alias pointer 기반 UAF write다.
-- Next: Day065 UAF 2
+- Next: Day065
+
+### Day065
+- Topic: UAF 2 - leak primitive 구성
+- Status: done
+- Result: `Obj *alias = a`로 복사해둔 dangling pointer가 같은 size class 재할당으로 새 객체 `b`와 같은 chunk를 가리키는 상황을 만들었다. `b->ptr = secret` 이후 `alias->ptr`을 읽으면 `alias->ptr == b->ptr == secret`이 되어 secret heap 주소와 문자열을 leak할 수 있음을 확인했다. gdb에서 `alias == b`, `alias->ptr == b->ptr`, `x/6gx alias == x/6gx b`로 raw memory를 교차검증했다.
+- Files: Day040-100/Day065/day65_heap.md, notes/cs_fundamentals.md
+- Problems: 다른 size class로 `b`를 재할당하면 같은 chunk가 재사용되지 않아 `alias==b`가 성립하지 않고 leak 재현이 실패할 수 있다. 단, dangling pointer가 남아 있으므로 UAF bug 자체가 사라지는 것은 아니다. UAF read는 방법이고, 이번 결과는 UAF 기반 heap leak primitive로 정리한다.
+- Next: Day066
 
 ---
 
