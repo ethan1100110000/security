@@ -48,22 +48,14 @@ Default pwn/reversing study routine:
 
 ## Current Pointer
 
-- Last completed: Day065
-- Current focus: UAF leak primitive 완료, free 이후 포인터 재사용 위험 정리 완료
-- Next task: Day066 진행
+- Last completed: Day066
+- Current focus: UAF overwrite로 분기 조건 field를 바꾸는 흐름 변화 검증 완료
+- Next task: Day067 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
 
 ## Recent Daily Log
-
-### Day061
-- Topic: Heap intro: malloc/free, UAF, double free, heap overflow, tcache
-- Status: done
-- Result: stack pointer 변수와 heap chunk의 차이, `free()`가 포인터를 NULL로 만들지 않는 점, dangling pointer, UAF read/write, alias pointer, double free, heap overflow, metadata, tcache LIFO 재사용, tcache poisoning 기본 흐름을 정리했다.
-- Files: Day040-100/Day061/heap_intro_notes.md
-- Problems: `free(p)`는 heap chunk를 allocator에 반납할 뿐 `p` 값을 자동으로 NULL로 바꾸지 않는다. `p=NULL`은 alias pointer까지 해결하지 못한다.
-- Next: Day062
 
 ### Day062
 - Topic: Heap metadata: size/flag 관찰
@@ -96,6 +88,14 @@ Default pwn/reversing study routine:
 - Files: Day040-100/Day065/day65_heap.md, notes/cs_fundamentals.md
 - Problems: 다른 size class로 `b`를 재할당하면 같은 chunk가 재사용되지 않아 `alias==b`가 성립하지 않고 leak 재현이 실패할 수 있다. 단, dangling pointer가 남아 있으므로 UAF bug 자체가 사라지는 것은 아니다. UAF read는 방법이고, 이번 결과는 UAF 기반 heap leak primitive로 정리한다.
 - Next: Day066
+
+### Day066
+- Topic: UAF 3 - overwrite로 흐름 변화 만들기
+- Status: done
+- Result: `User *alias = a`로 복사해둔 dangling pointer가 같은 size class 재할당으로 새 객체 `b`와 같은 chunk를 가리키는 상황을 만들었다. `alias->is_admin = 1`을 수행하자 실제로 `b->is_admin`이 1로 바뀌고, `check(b)`의 분기가 `access denied`에서 `admin access granted`로 바뀌는 것을 확인했다. gdb에서 첫 번째 `check(b)`의 `is_admin=0`, overwrite 이후 두 번째 `check(b)`의 `is_admin=1`, raw memory의 `b+0x20=0x1`을 교차검증했다.
+- Files: Day040-100/Day066/day66_heap.md, notes/cs_fundamentals.md
+- Problems: 다른 size class로 `b`를 재할당하면 freed `a` chunk가 `b`로 재사용되지 않아 `alias==b`가 성립하지 않고 `alias->is_admin` write가 `b->is_admin`을 바꾸지 못한다. 오늘 실습은 type confusion이 아니라 같은 타입 객체의 분기 조건 field를 덮는 UAF overwrite 사례다. type confusion exploit은 같은 주소 재사용과 target offset까지 도달 가능한 write가 함께 필요하다.
+- Next: Day067
 
 ---
 
