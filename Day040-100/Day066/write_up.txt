@@ -1,0 +1,57 @@
+# Day66 - UAF 3: overwrite로 흐름 변화 만들기
+
+## 핵심
+
+이번 실습은 dangling pointer를 이용해 새 객체의 중요한 field를 덮고, 프로그램 분기를 바꾸는 UAF overwrite primitive를 확인했다.
+
+```c
+typedef struct {
+    char name[0x20];
+    int is_admin;
+} User;
+
+is_admin은 구조체 시작 기준 offset 0x20에 있다.
+
+흐름
+a = malloc(sizeof(User))
+alias = a
+
+free(a)
+a = NULL
+
+b = malloc(sizeof(User))
+
+같은 size class로 다시 할당했기 때문에 freed chunk가 재사용되어 alias == b가 성립했다.
+
+alias ─────► [ old User chunk / reused as b ]
+b     ─────► [ old User chunk / reused as b ]
+
+따라서:
+
+alias->is_admin = 1;
+
+은 실제로:
+
+b->is_admin = 1;
+
+과 같은 위치를 바꾼다.
+
+결과
+
+초기 상태에서는 b->is_admin = 0이므로 check(b) 결과가 access denied였다.
+
+UAF overwrite 이후 b->is_admin = 1이 되어 check(b)의 분기가 바뀌고 admin access granted가 출력됐다.
+
+gdb 검증
+첫 번째 check(b)에서 u->is_admin = 0
+alias->is_admin = 1 이후 두 번째 check(b)에서 u->is_admin = 1
+raw memory에서 b + 0x20 위치가 0x00000001로 바뀐 것을 확인했다.
+실패 케이스
+
+b = malloc(0x100)처럼 다른 size class로 재할당하면 freed a chunk가 b로 재사용되지 않을 가능성이 크다.
+
+이 경우:
+
+alias != b
+
+가 되어 alias->is_admin = 1이 b->is_admin을 바꾸지 못한다.
