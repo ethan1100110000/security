@@ -1,0 +1,60 @@
+# Day67 - Double Free 1: tcache duplicate 상태 만들기
+
+## 핵심
+
+이번 실습은 같은 chunk를 두 번 free했을 때 tcache free list가 어떻게 망가질 수 있는지 확인했다.
+
+정상적으로는 같은 chunk가 tcache에 한 번만 들어가야 한다.
+
+```text
+tcache[0x40] → a → NULL
+
+하지만 double free가 우회되면 같은 chunk가 중복으로 들어갈 수 있다.
+
+tcache[0x40] → a → a → ...
+실습 흐름
+
+처음에는 단순히 아래처럼 실행했다.
+
+free(a);
+free(a);
+
+결과는 glibc가 double free를 감지해서 abort했다.
+
+free(): double free detected in tcache 2
+
+첫 번째 free(a) 이후 gdb에서 확인한 결과, freed chunk의 user data 영역이 tcache metadata로 바뀌어 있었다.
+
+a + 0x00 : encoded next
+a + 0x08 : tcache key
+
+실제 raw memory에서도 a+0x08에 key 값이 들어가 있었고, tcachebins에서 tcache[0x40] → a 상태를 확인했다.
+
+우회 관찰
+
+첫 번째 free 이후 UAF write로 key를 덮었다.
+
+((uintptr_t *)a)[1] = 0;
+
+이는 a + 0x08 위치의 tcache key를 0으로 덮는 동작이다.
+
+그 후 다시 free(a)를 호출하자 double-free detection 없이 통과했고, 같은 chunk가 tcache에 중복 등록되었다.
+
+결과
+
+이후 같은 size로 두 번 malloc했다.
+
+p = malloc(0x30);
+q = malloc(0x30);
+
+결과:
+
+p == q
+
+즉 서로 다른 포인터처럼 보이는 p, q가 실제로는 같은 heap chunk를 가리키게 되었다.
+
+실패 케이스
+
+tcache key를 망가뜨리지 않고 바로 두 번째 free(a)를 호출하면 glibc가 double free를 감지하고 abort한다.
+
+free(): double free detected in tcache 2
