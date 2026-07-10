@@ -48,22 +48,14 @@ Default pwn/reversing study routine:
 
 ## Current Pointer
 
-- Last completed: Day066
-- Current focus: UAF overwrite로 분기 조건 field를 바꾸는 흐름 변화 검증 완료
-- Next task: Day067 진행
+- Last completed: Day067
+- Current focus: Double free 1 완료, tcache duplicate 상태와 key corruption 우회 관찰 완료
+- Next task: Day068 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
 
 ## Recent Daily Log
-
-### Day062
-- Topic: Heap metadata: size/flag 관찰
-- Status: done
-- Result: `malloc(0x30)`의 실제 chunk size가 `0x40`이고 `size|flags=0x41`, `malloc(0x80)`의 실제 chunk size가 `0x90`이고 `size|flags=0x91`임을 gdb로 확인했다. user pointer 기준 `p-0x10=prev_size`, `p-0x8=size|flags` 구조와 `PREV_INUSE` 의미를 정리했다. `free(a)` 후 같은 size class의 `malloc(0x30)`에서 `d==a`가 되는 tcache 재사용과 UAF write/read 가능성을 확인했다.
-- Files: Day040-100/Day062/day62_heap.md
-- Problems: `PREV_INUSE`는 현재 chunk가 아니라 이전 chunk 상태를 나타낸다. `prev_size`는 `PREV_INUSE=0`일 때만 의미 있다. 작은 chunk가 tcache에 들어가면 즉시 coalescing되지 않아 다음 chunk의 `PREV_INUSE`가 바로 0으로 바뀌지 않을 수 있다.
-- Next: Day063
 
 ### Day063
 - Topic: tcache bin/free list 검증
@@ -96,6 +88,14 @@ Default pwn/reversing study routine:
 - Files: Day040-100/Day066/day66_heap.md, notes/cs_fundamentals.md
 - Problems: 다른 size class로 `b`를 재할당하면 freed `a` chunk가 `b`로 재사용되지 않아 `alias==b`가 성립하지 않고 `alias->is_admin` write가 `b->is_admin`을 바꾸지 못한다. 오늘 실습은 type confusion이 아니라 같은 타입 객체의 분기 조건 field를 덮는 UAF overwrite 사례다. type confusion exploit은 같은 주소 재사용과 target offset까지 도달 가능한 write가 함께 필요하다.
 - Next: Day067
+
+### Day067
+- Topic: Double free 1 - tcache duplicate 상태 만들기
+- Status: done
+- Result: 단순 `free(a); free(a);`에서는 glibc가 `free(): double free detected in tcache 2`로 abort하는 것을 확인했다. 첫 번째 `free(a)` 이후 raw memory에서 `a+0x00`의 encoded next와 `a+0x08`의 tcache key를 확인했고, `tcachebins`에서 `tcache[0x40] → a → NULL` 상태를 검증했다. 이후 UAF write로 `((uintptr_t *)a)[1] = 0`을 수행해 `a+0x08`의 key를 corruption한 뒤 두 번째 `free(a)`가 통과했고, `malloc(0x30)` 두 번에서 `p == q`가 되어 같은 chunk가 중복 반환되는 것을 확인했다.
+- Files: Day040-100/Day067/day67_heap.md
+- Problems: key를 망가뜨리지 않고 바로 두 번째 `free(a)`를 호출하면 glibc가 double free를 감지하고 abort한다. double free가 우회되면 같은 chunk가 tcache에 중복 등록되어 active object처럼 보이는 두 포인터가 같은 heap 주소를 가리키는 alias 상태가 된다.
+- Next: Day068
 
 ---
 
