@@ -48,22 +48,14 @@ Default pwn/reversing study routine:
 
 ## Current Pointer
 
-- Last completed: Day067
-- Current focus: Double free 1 완료, tcache duplicate 상태와 key corruption 우회 관찰 완료
-- Next task: Day068 진행
+- Last completed: Day068
+- Current focus: Double free 2 완료, tcache free list 순서 조작과 malloc 반환 순서 검증 완료
+- Next task: Day069 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
 
 ## Recent Daily Log
-
-### Day063
-- Topic: tcache bin/free list 검증
-- Status: done
-- Result: 같은 size class chunk `a,b,c`를 `free(a); free(b); free(c);` 순서로 해제했을 때 tcache list가 `c -> b -> a -> NULL`이 되는 LIFO 구조를 gdb `tcachebins`와 raw memory로 교차검증했다. 이후 `malloc(0x30)` 반복에서 `d==c`, `e==b`, `f==a` 순서로 pop되는 것을 확인했다. safe-linking 때문에 raw next 값은 encoded되어 저장되며 `real_next = encoded_next ^ (chunk_addr >> 12)`로 복원해야 함을 확인했다.
-- Files: Day040-100/Day063/day63_heap.md
-- Problems: safe-linking decode 시 next로 가리켜지는 chunk 주소가 아니라 encoded next가 저장된 현재 chunk 주소를 기준으로 `>> 12` 해야 한다. malloc 후에도 user data가 초기화되지 않아 stale tcache metadata가 남을 수 있고, 이를 잘못 해석하면 allocated chunk가 아직 tcache 안에 있다고 착각할 수 있다.
-- Next: Day064
 
 ### Day064
 - Topic: UAF 1 - dangling pointer bug 재현
@@ -96,6 +88,14 @@ Default pwn/reversing study routine:
 - Files: Day040-100/Day067/day67_heap.md
 - Problems: key를 망가뜨리지 않고 바로 두 번째 `free(a)`를 호출하면 glibc가 double free를 감지하고 abort한다. double free가 우회되면 같은 chunk가 tcache에 중복 등록되어 active object처럼 보이는 두 포인터가 같은 heap 주소를 가리키는 alias 상태가 된다.
 - Next: Day068
+
+### Day068
+- Topic: Double free 2 - allocation 순서 조작
+- Status: done
+- Result: `free(a); free(b); ((uintptr_t *)a)[1] = 0; free(a);` 흐름으로 `a+0x08`의 tcache key를 corruption해 double-free detection을 우회했다. 그 결과 tcache 구조가 `tcache[0x40] -> a -> b -> a -> ...` 형태로 오염되었고, 이후 `malloc(0x30)` 세 번에서 `p=a`, `q=b`, `r=a`가 되어 `p == r`, `p != q`를 확인했다. gdb에서 `tcachebins`, raw memory의 encoded next, malloc 이후 포인터 값을 교차검증했다.
+- Files: Day040-100/Day068/day68_heap.md, notes/cs_fundamentals.md
+- Problems: key corruption 없이 두 번째 `free(a)`를 호출하면 `a+0x08`의 tcache key가 남아 있어 glibc가 `free(): double free detected in tcache 2`로 abort한다. tcache duplicate check는 freed chunk 내부 key를 이용해 중복 free 가능성을 의심하며, UAF write로 key를 망가뜨리면 free list 순서가 오염될 수 있다.
+- Next: Day069
 
 ---
 
