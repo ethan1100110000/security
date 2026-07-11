@@ -1,0 +1,35 @@
+# Day68 - Double Free 2: allocation 순서 조작
+
+## 핵심
+
+Day68은 double free로 tcache free list 순서를 조작하고, 이후 `malloc()` 반환 순서가 바뀌는 것을 확인한 실습이다.
+
+흐름은 다음과 같다.
+
+```c
+free(a);
+free(b);
+((uintptr_t *)a)[1] = 0;
+free(a);
+
+첫 번째 free(a) 이후 a+0x08에는 tcache key가 저장된다. 이를 UAF write로 0으로 덮어 double-free detection을 우회했다.
+
+그 결과 tcache 구조는 다음처럼 꼬였다.
+
+tcache[0x40] -> a -> b -> a -> ...
+
+이후 같은 크기로 세 번 malloc하면:
+
+p = a
+q = b
+r = a
+
+따라서 p == r이 성립했다.
+
+검증
+
+gdb에서 tcachebins와 raw memory를 확인해 a -> b -> a 구조를 봤고, malloc 이후 p == r, p != q를 확인했다.
+
+실패 케이스
+
+((uintptr_t *)a)[1] = 0으로 key를 망가뜨리지 않고 두 번째 free(a)를 호출하면 glibc가 감지하고 abort한다.
