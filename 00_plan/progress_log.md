@@ -48,9 +48,9 @@ Default pwn/reversing study routine:
 
 ## Current Pointer
 
-- Last completed: Day068
-- Current focus: Double free 2 완료, tcache free list 순서 조작과 malloc 반환 순서 검증 완료
-- Next task: Day069 진행
+- Last completed: Day070
+- Current focus: UAF와 double free의 root cause, lifetime/소유권 차이, 재할당 전·후 UAF, overlapping allocation, heap 다이어그램 작성법 비교 완료
+- Next task: Day071 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -96,6 +96,22 @@ Default pwn/reversing study routine:
 - Files: Day040-100/Day068/day68_heap.md, notes/cs_fundamentals.md
 - Problems: key corruption 없이 두 번째 `free(a)`를 호출하면 `a+0x08`의 tcache key가 남아 있어 glibc가 `free(): double free detected in tcache 2`로 abort한다. tcache duplicate check는 freed chunk 내부 key를 이용해 중복 free 가능성을 의심하며, UAF write로 key를 망가뜨리면 free list 순서가 오염될 수 있다.
 - Next: Day069
+
+### Day069
+- Topic: Double free 3 - exploit/write-up
+- Status: done
+- Result: double free로 `tcache[0x40] -> a -> b -> a -> NULL` 상태를 만든 뒤 `malloc(0x30)` 세 번에서 `p=a`, `q=b`, `r=a`를 확인했다. `p == r`, `p != q` 상태에서 `p`의 user area를 `A`로 덮자 `r`에서도 같은 raw memory가 보였고, 별도 chunk인 `q`에는 영향이 없었다. 이를 통해 overlapping allocation 기반 cross-object overwrite 가능성을 검증했다.
+- Files: Day040-100/Day069/day69_heap.md, notes/cs_fundamentals.md
+- Problems: 세 번째 요청을 `malloc(0x39)`로 바꾸면 `0x50` size class를 사용해 `tcache[0x40]`의 중복 `a`를 소비하지 않는다. 그 결과 `p != r`이 되고, `tcache[0x40]`에 `a`가 남아 overlapping allocation이 실패한다.
+- Next: Day070
+
+### Day070
+- Topic: Heap write-up 1 - UAF와 double free 비교
+- Status: done
+- Result: UAF는 lifetime이 끝난 객체를 stale pointer로 사용하는 버그이고, double free는 같은 allocation을 allocator에 두 번 반환하는 버그로 구분했다. 재할당 전 UAF write로 freed chunk의 tcache key를 corruption해 double-free detection을 우회하고, 중복 등록된 chunk를 통해 overlapping allocation까지 이어지는 exploit chain을 정리했다. heap 다이어그램에서는 valid pointer와 stale pointer, owner가 program인지 allocator인지, 같은 physical chunk의 중복 entry 여부를 명시하는 방식으로 정리했다.
+- Files: Day040-100/Day070/day70_heap.md, notes/cs_fundamentals.md
+- Problems: 다른 size class 할당으로 즉시 chunk 재사용이 실패해도 dangling pointer 자체는 남는다. 반대로 tcache key를 손상시키지 않으면 두 번째 free에서 abort하지만, 이는 버그 부재가 아니라 glibc 방어가 해당 실행에서 성공한 것이다.
+- Next: Day071
 
 ---
 
