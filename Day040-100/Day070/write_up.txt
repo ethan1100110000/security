@@ -1,0 +1,142 @@
+# Day070 - UAF와 Double Free 비교
+
+## 핵심 차이
+
+| 구분         | UAF                                  | Double Free                             |
+| ---------- | ------------------------------------ | --------------------------------------- |
+| Root cause | 객체 lifetime 종료 후 stale pointer 사용    | 같은 allocation을 allocator에 두 번 반환        |
+| 주요 대상      | freed chunk 또는 재할당된 새 객체             | allocator free list                     |
+| 대표 결과      | leak, overwrite, metadata corruption | free list 중복 등록, overlapping allocation |
+| 핵심 검증      | dangling pointer, 주소 재사용, raw memory | `tcachebins`, key/next, malloc 반환 순서    |
+
+## UAF
+
+```text
+a = malloc(...)
+alias = a
+free(a)
+
+alias ──> freed chunk
+```
+
+`free(a)` 이후 chunk의 소유권은 allocator로 돌아가지만, `alias`에는 old heap 주소가 남는다.
+
+재할당 전에는 `alias`로 freed chunk의 tcache metadata를 읽거나 덮을 수 있다.
+
+```text
+alias ──> [encoded next][tcache key]
+```
+
+같은 size class의 새 객체 `b`가 해당 chunk를 재사용하면:
+
+```text
+alias ─┐
+       ├──> same chunk owned by b
+b ─────┘
+```
+
+이후 `alias`를 통한 write는 현재 객체 `b`의 데이터를 덮는다.
+
+### 실패 케이스
+
+`b = malloc(0x39)`처럼 다른 size class를 요청하면 old chunk가 즉시 재사용되지 않아 `alias != b`가 된다.
+
+단, dangling pointer는 남아 있으므로 UAF 버그 자체가 사라진 것은 아니다.
+
+## Double Free
+
+```text
+free(a);
+free(a);
+```
+
+첫 번째 `free(a)`에서 chunk 소유권은 이미 allocator로 이전된다. 두 번째 `free(a)`는 allocator가 소유 중인 같은 chunk를 다시 반환하는 잘못된 동작이다.
+
+이번 환경에서는 단순 double free가 tcache key 검사로 탐지된다.
+
+```text
+free(a)
+tcache[0x40] -> a
+a user area: [encoded next][tcache key]
+```
+
+재할당 전 UAF write로 key를 손상시키면:
+
+```c
+((uintptr_t *)a)[1] = 0;
+```
+
+두 번째 free가 통과하면서 free list에 같은 chunk가 중복 등록될 수 있다.
+
+```text
+tcache[0x40] -> a -> b -> a -> NULL
+```
+
+이후 같은 size class로 세 번 할당하면:
+
+```text
+p = a
+q = b
+r = a
+```
+
+가 되어 `p == r`, `p != q`인 overlapping allocation이 만들어진다.
+
+```text
+p ─┐
+   ├──> same active chunk
+r ─┘
+
+q ───> separate chunk
+```
+
+`p`로 쓴 값이 `r`에서도 보이고 `q`에는 반영되지 않으면 overlapping allocation 기반 overwrite가 증명된다.
+
+### 실패 케이스
+
+tcache key를 손상시키지 않고 두 번째 `free(a)`를 호출하면 glibc가 double free를 탐지하고 abort한다.
+
+이는 버그가 없다는 뜻이 아니라, 해당 실행에서 방어가 성공한 것이다.
+
+## Exploit Chain
+
+```text
+재할당 전 UAF write
+→ tcache key corruption
+→ double-free detection 우회
+→ 같은 chunk 중복 등록
+→ allocation 순서 조작
+→ overlapping allocation
+→ cross-object overwrite
+```
+
+## GDB 검증
+
+```gdb
+tcachebins
+x/4gx a
+p/x alias
+p/x b
+p/x p
+p/x q
+p/x r
+x/6gx p
+x/6gx q
+x/6gx r
+```
+
+확인할 항목:
+
+```text
+재할당 전: alias가 freed chunk를 가리키는가
+재할당 후: alias == b인가
+double free 후: a -> b -> a 순서인가
+malloc 후: p == r, p != q인가
+write 후: raw(p) == raw(r), raw(q) != raw(p)인가
+```
+
+## 결론
+
+UAF는 lifetime이 끝난 객체를 stale pointer로 사용하는 버그이고, double free는 같은 allocation을 allocator에 두 번 반환하는 버그다.
+
+이번 실습에서는 재할당 전 UAF write로 tcache key를 손상시켜 double free를 우회했고, 최종적으로 overlapping allocation 기반 overwrite를 만들었다.

@@ -1,0 +1,40 @@
+# Day069 - Double Free 3
+
+## Goal
+
+double free로 tcache free list를 오염시키고, 같은 chunk가 두 번 할당되는 overlapping allocation을 확인한다.
+
+## Result
+
+```text
+tcache[0x40] -> a -> b -> a -> NULL
+```
+
+이후 `malloc(0x30)`을 세 번 호출했을 때:
+
+```text
+p = a
+q = b
+r = a
+```
+
+가 되어 `p == r`, `p != q`를 확인했다.
+
+`p`에 `A`를 쓴 뒤 `r`에서도 같은 값이 보였고, 별도 chunk인 `q`에는 영향이 없었다. 따라서 double free로 동일한 heap chunk가 두 active allocation에 중복 반환되어 overlapping allocation 기반 overwrite가 가능함을 확인했다.
+
+## GDB Verification
+
+* `tcachebins`에서 `a -> b -> a -> NULL` 확인
+* `p == a`, `q == b`, `r == a` 확인
+* raw memory에서 `p`와 `r`의 데이터가 동일함을 확인
+* `q`의 raw memory는 별도로 유지됨을 확인
+
+## Failure Case
+
+세 번째 할당을 `malloc(0x39)`로 변경하면 요청이 `tcache[0x50]` size class를 사용한다.
+
+따라서 `tcache[0x40]`에 남아 있는 중복 `a`가 반환되지 않아 `p != r`이 되고 overlapping allocation이 실패한다.
+
+## Root Cause
+
+UAF write로 freed chunk의 tcache key를 손상시켜 double-free detection을 우회했고, 같은 chunk가 tcache free list에 중복 등록되었다.
