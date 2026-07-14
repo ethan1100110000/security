@@ -1,0 +1,62 @@
+# Day071 - Tcache Poisoning 1
+
+## Goal
+
+freed chunk의 encoded `next`를 조작해 이후 `malloc`이 공격자가 지정한 `target` 주소를 반환하도록 만든다.
+
+## Result
+
+초기 상태:
+
+```text
+tcache[0x40] -> a -> b -> NULL
+```
+
+safe-linking에 맞춰 다음 값을 `a`의 첫 8바이트에 기록했다.
+
+```c
+encoded_target = (uintptr_t)target ^ ((uintptr_t)a >> 12);
+*(uintptr_t *)a = encoded_target;
+```
+
+그 결과:
+
+```text
+tcache[0x40] -> a -> target
+```
+
+으로 free list가 바뀌었다.
+
+같은 size class로 `malloc`을 두 번 호출했을 때:
+
+```text
+p = a
+q = target
+```
+
+이 되어 `q == target`을 확인했다.
+
+이후 `q`를 통해 값을 쓰자 `target`의 raw memory에도 동일한 값이 반영되어 target address에 대한 write primitive가 성립했음을 확인했다.
+
+## GDB Verification
+
+* poisoning 전 `a -> b` 확인
+* poisoning 후 `a -> target` 확인
+* `a` 첫 8바이트가 `target ^ (a >> 12)`와 같은지 확인
+* 첫 번째 `malloc` 후 head가 `target`으로 바뀌는지 확인
+* 두 번째 `malloc` 반환값이 `target`인지 확인
+* `q`를 통한 write가 `target` raw memory에 반영되는지 확인
+
+## Failure Case
+
+`a->next`에 encoded value가 아니라 raw `target` 주소를 그대로 쓰면 glibc가 복호화 과정에서 다시 `a >> 12`와 XOR한다.
+
+```text
+decoded_next = target ^ (a >> 12)
+```
+
+따라서 실제 next가 `target`이 아닌 잘못된 주소가 되어 abort 또는 비정상 동작이 발생한다.
+
+## Root Cause
+
+freed chunk의 user area 첫 8바이트가 tcache entry의 encoded `next`로 사용되며, UAF write로 이 값을 조작할 수 있었기 때문에 tcache allocation 흐름을 공격자 지정 주소로 변경할 수 있었다.
