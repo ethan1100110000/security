@@ -13,6 +13,7 @@
 
 공부 시작 전:
 - GitHub repo를 확인한다.
+- 사용자가 "시작하자" 또는 특정 Day 시작을 요청하면 GitHub progress log와 최신 `보안 계획표.xlsx`의 해당 Day를 함께 확인한다.
 - 사용자는 먼저 아래 명령을 실행한다.
 
 ```bash
@@ -44,13 +45,19 @@ Default pwn/reversing study routine:
 - 매 문제마다 입력 지점 확인 → data flow 추적 → 검증/제한 위치 확인 → 위험 sink 확인 → root cause 설명 → 소스 없이 찾는 방법 설명 → exploitability 판단 → exploit 작성/검증 루틴을 기본으로 적용한다.
 - 사용자가 별도로 생략하라고 하지 않는 한, write-up 또는 복기 단계에 root cause와 discovery 관점을 포함한다.
 
+Day080 additional exam plan:
+- 엑셀에 원래 계획된 Day080 미니시험은 그대로 진행한다.
+- 추가로 GitHub Day001~Day079 write-up 전체를 확인해 보안 필기시험 약 30문항을 만든다.
+- 사용자가 Day080에 제공하는 별도 CS 정리 파일을 바탕으로 CS 필기시험 20~30문항을 추가한다.
+- 추가 필기시험은 개념, 메모리 상태, gdb/raw memory 해석, 실패 원인, exploit 흐름, 틀린 설명 교정 중심으로 구성한다.
+
 ---
 
 ## Current Pointer
 
-- Last completed: Day070
-- Current focus: UAF와 double free의 root cause, lifetime/소유권 차이, 재할당 전·후 UAF, overlapping allocation, heap 다이어그램 작성법 비교 완료
-- Next task: Day071 진행
+- Last completed: Day071
+- Current focus: Tcache poisoning 1 완료. safe-linking 기반 encoded next 계산, `a -> target` free-list 조작, target address allocation과 targeted write 검증 완료
+- Next task: Day072 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -112,6 +119,14 @@ Default pwn/reversing study routine:
 - Files: Day040-100/Day070/day70_heap.md, notes/cs_fundamentals.md
 - Problems: 다른 size class 할당으로 즉시 chunk 재사용이 실패해도 dangling pointer 자체는 남는다. 반대로 tcache key를 손상시키지 않으면 두 번째 free에서 abort하지만, 이는 버그 부재가 아니라 glibc 방어가 해당 실행에서 성공한 것이다.
 - Next: Day071
+
+### Day071
+- Topic: Tcache poisoning 1 - 개념/toy
+- Status: done
+- Result: `tcache[0x40] -> a -> b` 상태에서 UAF write로 `a`의 user area 첫 8바이트인 encoded `next`를 `target ^ (a >> 12)`로 덮어 `a -> target` 체인을 만들었다. 같은 size class `malloc` 두 번에서 `p=a`, `q=target`을 확인했고, `q`를 통한 write가 전역 aligned target의 raw memory에 반영되어 target address allocation과 targeted write primitive를 검증했다. poisoning으로 기존 `b`는 메모리에는 남지만 free-list에서 도달 불가능한 orphaned freed chunk가 됨을 정리했다.
+- Files: Day040-100/Day071/day71_heap.md, notes/cs_fundamentals.md
+- Problems: encoded value 대신 raw target 주소를 `a->next`에 쓰면 safe-linking 복호화 시 `target ^ (a >> 12)`가 next로 해석되어 target 반환이 실패하거나 abort한다. 또한 target 주소가 16바이트 정렬을 만족하지 않으면 `unaligned tcache chunk detected`로 실패할 수 있다. `q == target`만으로는 allocation primitive이며, 실제 write 경로와 주소·offset·값·크기 통제가 있어야 stronger write primitive로 확장된다.
+- Next: Day072
 
 ---
 
