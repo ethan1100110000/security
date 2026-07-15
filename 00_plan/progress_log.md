@@ -55,9 +55,9 @@ Day080 additional exam plan:
 
 ## Current Pointer
 
-- Last completed: Day071
-- Current focus: Tcache poisoning 1 완료. safe-linking 기반 encoded next 계산, `a -> target` free-list 조작, target address allocation과 targeted write 검증 완료
-- Next task: Day072 진행
+- Last completed: Day072
+- Current focus: Tcache poisoning 2 완료. `target+0x20`을 fake tcache entry로 구성해 controlled allocation과 targeted write를 검증하고, controlled/arbitrary allocation 및 allocation/write primitive 차이를 정리함
+- Next task: Day073 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -127,6 +127,14 @@ Day080 additional exam plan:
 - Files: Day040-100/Day071/day71_heap.md, notes/cs_fundamentals.md
 - Problems: encoded value 대신 raw target 주소를 `a->next`에 쓰면 safe-linking 복호화 시 `target ^ (a >> 12)`가 next로 해석되어 target 반환이 실패하거나 abort한다. 또한 target 주소가 16바이트 정렬을 만족하지 않으면 `unaligned tcache chunk detected`로 실패할 수 있다. `q == target`만으로는 allocation primitive이며, 실제 write 경로와 주소·offset·값·크기 통제가 있어야 stronger write primitive로 확장된다.
 - Next: Day072
+
+### Day072
+- Topic: Tcache poisoning 2 - controlled allocation
+- Status: done
+- Result: `goal = target + 0x20`으로 설정하고 `a->next`에 `goal ^ (a >> 12)`를 저장해 `tcache[0x40] -> a -> goal` 상태를 만들었다. fake entry인 `goal`의 encoded NULL을 `goal >> 12`로 구성한 뒤 같은 size class `malloc` 두 번에서 `p == a`, `q == goal`을 확인했다. 이후 `memset(q, 'A', 8)`이 `goal` raw memory를 `0x4141414141414141`로 바꾸는 것을 검증했다. CS에서는 controlled allocation과 arbitrary allocation, allocation primitive와 write primitive, 제약 있는 arbitrary primitive 표현을 구분했다.
+- Files: Day040-100/Day072/day72_heap.md, notes/cs_fundamentals.md
+- Problems: `goal = target + 0x18`로 바꾸면 16바이트 정렬이 깨져 `malloc(): unaligned tcache chunk detected`로 실패할 수 있다. 복습 필기 30문항에서는 stack/ROP/PIE/ret2libc와 UAF/tcache를 점검했고, saved RIP 용어, NULL canary와 문자열 함수, `strip()`의 whitespace 제거, root cause와 exploit 결과 구분, controlled/arbitrary allocation 표현을 보완했다.
+- Next: Day073
 
 ---
 
