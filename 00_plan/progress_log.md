@@ -55,9 +55,9 @@ Day080 additional exam plan:
 
 ## Current Pointer
 
-- Last completed: Day072
-- Current focus: Tcache poisoning 2 완료. `target+0x20`을 fake tcache entry로 구성해 controlled allocation과 targeted write를 검증하고, controlled/arbitrary allocation 및 allocation/write primitive 차이를 정리함
-- Next task: Day073 진행
+- Last completed: Day073
+- Current focus: Tcache poisoning 3 완료. `&target.callback`을 fake tcache entry로 구성해 controlled allocation, function pointer overwrite, `safe`에서 `win`으로의 control-flow hijack을 검증함
+- Next task: Day074 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -135,6 +135,14 @@ Day080 additional exam plan:
 - Files: Day040-100/Day072/day72_heap.md, notes/cs_fundamentals.md
 - Problems: `goal = target + 0x18`로 바꾸면 16바이트 정렬이 깨져 `malloc(): unaligned tcache chunk detected`로 실패할 수 있다. 복습 필기 30문항에서는 stack/ROP/PIE/ret2libc와 UAF/tcache를 점검했고, saved RIP 용어, NULL canary와 문자열 함수, `strip()`의 whitespace 제거, root cause와 exploit 결과 구분, controlled/arbitrary allocation 표현을 보완했다.
 - Next: Day073
+
+### Day073
+- Topic: Tcache poisoning 3 - control data overwrite
+- Status: done
+- Result: `goal = &target.callback`으로 설정하고 safe-linking된 `a->next`를 조작해 `tcache[0x40] -> a -> &target.callback` 상태를 만들었다. 같은 size class `malloc` 두 번에서 `p == a`, `q == &target.callback`을 확인한 뒤 `q`를 통해 callback 값을 `safe` 주소에서 `win` 주소로 덮었다. raw memory와 심볼 값을 비교하고 `win` breakpoint hit 및 `WIN` 출력을 통해 control data overwrite와 control-flow hijack을 검증했다. CS에서는 함수 포인터가 함수 시작 주소를 저장하고 간접 호출 시 RIP의 이동 대상으로 사용된다는 점, hook overwrite 위험, PIE와 함수 주소 계산, 함수 시그니처 호환 조건을 정리했다.
+- Files: Day040-100/Day073/day73_heap.md, notes/cs_fundamentals.md
+- Problems: callback에 `0x4141414141414141`을 기록하면 overwrite 자체는 성공하지만 간접 호출 시 유효하지 않은 실행 주소로 분기해 `Segmentation fault`가 발생한다. 따라서 control data overwrite 성공과 control-flow hijack 성공을 분리해 검증해야 한다.
+- Next: Day074
 
 ---
 
