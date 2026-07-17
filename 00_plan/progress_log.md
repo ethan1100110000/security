@@ -55,9 +55,9 @@ Day080 additional exam plan:
 
 ## Current Pointer
 
-- Last completed: Day073
-- Current focus: Tcache poisoning 3 완료. `&target.callback`을 fake tcache entry로 구성해 controlled allocation, function pointer overwrite, `safe`에서 `win`으로의 control-flow hijack을 검증함
-- Next task: Day074 진행
+- Last completed: Day074
+- Current focus: Heap leak 1 완료. `holder->ptr == target == leak`을 raw memory와 gdb로 검증하고, 고정 offset으로 ASLR 환경의 heap base를 복원함. chunk metadata의 `prev_size`, `size|flags`, 실제 chunk 크기와 요청 크기의 차이도 정리함
+- Next task: Day075 진행
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -143,6 +143,14 @@ Day080 additional exam plan:
 - Files: Day040-100/Day073/day73_heap.md, notes/cs_fundamentals.md
 - Problems: callback에 `0x4141414141414141`을 기록하면 overwrite 자체는 성공하지만 간접 호출 시 유효하지 않은 실행 주소로 분기해 `Segmentation fault`가 발생한다. 따라서 control data overwrite 성공과 control-flow hijack 성공을 분리해 검증해야 한다.
 - Next: Day074
+
+### Day074
+- Topic: Heap leak 1 - heap pointer disclosure
+- Status: done
+- Result: `holder->ptr = target`인 toy에서 프로그램 출력 leak, `holder->ptr`, `target`, `x/gx &holder->ptr`가 모두 같은 heap 주소임을 확인했다. `vmmap`, `heap chunks`, raw memory를 교차검증하고 첫 실행에서 `offset = leak - heap_base = 0x310`을 구했다. ASLR로 절대주소가 바뀐 새 실행에서도 `new_leak - 0x310`이 실제 `[heap]` 시작 주소와 일치해 고정 상대 offset을 이용한 heap base 복원을 검증했다. CS에서는 heap pointer disclosure가 ASLR 우회용 보조 primitive이며 별도의 read/write primitive와 결합돼야 한다는 점, glibc chunk의 `prev_size`, `size|flags`, `PREV_INUSE`, `IS_MMAPPED`, `NON_MAIN_ARENA`를 정리했다.
+- Files: Day040-100/Day074/day74_heap.md, notes/cs_fundamentals.md
+- Problems: `target` 앞에 `malloc(0x30)`을 하나 추가하자 target offset이 `0x310`에서 `0x350`으로 변했다. 요청 크기는 `0x30`이지만 실제 chunk 크기는 metadata와 정렬을 포함해 `0x40`이므로 target이 정확히 `0x40` 밀렸다. 기존 offset을 계속 사용하면 계산된 heap base가 실제 base보다 `0x40` 크게 나와 실패한다.
+- Next: Day075
 
 ---
 
