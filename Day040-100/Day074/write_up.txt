@@ -1,0 +1,55 @@
+# Day074 — Heap Leak
+
+## 목표
+
+heap pointer를 leak하고, 고정된 offset을 이용해 heap base를 계산했다.
+
+```text
+heap_base = leak - offset
+```
+
+## 검증
+
+```text
+target == holder->ptr == 출력된 leak
+```
+
+GDB에서 다음을 교차검증했다.
+
+```gdb
+p/x target
+p/x holder->ptr
+x/gx &holder->ptr
+vmmap
+heap chunks
+```
+
+첫 실행에서:
+
+```text
+offset = leak - heap_base
+```
+
+를 구했고, 새 실행에서:
+
+```text
+new_heap_base = new_leak - offset
+```
+
+결과가 `vmmap`의 실제 `[heap]` 시작 주소와 일치함을 확인했다.
+
+## 실패 케이스
+
+`target` 앞에 `malloc(0x30)`을 하나 추가하자 offset이 바뀌었다.
+
+```text
+기존 offset = 0x310
+변경 offset = 0x350
+차이        = 0x40
+```
+
+`malloc(0x30)`의 실제 chunk 크기가 `0x40`이므로 target이 `0x40`만큼 밀렸다.
+
+## 결론
+
+heap offset은 ASLR과 무관하게 유지될 수 있지만, 할당 순서나 chunk 크기가 바뀌면 다시 계산해야 한다.
