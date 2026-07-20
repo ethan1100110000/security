@@ -55,9 +55,9 @@ Day080 additional exam plan:
 
 ## Current Pointer
 
-- Last completed: Day074
-- Current focus: Heap leak 1 완료. `holder->ptr == target == leak`을 raw memory와 gdb로 검증하고, 고정 offset으로 ASLR 환경의 heap base를 복원함. chunk metadata의 `prev_size`, `size|flags`, 실제 chunk 크기와 요청 크기의 차이도 정리함
-- Next task: Day075 진행
+- Last completed: Day077
+- Current focus: Heap leak 2·3과 Unsorted bin 1 완료. 재사용된 heap 객체의 stale `puts` pointer를 확인하고 `leak - offset`으로 libc base를 계산해 `vmmap`의 offset 0 mapping과 검증했다. large chunk는 guard가 있을 때 unsorted bin의 `fd/bk`에 libc pointer가 기록되고, guard가 없으면 top과 병합되어 유효한 unsorted metadata가 생기지 않음을 확인했다. CS에서는 `PREV_INUSE`, `prev_size`, boundary tag, forward/backward consolidation, tcache와 일반 free 경로의 차이를 정리했다.
+- Next task: Day078 진행 — Unsorted bin 2: main_arena leak. `fd/bk`가 libc 내부 전역 구조를 가리키는 이유와 정확한 libc offset/base 계산을 raw memory와 `vmmap`으로 검증한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -151,6 +151,30 @@ Day080 additional exam plan:
 - Files: Day040-100/Day074/day74_heap.md, notes/cs_fundamentals.md
 - Problems: `target` 앞에 `malloc(0x30)`을 하나 추가하자 target offset이 `0x310`에서 `0x350`으로 변했다. 요청 크기는 `0x30`이지만 실제 chunk 크기는 metadata와 정렬을 포함해 `0x40`이므로 target이 정확히 `0x40` 밀렸다. 기존 offset을 계속 사용하면 계산된 heap base가 실제 base보다 `0x40` 크게 나와 실패한다.
 - Next: Day075
+
+### Day075
+- Topic: Heap leak 2 - libc pointer disclosure
+- Status: done
+- Result: `Handler { name[32], callback }` 객체의 `callback`에 `puts`를 저장한 뒤 해제하고 같은 크기의 객체를 재할당했다. 새 객체에서는 `name` 8바이트만 갱신되어 `callback`이 초기화되지 않았고, `fresh->callback`, `x/gx &fresh->callback`, `puts`가 모두 `0x7ffff7c80e50`으로 일치했다. 재사용된 객체의 부분 초기화가 stale libc pointer disclosure로 이어짐을 확인했다.
+- Files: Day040-100/Day075/day75.c, Day040-100/Day075/write_up.txt
+- Problems: 객체 전체를 `calloc`, `memset`, 명시적 `NULL` 대입으로 초기화하면 stale pointer가 제거된다. 같은 size class chunk가 재사용되지 않으면 동일한 leak이 즉시 재현되지 않을 수 있다.
+- Next: Day076
+
+### Day076
+- Topic: Heap leak 3 - libc base 계산
+- Status: done
+- Result: `puts leak = 0x7ffff7c80e50`, `puts offset = 0x80e50`을 사용해 `libc base = 0x7ffff7c00000`을 계산했다. `vmmap`의 file offset 0 libc mapping과 계산값이 일치함을 확인했고, `r-xp` mapping은 base보다 `0x28000` 뒤에서 시작한다는 점을 구분했다.
+- Files: Day040-100/Day076/write_up.txt
+- Problems: `r-xp` 시작점을 libc base로 사용하면 이후 주소가 `0x28000`만큼 틀어진다. 다른 libc build의 offset이나 함수 내부 주소를 symbol 시작 offset으로 잘못 빼도 base와 `system` 주소가 잘못 계산된다.
+- Next: Day077
+
+### Day077
+- Topic: Unsorted bin 1 - chunk 이동 관찰
+- Status: done
+- Result: `malloc(0x500)` victim 뒤에 allocated guard를 배치하고 victim을 free하자 unsorted bin에 들어갔으며, user area의 `fd`와 `bk`가 모두 `0x7ffff7e1ace0`인 libc `rw-p` 주소를 가리켰다. chunk가 하나인 원형 이중 연결 리스트에서는 양쪽 pointer가 모두 bin head를 가리킴을 확인했다. guard를 제거하면 victim이 top과 병합되어 size가 `0x20d71`로 커지고 유효한 unsorted `fd/bk`가 생성되지 않았다. CS에서는 `PREV_INUSE`, `prev_size`, boundary tag, forward/backward consolidation, tcache와 일반 free 경로 차이를 정리했다.
+- Files: Day040-100/Day076/day76.c, Day040-100/Day076/day77.c, Day040-100/Day077/write_up.txt
+- Problems: guard가 없는 경우 user area에 기존 `A` 값이 남아 있어도 이는 stale data일 뿐 unsorted metadata가 아니다. 초기에는 재컴파일하지 않은 바이너리를 실행해 guard chunk의 `0x31` header가 보였고, 재컴파일 후 top consolidation 상태를 다시 검증했다. Day077 실습 소스가 현재 Day076 폴더에 있으므로 다음 정리 시 Day077 폴더로 이동할 필요가 있다.
+- Next: Day078
 
 ---
 
