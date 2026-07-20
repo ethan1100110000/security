@@ -1,0 +1,23 @@
+Day076 — libc base 계산과 검증
+목표
+
+유출된 puts 주소에서 libc base를 계산하고, 잘못된 base 계산 사례를 비교했다.
+
+계산
+puts leak   = 0x7ffff7c80e50
+puts offset = 0x80e50
+
+libc base
+= leak - offset
+= 0x7ffff7c00000
+검증
+
+vmmap에서 file offset이 0인 libc mapping의 시작 주소가 계산한 base와 일치했다.
+
+libc의 r-xp 영역은 base가 아니라 실행 가능한 segment의 시작점이다.
+
+libc base    = 0x7ffff7c00000
+r-xp start   = 0x7ffff7c28000
+차이         = 0x28000
+
+따라서 r-xp 시작점을 libc base로 사용하면 모든 계산 결과가 0x28000만큼 틀어진다.

@@ -1,0 +1,27 @@
+Day077 — Unsorted bin libc leak
+목표
+
+큰 chunk를 unsorted bin에 넣고, 남아 있는 fd와 bk를 통해 libc 주소를 확인했다.
+
+실습
+victim = malloc(0x500);
+guard  = malloc(0x20);
+
+free(victim);
+
+guard가 victim과 top chunk 사이에 있으므로 victim은 top과 병합되지 않고 unsorted bin에 들어갔다.
+
+결과
+fd = 0x7ffff7e1ace0
+bk = 0x7ffff7e1ace0
+
+chunk가 unsorted bin에 하나뿐이므로 fd와 bk가 모두 libc 내부의 bin head를 가리켰다.
+
+bin_head <-> victim <-> bin_head
+실패 사례
+
+guard를 제거하면 victim이 top chunk와 인접한다.
+
+[victim][top]
+
+이 상태에서 free(victim)을 호출하면 victim은 unsorted bin에 들어가지 않고 top chunk에 병합된다. 따라서 user area에 남아 있던 값은 보일 수 있지만, 유효한 unsorted bin의 fd와 bk는 생성되지 않는다.

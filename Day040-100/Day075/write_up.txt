@@ -1,0 +1,22 @@
+Day075 — Heap stale pointer leak
+목표
+
+재사용된 heap 객체의 초기화되지 않은 함수 포인터를 통해 libc 주소가 노출되는 현상을 확인했다.
+
+핵심 구조
+struct Handler {
+    char name[32];
+    void (*callback)(const char *);
+};
+
+기존 객체의 callback에 puts를 저장한 뒤 객체를 해제했다. 동일한 크기의 객체를 다시 할당하고 name에 8바이트만 입력했기 때문에, callback 영역은 초기화되지 않은 채 이전 값이 남았다.
+
+검증
+fresh->callback = 0x7ffff7c80e50
+fresh + 0x20    = 0x7ffff7c80e50
+
+GDB에서 해당 주소가 __GI__IO_puts임을 확인했다.
+
+원인과 대응
+
+재사용된 heap 메모리의 모든 필드를 초기화하지 않은 것이 원인이다. calloc()이나 memset()으로 객체 전체를 초기화하거나, 함수 포인터를 명시적으로 NULL로 설정해야 한다.
