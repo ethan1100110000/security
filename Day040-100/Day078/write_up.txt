@@ -1,0 +1,45 @@
+# Day078 — Unsorted Bin libc Leak
+
+`malloc(0x500)`으로 생성한 chunk를 free한 뒤 raw memory를 확인했다.
+
+```gdb
+x/4gx victim
+```
+
+free된 chunk의 user area 처음 두 qword가 `fd`, `bk`로 바뀌었고, 둘 다 다음 값을 가리켰다.
+
+```text
+fd = 0x7ffff7e1ace0
+bk = 0x7ffff7e1ace0
+```
+
+`vmmap`으로 확인한 결과 해당 주소는 libc의 `rw-p` 영역에 있었다. 현재 libc base는 다음과 같았다.
+
+```text
+libc base = 0x7ffff7c00000
+```
+
+따라서 unsorted bin head offset은:
+
+```text
+0x7ffff7e1ace0 - 0x7ffff7c00000
+= 0x21ace0
+```
+
+libc base 계산:
+
+```text
+libc base = leak - 0x21ace0
+```
+
+계산 결과는 page-aligned였고 `vmmap`의 libc offset-0 mapping 시작점과 일치했다.
+
+잘못된 offset `0x219c80`을 사용하면:
+
+```text
+wrong base = 0x7ffff7c01060
+```
+
+이 되어 실제 base보다 `0x1060` 크게 계산되고 page alignment도 맞지 않는다.
+
+핵심은 leak이 libc `rw-p`에 있는지만 보는 것이 아니라, 정확한 offset을 사용하고 `vmmap`의 libc 시작 주소와 교차검증하는 것이다.
