@@ -55,9 +55,9 @@ Day080 additional exam plan:
 
 ## Current Pointer
 
-- Last completed: Day077
-- Current focus: Heap leak 2·3과 Unsorted bin 1 완료. 재사용된 heap 객체의 stale `puts` pointer를 확인하고 `leak - offset`으로 libc base를 계산해 `vmmap`의 offset 0 mapping과 검증했다. large chunk는 guard가 있을 때 unsorted bin의 `fd/bk`에 libc pointer가 기록되고, guard가 없으면 top과 병합되어 유효한 unsorted metadata가 생기지 않음을 확인했다. CS에서는 `PREV_INUSE`, `prev_size`, boundary tag, forward/backward consolidation, tcache와 일반 free 경로의 차이를 정리했다.
-- Next task: Day078 진행 — Unsorted bin 2: main_arena leak. `fd/bk`가 libc 내부 전역 구조를 가리키는 이유와 정확한 libc offset/base 계산을 raw memory와 `vmmap`으로 검증한다.
+- Last completed: Day078
+- Current focus: Unsorted bin 2 완료. large chunk를 free한 뒤 user area의 `fd/bk`가 `0x7ffff7e1ace0`인 libc `rw-p` 주소를 가리키는 것을 raw memory로 확인했다. `leak - 0x21ace0 = 0x7ffff7c00000`으로 libc base를 계산하고 `vmmap`의 file offset 0 mapping과 일치함을 검증했다. 잘못된 offset `0x219c80`을 사용하면 base가 `0x1060`만큼 틀리고 page alignment도 깨지는 실패 케이스를 재현했다. CS에서는 libc 내부 전역구조가 free chunk의 `fd/bk`를 통해 노출되는 이유, UAF/OOB read 필요성, 재할당 후 stale metadata를 신뢰하면 안 되는 이유, 다른 libc leak과의 교차검증을 정리했다.
+- Next task: Day079 진행 — Unsorted bin 3: exploit 연결. unsorted leak을 ret2libc/ROP 계획에 연결하고, leak→base→target 주소 계산 흐름과 실패 케이스를 검증한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -175,6 +175,14 @@ Day080 additional exam plan:
 - Files: Day040-100/Day076/day76.c, Day040-100/Day076/day77.c, Day040-100/Day077/write_up.txt
 - Problems: guard가 없는 경우 user area에 기존 `A` 값이 남아 있어도 이는 stale data일 뿐 unsorted metadata가 아니다. 초기에는 재컴파일하지 않은 바이너리를 실행해 guard chunk의 `0x31` header가 보였고, 재컴파일 후 top consolidation 상태를 다시 검증했다. Day077 실습 소스가 현재 Day076 폴더에 있으므로 다음 정리 시 Day077 폴더로 이동할 필요가 있다.
 - Next: Day078
+
+### Day078
+- Topic: Unsorted bin 2 - main_arena leak
+- Status: done
+- Result: `malloc(0x500)` victim 뒤에 guard chunk를 둔 뒤 victim을 free하고 raw memory를 확인했다. `fd`와 `bk`가 모두 `0x7ffff7e1ace0`으로 같았고, 해당 값이 libc `rw-p` mapping에 속함을 검증했다. `0x7ffff7e1ace0 - 0x21ace0 = 0x7ffff7c00000`으로 libc base를 복원했으며, 계산값이 `vmmap`의 libc file offset 0 mapping 시작점과 정확히 일치했다. CS에서는 libc 내부 bin head 주소가 free chunk의 user area에 기록되고 UAF/OOB read로 leak되는 구조, 같은 libc build에서 offset이 고정되는 이유, 다른 leak과의 교차검증을 정리했다.
+- Files: Day040-100/Day078/day78.c, Day040-100/Day078/day78, Day040-100/Day078/.gdb_history, Day040-100/Day078/write_up.txt
+- Problems: 잘못된 offset `0x219c80`을 사용하면 `wrong base = 0x7ffff7c01060`이 되어 실제 base보다 `0x1060` 크게 계산되고 page alignment 및 `vmmap` 검증에 실패한다. 재할당된 chunk에 남은 값은 현재 `fd/bk`가 아니라 일부가 덮인 stale data일 수 있으므로 주소 형태만 보고 신뢰하면 안 된다.
+- Next: Day079
 
 ---
 
