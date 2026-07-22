@@ -55,9 +55,9 @@ Day080 additional exam plan:
 
 ## Current Pointer
 
-- Last completed: Day078
-- Current focus: Unsorted bin 2 완료. large chunk를 free한 뒤 user area의 `fd/bk`가 `0x7ffff7e1ace0`인 libc `rw-p` 주소를 가리키는 것을 raw memory로 확인했다. `leak - 0x21ace0 = 0x7ffff7c00000`으로 libc base를 계산하고 `vmmap`의 file offset 0 mapping과 일치함을 검증했다. 잘못된 offset `0x219c80`을 사용하면 base가 `0x1060`만큼 틀리고 page alignment도 깨지는 실패 케이스를 재현했다. CS에서는 libc 내부 전역구조가 free chunk의 `fd/bk`를 통해 노출되는 이유, UAF/OOB read 필요성, 재할당 후 stale metadata를 신뢰하면 안 되는 이유, 다른 libc leak과의 교차검증을 정리했다.
-- Next task: Day079 진행 — Unsorted bin 3: exploit 연결. unsorted leak을 ret2libc/ROP 계획에 연결하고, leak→base→target 주소 계산 흐름과 실패 케이스를 검증한다.
+- Last completed: Day079
+- Current focus: Unsorted bin 3 exploit 연결 완료. 먼저 자동으로 8바이트 leak을 출력하는 기초 버전에서 leak→libc base→`system("/bin/sh")` ROP 연결을 확인한 뒤, 난도가 낮다는 점을 보완해 메뉴형 UAF+BOF 버전을 다시 풀었다. 직접 `0x500` victim과 guard를 할당하고 victim을 free한 뒤 dangling pointer가 남은 `show`로 raw 16바이트 `fd/bk`를 leak했다. leak offset `0x21ace0`으로 libc base를 계산하고 libc 내부 `pop rdi; ret`, `system`, `/bin/sh` 주소를 구성해 별도 BOF에서 shell 및 실제 명령 실행까지 성공했다. CS에서는 Safe-Linking의 `real_next ^ (pos >> 12)` 구조, heap leak이 있을 때 decode/forge가 가능한 이유, tcache key 기반 double-free 검사, glibc 2.34 이후 malloc hook 제거, unsorted bin이 Safe-Linking 대상이 아닌 이유를 정리했다.
+- Next task: Day080 진행 — 엑셀의 미니시험을 진행하고, GitHub Day001~Day079 write-up 기반 보안 필기 약 30문항과 사용자가 제공할 CS 정리 파일 기반 CS 필기 20~30문항을 추가로 실시한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -183,6 +183,14 @@ Day080 additional exam plan:
 - Files: Day040-100/Day078/day78.c, Day040-100/Day078/day78, Day040-100/Day078/.gdb_history, Day040-100/Day078/write_up.txt
 - Problems: 잘못된 offset `0x219c80`을 사용하면 `wrong base = 0x7ffff7c01060`이 되어 실제 base보다 `0x1060` 크게 계산되고 page alignment 및 `vmmap` 검증에 실패한다. 재할당된 chunk에 남은 값은 현재 `fd/bk`가 아니라 일부가 덮인 stale data일 수 있으므로 주소 형태만 보고 신뢰하면 안 된다.
 - Next: Day079
+
+### Day079
+- Topic: Unsorted bin 3 - exploit 연결
+- Status: done
+- Result: 자동으로 unsorted pointer를 출력하는 기초 버전에서 leak→libc base→ret2libc 연결을 먼저 확인했다. 이후 실제 exploit 흐름을 만들기 위해 메뉴형 프로그램에서 `add`로 `0x500` victim과 guard를 직접 배치하고, `free` 후 dangling pointer가 남은 `show`로 raw 16바이트 `fd/bk`를 획득했다. 앞 8바이트를 `u64`로 파싱하고 `leak - 0x21ace0`으로 libc base를 계산했으며, 바이너리에 `pop rdi; ret`이 없어 libc gadget을 사용했다. 별도 `bof` 기능의 saved RIP를 덮어 `ret → pop rdi → /bin/sh → system` ROP를 실행했고 shell 획득 후 실제 명령 입력까지 성공했다. CS에서는 Safe-Linking, tcache key 기반 double-free 검사, malloc hook 제거와 이번 unsorted-bin UAF read+BOF 체인의 관계를 정리했다.
+- Files: Day040-100/Day079/.gdb_history, Day040-100/Day079/Makefile, Day040-100/Day079/README.md, Day040-100/Day079/day79, Day040-100/Day079/day79.c, Day040-100/Day079/exploit.py, Day040-100/Day079/run.sh, Day040-100/Day079/write_up.txt, Day040-100/Day079/day079_menu_uaf_bof/.gdb_history, Day040-100/Day079/day079_menu_uaf_bof/Makefile, Day040-100/Day079/day079_menu_uaf_bof/README.md, Day040-100/Day079/day079_menu_uaf_bof/day79_menu, Day040-100/Day079/day079_menu_uaf_bof/day79_menu.c, Day040-100/Day079/day079_menu_uaf_bof/exploit.py, Day040-100/Day079/day079_menu_uaf_bof/run.sh
+- Problems: 최초 기초 버전은 프로그램이 leak을 자동 출력해 기존 ret2libc와 차이가 작았다. 이를 메뉴형 UAF 버전으로 교체해 heap 배치와 leak 조건을 직접 만들었다. `show`는 16바이트를 출력하므로 `fd=data[:8]`, `bk=data[8:16]`으로 분리해야 하며, ASCII처럼 보이는 바이트도 raw pointer 일부일 뿐이다. 이번 체인은 unsorted bin을 사용하고 double free/tcache poisoning을 하지 않았으므로 Safe-Linking이나 tcache 검사를 직접 우회하지 않았다.
+- Next: Day080
 
 ---
 
