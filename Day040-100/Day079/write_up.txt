@@ -1,0 +1,26 @@
+## Day079 — Menu UAF Unsorted-bin Leak → ret2libc
+
+### 환경
+
+* Canary OFF
+* NX ON
+* PIE OFF
+* ASLR ON
+
+### 취약점
+
+`free()` 후 chunk 포인터를 제거하지 않아 dangling pointer가 남았다. `show` 기능이 이 포인터를 다시 읽으면서 UAF read가 발생했다. 별도의 `bof` 기능에는 stack buffer overflow가 존재했다.
+
+### Exploit 흐름
+
+1. 큰 victim chunk와 guard chunk를 할당했다.
+2. victim을 해제해 unsorted bin에 들어가게 했다.
+3. freed victim을 `show`하여 `fd`와 `bk` libc 포인터를 유출했다.
+4. leak에서 libc 내부 offset을 빼 libc base를 계산했다.
+5. libc에서 `pop rdi; ret`, `system`, `"/bin/sh"` 주소를 계산했다.
+6. BOF로 saved RIP를 덮고 `system("/bin/sh")` ROP chain을 실행했다.
+7. 쉘 획득 후 실제 명령 실행까지 성공했다.
+
+### 핵심
+
+이번 실습에서는 프로그램이 libc 주소를 자동으로 제공하지 않았다. 직접 heap 배치를 구성하고 UAF read primitive로 unsorted-bin leak을 만든 뒤, 이를 별도의 control-flow primitive와 연결했다.
