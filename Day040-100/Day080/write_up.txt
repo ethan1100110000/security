@@ -1,0 +1,37 @@
+# Day080 Heap Mini Exam
+프로그램 흐름은
+add - malloc으로 할당 index, size, value 작성
+delete - free
+show - chunk의 첫 8바이트 출력
+edit - chunk 첫 8바이트 수정
+trigger - puts("/bin/sh")
+
+free 이후 null로 초기화 없음
+
+## Protections
+nx on Partial RELRO
+pie, canary off
+
+## Exploit Flow
+unsortedbin활용을 위해 0x500사이즈의 victim chunk할당 free할때 top chunk에 흡수되는걸 막기 위해
+0x20 사이즈의 guard chunk 할당
+free(victim) 이후 unsortedbin에 들어간 것을 확인 show로 첫 8바이트 즉 fd leak libc base 획득
+
+tcache의 chunk를 넣어 next값을 puts를 갖고있는 공간으로 바꿀 계획
+tcache에 들어갈 수 있도록 0x40 사이즈의 chunk a, b 할당
+b만 먼저 free, tcache에 들어갔으니 b의 첫 8바이트 즉 encode 된 next 값 지금의 경우 tcache 에 b 하나밖에
+없으니 encode 연산을 한 next는 b >> 12 일 것 show 로 8바이트 leak
+puts를 가지고 있는 주소값에 b >> 12 로 xor 연산한 값을 target으로 지정
+
+b를 재할당 한 후에 a, b 모두 free 재할당 한 이유는 free 순서 맞추려고 b -> a -> 0 순서
+edit 로 b의 첫 8바이트 즉 next값을 target으로 덮음
+
+이후 0x40 같은 사이즈로 malloc 2번
+첫번째에는 b 두번째에는 target이 들어감
+이제 edit로 target의 첫 8바이트 puts가 있는 위치에 system값을 넣는다
+
+trigger로 target 호출 system(/bin/sh)
+
+## Failure Case
+target 을 edcode 연산을 하지 않고 넣은 경우
+decode연산이 되면서 이상한 주소가 나옴 실패
