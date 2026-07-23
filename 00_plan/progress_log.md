@@ -56,8 +56,8 @@ Day080 additional exam plan:
 ## Current Pointer
 
 - Last completed: Day079
-- Current focus: Unsorted bin 3 exploit 연결 완료. 먼저 자동으로 8바이트 leak을 출력하는 기초 버전에서 leak→libc base→`system("/bin/sh")` ROP 연결을 확인한 뒤, 난도가 낮다는 점을 보완해 메뉴형 UAF+BOF 버전을 다시 풀었다. 직접 `0x500` victim과 guard를 할당하고 victim을 free한 뒤 dangling pointer가 남은 `show`로 raw 16바이트 `fd/bk`를 leak했다. leak offset `0x21ace0`으로 libc base를 계산하고 libc 내부 `pop rdi; ret`, `system`, `/bin/sh` 주소를 구성해 별도 BOF에서 shell 및 실제 명령 실행까지 성공했다. CS에서는 Safe-Linking의 `real_next ^ (pos >> 12)` 구조, heap leak이 있을 때 decode/forge가 가능한 이유, tcache key 기반 double-free 검사, glibc 2.34 이후 malloc hook 제거, unsorted bin이 Safe-Linking 대상이 아닌 이유를 정리했다.
-- Next task: Day080 진행 — 엑셀의 미니시험을 진행하고, GitHub Day001~Day079 write-up 기반 보안 필기 약 30문항과 사용자가 제공할 CS 정리 파일 기반 CS 필기 20~30문항을 추가로 실시한다.
+- Current focus: Day080 진행 중. Heap 미니시험 실습에서 메뉴형 UAF read/write를 이용해 unsorted-bin `fd/bk` leak으로 libc base와 `system`을 계산하고, tcache Safe-Linking mask를 같은 프로세스에서 leak한 뒤 poisoned next로 `0x4040a0` 함수 포인터 위치를 allocation target으로 만들었다. 최종적으로 callback을 `puts`에서 `system`으로 덮어 `trigger → system("/bin/sh")`를 실행했고 `id`, `whoami`로 shell을 검증했다. raw target을 그대로 저장할 때 잘못 decode되어 abort할 수 있는 실패 원인과 tcache count가 최소 2여야 target까지 반환받을 수 있다는 점도 확인했다. 추가 보안 필기시험은 30문항을 진행해 70점으로 채점했으며, stripped `_start→main`, shellcode/syscall, badchars, raw leak parsing, `%hhn`, EOF/signal 진단이 복습 항목으로 남았다.
+- Next task: Day080 마무리 — 보안 필기 오답 복습·재정리 후 heap 미니시험 write-up을 완성하고, 최신 `보안 계획표.xlsx`의 Day080 CS 항목인 heap 미니시험 면접 질문 정리를 진행한다. 완료 후 Day080 산출물을 commit/push하고 progress log를 최종 완료 상태로 갱신한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -191,6 +191,14 @@ Day080 additional exam plan:
 - Files: Day040-100/Day079/.gdb_history, Day040-100/Day079/Makefile, Day040-100/Day079/README.md, Day040-100/Day079/day79, Day040-100/Day079/day79.c, Day040-100/Day079/exploit.py, Day040-100/Day079/run.sh, Day040-100/Day079/write_up.txt, Day040-100/Day079/day079_menu_uaf_bof/.gdb_history, Day040-100/Day079/day079_menu_uaf_bof/Makefile, Day040-100/Day079/day079_menu_uaf_bof/README.md, Day040-100/Day079/day079_menu_uaf_bof/day79_menu, Day040-100/Day079/day079_menu_uaf_bof/day79_menu.c, Day040-100/Day079/day079_menu_uaf_bof/exploit.py, Day040-100/Day079/day079_menu_uaf_bof/run.sh
 - Problems: 최초 기초 버전은 프로그램이 leak을 자동 출력해 기존 ret2libc와 차이가 작았다. 이를 메뉴형 UAF 버전으로 교체해 heap 배치와 leak 조건을 직접 만들었다. `show`는 16바이트를 출력하므로 `fd=data[:8]`, `bk=data[8:16]`으로 분리해야 하며, ASCII처럼 보이는 바이트도 raw pointer 일부일 뿐이다. 이번 체인은 unsorted bin을 사용하고 double free/tcache poisoning을 하지 않았으므로 Safe-Linking이나 tcache 검사를 직접 우회하지 않았다.
 - Next: Day080
+
+### Day080
+- Topic: Heap mini-exam + Day001~Day079 보안 필기시험
+- Status: in progress
+- Result: stripped PIE-OFF 메뉴형 바이너리에서 `delete` 후 slot을 비우지 않아 발생한 dangling pointer를 통해 freed chunk의 raw 16바이트 read와 첫 qword write primitive를 확인했다. `0x500` victim과 guard를 배치해 unsorted-bin `fd/bk`를 leak하고 `leak - 0x21ace0`으로 libc base와 `system`을 계산했다. 같은 size class chunk에서 `next == NULL`일 때 노출되는 Safe-Linking mask를 같은 프로세스에서 확보하고, `encoded_target = 0x4040a0 ^ mask`로 tcache next를 poison했다. tcache count를 2로 유지한 뒤 malloc 두 번으로 callback 위치 `0x4040a0`을 반환받아 `puts`를 `system`으로 덮었고, trigger의 기존 인자 `"/bin/sh"`를 재사용해 shell을 획득했다. `id`, `whoami` 실행과 GDB raw memory의 `puts → system` 변경을 확인했다. 추가 보안 필기시험 30문항은 70점으로 채점했다.
+- Files (local, commit pending): Day040-100/Day080/day80_exam, Day040-100/Day080/exploit.py
+- Problems: 작은 freed chunk가 한 개뿐이면 첫 malloc 후 tcache count가 0이 되어 두 번째 malloc이 poisoned target을 반환하지 않을 수 있으므로 poisoning 직전 count가 최소 2여야 한다. `B → A` 상태의 B 첫 qword는 단순 mask가 아니라 `A ^ (B >> 12)`이므로 이를 mask로 오인하면 `malloc(): unaligned tcache chunk detected` 등으로 abort할 수 있다. raw target `0x4040a0`을 그대로 저장해도 decode 결과가 달라져 실패한다. raw leak에 `recvline()`/`strip()`을 쓰는 파싱 위험과 pwntools bytes 경고도 수정 대상이다. 필기시험에서는 stripped main discovery, shellcode/syscall, badchars, raw leak parsing, `%hhn`, EOF/signal 진단이 취약했다.
+- Next: Day080 보안 필기 오답 복습·재정리 → heap 면접형 CS 질문 → write-up/산출물 정리 및 commit/push → Day080 완료
 
 ---
 
