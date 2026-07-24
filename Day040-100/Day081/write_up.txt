@@ -1,0 +1,28 @@
+# Day81 — Modern glibc control-flow targets
+
+## 1. __free_hook 제거 이후 변화
+- glibc 2.35 환경
+- __free_hook 호환 심볼 주소는 존재
+- fake_hook 주소 쓰기 성공
+- free()에서 fake_hook 호출 안 됨
+- 심볼 존재와 실제 실행 경로 사용은 다름
+
+## 2. 대체 target 선택 기준
+- writable 여부
+- 주소를 계산할 수 있는지
+- 이후 실제 사용되는지
+- 호출 인자가 원하는 함수와 호환되는지
+
+## 3. 함수 포인터 overwrite
+- action은 처음 puts를 가리킴
+- action을 system으로 변경
+- action("/bin/sh") → system("/bin/sh")
+- GDB에서 action 값과 RDI 문자열 검증
+
+## 4. RELRO 비교
+- Partial RELRO: GOT overwrite 가능
+- Full RELRO: GOT read-only
+- Full RELRO도 일반 .data callback은 자동 보호하지 않음
+
+## 5. 실패 사례
+- __free_hook overwrite는 성공했지만 glibc 2.35 free 경로에서 사용되지 않음
