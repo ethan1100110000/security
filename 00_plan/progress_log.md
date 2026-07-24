@@ -55,9 +55,9 @@ Day080 additional exam plan:
 
 ## Current Pointer
 
-- Last completed: Day079
-- Current focus: Day080 진행 중. Heap 미니시험 실습에서 메뉴형 UAF read/write를 이용해 unsorted-bin `fd/bk` leak으로 libc base와 `system`을 계산하고, tcache Safe-Linking mask를 같은 프로세스에서 leak한 뒤 poisoned next로 `0x4040a0` 함수 포인터 위치를 allocation target으로 만들었다. 최종적으로 callback을 `puts`에서 `system`으로 덮어 `trigger → system("/bin/sh")`를 실행했고 `id`, `whoami`로 shell을 검증했다. raw target을 그대로 저장할 때 잘못 decode되어 abort할 수 있는 실패 원인과 tcache count가 최소 2여야 target까지 반환받을 수 있다는 점도 확인했다. 추가 보안 필기시험은 30문항을 진행해 70점으로 채점했으며, stripped `_start→main`, shellcode/syscall, badchars, raw leak parsing, `%hhn`, EOF/signal 진단이 복습 항목으로 남았다.
-- Next task: Day080 마무리 — 보안 필기 오답 복습·재정리 후 heap 미니시험 write-up을 완성하고, 최신 `보안 계획표.xlsx`의 Day080 CS 항목인 heap 미니시험 면접 질문 정리를 진행한다. 완료 후 Day080 산출물을 commit/push하고 progress log를 최종 완료 상태로 갱신한다.
+- Last completed: Day081
+- Current focus: Day081 완료. glibc 2.35에서 `__free_hook` 호환 심볼의 주소를 찾고 값을 `fake_hook`으로 덮는 데 성공했지만 `free()`가 해당 값을 사용하지 않아 hook 호출이 발생하지 않음을 확인했다. 반대로 writable한 `.data` 함수 포인터 `action`을 `puts`에서 `system`으로 덮고 기존 `action("/bin/sh")` trigger를 실행해 shell을 획득했다. Full RELRO가 GOT를 read-only로 만들지만 일반 callback까지 자동 보호하지 않는다는 점과 modern glibc target 선택 조건인 writable, addressable, triggerable, argument-compatible을 정리했다.
+- Next task: Day082 — 최신 `보안 계획표.xlsx` 기준 `Heap → ROP 전환`. heap bug로 leak/control data primitive를 만든 뒤 ROP로 연결하는 설계를 진행하고, heap/tcache 상태를 GDB 명령과 raw memory로 교차검증한다. CS는 heap exploit에서 ROP로 전환하는 이유를 정리하고 `day82_heap.md`에 heap 구조 그림과 실패 케이스 1개를 남긴다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -194,11 +194,19 @@ Day080 additional exam plan:
 
 ### Day080
 - Topic: Heap mini-exam + Day001~Day079 보안 필기시험
-- Status: in progress
-- Result: stripped PIE-OFF 메뉴형 바이너리에서 `delete` 후 slot을 비우지 않아 발생한 dangling pointer를 통해 freed chunk의 raw 16바이트 read와 첫 qword write primitive를 확인했다. `0x500` victim과 guard를 배치해 unsorted-bin `fd/bk`를 leak하고 `leak - 0x21ace0`으로 libc base와 `system`을 계산했다. 같은 size class chunk에서 `next == NULL`일 때 노출되는 Safe-Linking mask를 같은 프로세스에서 확보하고, `encoded_target = 0x4040a0 ^ mask`로 tcache next를 poison했다. tcache count를 2로 유지한 뒤 malloc 두 번으로 callback 위치 `0x4040a0`을 반환받아 `puts`를 `system`으로 덮었고, trigger의 기존 인자 `"/bin/sh"`를 재사용해 shell을 획득했다. `id`, `whoami` 실행과 GDB raw memory의 `puts → system` 변경을 확인했다. 추가 보안 필기시험 30문항은 70점으로 채점했다.
-- Files (local, commit pending): Day040-100/Day080/day80_exam, Day040-100/Day080/exploit.py
-- Problems: 작은 freed chunk가 한 개뿐이면 첫 malloc 후 tcache count가 0이 되어 두 번째 malloc이 poisoned target을 반환하지 않을 수 있으므로 poisoning 직전 count가 최소 2여야 한다. `B → A` 상태의 B 첫 qword는 단순 mask가 아니라 `A ^ (B >> 12)`이므로 이를 mask로 오인하면 `malloc(): unaligned tcache chunk detected` 등으로 abort할 수 있다. raw target `0x4040a0`을 그대로 저장해도 decode 결과가 달라져 실패한다. raw leak에 `recvline()`/`strip()`을 쓰는 파싱 위험과 pwntools bytes 경고도 수정 대상이다. 필기시험에서는 stripped main discovery, shellcode/syscall, badchars, raw leak parsing, `%hhn`, EOF/signal 진단이 취약했다.
-- Next: Day080 보안 필기 오답 복습·재정리 → heap 면접형 CS 질문 → write-up/산출물 정리 및 commit/push → Day080 완료
+- Status: done
+- Result: stripped PIE-OFF 메뉴형 바이너리에서 `delete` 후 slot을 비우지 않아 생긴 dangling pointer로 freed chunk의 raw 16-byte read와 첫 qword write primitive를 만들었다. `0x500` victim과 guard를 이용해 unsorted-bin `fd/bk`를 leak하고 libc base와 `system`을 계산했다. 같은 프로세스에서 tcache tail의 Safe-Linking mask를 유출한 뒤 `encoded_target = 0x4040a0 ^ mask`로 next를 poison하고, count를 2로 유지해 malloc 두 번으로 callback 주소를 반환받았다. callback을 `puts`에서 `system`으로 덮고 기존 `trigger("/bin/sh")`를 사용해 shell을 획득했으며 `id`, `whoami`로 검증했다. 추가 보안 필기시험 30문항은 70점으로 채점했고, 오답 복습과 heap 면접형 CS 질문 정리를 완료했다.
+- Files: Day040-100/Day080/.gdb_history, Day040-100/Day080/RULES.md, Day040-100/Day080/day80_exam, Day040-100/Day080/exploit.py, Day040-100/Day080/setup.sh, Day040-100/Day080/write_up.txt
+- Problems: tcache entry가 한 개뿐이면 첫 malloc 뒤 count가 0이 되어 poisoned target까지 반환되지 않는다. `B → A` 상태의 B 첫 qword는 mask가 아니라 `A ^ (B >> 12)`이므로 tail/NULL 상태에서 mask를 구해야 한다. raw target을 그대로 저장하면 Safe-Linking decode 결과가 틀어져 abort할 수 있다. raw leak은 `recvline()`/`strip()`보다 고정 길이 `recvn()`과 `len`/hexdump 검증이 안전하다.
+- Next: Day081
+
+### Day081
+- Topic: Hook overwrite / modern glibc 대체 흐름
+- Status: done
+- Result: Ubuntu glibc 2.35에서 `dlvsym(..., "__free_hook", "GLIBC_2.2.5")`으로 호환 심볼 주소를 얻고 `fake_hook` 주소를 기록했다. 주소와 overwrite는 유효했지만 `free(p)`에서 `fake_hook`이 호출되지 않고 정상 free 뒤 코드가 계속 실행되어, 심볼 존재와 실제 allocator 실행 경로 사용이 다름을 확인했다. 이후 writable한 전역 함수 포인터 `action`을 `puts`에서 `system`으로 덮고 `action("/bin/sh")` trigger를 실행해 shell을 획득했다. CS에서는 취약점/primitive/target을 구분하고 callback, GOT, saved RIP, vtable pointer의 조건과 Full RELRO의 보호 범위를 정리했다.
+- Files: Day040-100/Day081/.gdb_history, Day040-100/Day081/day81, Day040-100/Day081/day81.c, Day040-100/Day081/write_up.txt
+- Problems: `__free_hook`에 값을 쓸 수 있어도 glibc 2.35의 `free()`가 이를 읽거나 호출하지 않아 control flow 변화가 없다. Full RELRO에서는 GOT가 read-only가 되지만 일반 `.data` callback까지 자동 보호하지 않는다. 함수 포인터를 `system`으로 덮어도 이후 trigger가 없거나 첫 인자가 유효한 명령 문자열 포인터가 아니면 exploit은 실패한다.
+- Next: Day082
 
 ---
 
