@@ -1,0 +1,36 @@
+##day82 heap write pivot
+
+##목표
+malloc 된 chunk에 fake stack을 만들어 system(/bin/sh) 호출
+
+##바이너리 구조
+malloc으로 struct 크기의 chunk 할당 obj
+system 주소 leak
+exit 주소 leak
+heap 주소 leak
+
+obj에 struct 사이즈만큼 입력받음 0x58
+
+친절하게 obj를 call하는 trigger 함수 존재 
+trigger_obj(obj)
+어셈블리를 보면 mov rdi rbp(rbp = rdi), call QWARD PTR [rdi + 0x50]
+
+##계획
+trigger 함수가 rdi 즉 obj + 0x50 위치를 call하니 pivot을 위한 leave ret 가젯을 그 위치에 넣을 생각
+나머지 rop chain은
+leave ret pivot이기 때문에 fake stack 시작 8바이트는 rbp에 들어갈 더미값이 있어야 함
+binsh문자열 주소 leak이 없기때문에 heap에 직접 문자열을 넣을 것
+dummy + ret + pop_rdi + (obj + 0x40) + system + pop_rdi + 0 + exit + b"/bin/sh\x00" + padding(0x50위치까지 남는 값) + leave ret
+
+##검증 - 1차시도
+실패
+aligemt인가 해서 ret을 빼고 재시도 역시 실패
+원인은 fake stack을 obj 시작점으로 잡아 system함수를 호출하면서 낮은 주소로 확장되는데 rsp가 내려가면서
+obj - 0x8, obj - 0x10 위치를 가리키게 된다 프로그램 터짐
+예전 stack pivot에서 bss 시작점에 fake stack을 만들지 않고 bss + 0x300 위치에 만들었던 이유와 정확히 같음
+
+바이너리 수정
+region이라는 이름으로 0x5000 크기의 chunk를 할당하고 obj는 region + 0x4000 으로 잡았다 충분한 공간이 생김
+
+##검증 - 2차시도
+성공
