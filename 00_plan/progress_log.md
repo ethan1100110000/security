@@ -55,9 +55,9 @@ Day080 additional exam plan:
 
 ## Current Pointer
 
-- Last completed: Day081
-- Current focus: Day081 완료. glibc 2.35에서 `__free_hook` 호환 심볼의 주소를 찾고 값을 `fake_hook`으로 덮는 데 성공했지만 `free()`가 해당 값을 사용하지 않아 hook 호출이 발생하지 않음을 확인했다. 반대로 writable한 `.data` 함수 포인터 `action`을 `puts`에서 `system`으로 덮고 기존 `action("/bin/sh")` trigger를 실행해 shell을 획득했다. Full RELRO가 GOT를 read-only로 만들지만 일반 callback까지 자동 보호하지 않는다는 점과 modern glibc target 선택 조건인 writable, addressable, triggerable, argument-compatible을 정리했다.
-- Next task: Day082 — 최신 `보안 계획표.xlsx` 기준 `Heap → ROP 전환`. heap bug로 leak/control data primitive를 만든 뒤 ROP로 연결하는 설계를 진행하고, heap/tcache 상태를 GDB 명령과 raw memory로 교차검증한다. CS는 heap exploit에서 ROP로 전환하는 이유를 정리하고 `day82_heap.md`에 heap 구조 그림과 실패 케이스 1개를 남긴다.
+- Last completed: Day082
+- Current focus: Day082 완료. `trigger_object(obj)`가 callback 호출 직전 `RBP = RDI = obj`를 구성하는 toy에서 객체의 callback을 `leave; ret`으로 덮어 heap fake stack으로 pivot했다. `pop rdi; ret`, alignment `ret`, `system("/bin/sh")`, `pop rdi; ret`, `exit(0)` 체인을 객체 내부 0x58바이트에 배치해 shell을 획득했다. 최초에는 fake stack을 작은 heap 영역 시작 근처에 배치해 `system()` 내부의 `push`/`sub rsp`가 낮은 주소 방향으로 확장될 공간이 부족해 실패했으며, 큰 region의 높은 offset으로 obj를 옮겨 해결했다. CS에서는 함수 포인터 overwrite가 호출 대상만 바꾸고 기존 인자 제약을 남기는 이유, controlled fake stack과 pivot 조건, 직접 `callback = system`과 ROP 전환의 차이를 정리했다.
+- Next task: Day083 — 최신 `보안 계획표.xlsx` 기준 `Heap 복합 문제 1`. UAF+leak 또는 tcache+libc leak을 결합한 문제를 풀이하고, chunk/tcache 상태를 GDB heap 명령과 raw memory로 교차검증한다. CS는 복합 heap bug의 triage 순서를 정리하고 `day83_heap.md`에 heap 구조 그림과 실패 케이스 1개를 남긴다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -207,6 +207,14 @@ Day080 additional exam plan:
 - Files: Day040-100/Day081/.gdb_history, Day040-100/Day081/day81, Day040-100/Day081/day81.c, Day040-100/Day081/write_up.txt
 - Problems: `__free_hook`에 값을 쓸 수 있어도 glibc 2.35의 `free()`가 이를 읽거나 호출하지 않아 control flow 변화가 없다. Full RELRO에서는 GOT가 read-only가 되지만 일반 `.data` callback까지 자동 보호하지 않는다. 함수 포인터를 `system`으로 덮어도 이후 trigger가 없거나 첫 인자가 유효한 명령 문자열 포인터가 아니면 exploit은 실패한다.
 - Next: Day082
+
+### Day082
+- Topic: Heap → ROP 전환 / heap fake stack pivot
+- Status: done
+- Result: `trigger_object(obj)` 내부의 `mov %rdi, %rbp; call *0x50(%rdi)`로 callback 호출 전 `RBP = obj`를 준비하고, `obj+0x50` callback을 `leave; ret`으로 덮어 heap으로 stack pivot했다. 객체 내부에 dummy RBP, `pop rdi; ret`, `obj+0x40`, alignment `ret`, `system`, `pop rdi; ret`, 0, `exit`, `/bin/sh\0`, padding, `leave; ret`을 정확히 0x58바이트로 구성해 shell과 정상 종료 흐름을 확인했다. CS에서는 직접 함수 포인터 overwrite가 기존 호출 인자를 유지하는 제약과, ROP가 레지스터 및 복수 호출을 재구성하는 이유를 설명했다.
+- Files: Day040-100/Day082/.gdb_history, Day040-100/Day082/day82, Day040-100/Day082/day82.c, Day040-100/Day082/exploit.py, Day040-100/Day082/write_up.txt
+- Problems: 최초에는 작은 heap 객체 시작 근처를 fake stack으로 사용해 ROP gadget 배치와 alignment가 맞아도 `system()` 내부 stack frame이 낮은 주소로 확장될 writable mapped 공간이 부족해 실패했다. `malloc(0x5000)` region의 `+0x4000`에 obj를 배치해 아래쪽 stack 여유 공간을 확보하자 성공했다. 이는 과거 `.bss` 시작점 대신 `.bss+0x300`으로 pivot했던 실패 사례와 같은 원리다. 또한 이 toy는 객체 전체를 쓸 수 있어 `obj+0x00="/bin/sh\0"`, callback=`system`의 직접 호출도 가능하므로 ROP가 필수인 조건을 강제하지는 않는다. callback 8바이트만 제어하고 별도의 controlled fake stack이 없다면 일반적인 ROP로 이어지지 않을 수 있다.
+- Next: Day083
 
 ---
 
