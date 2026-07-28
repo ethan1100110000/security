@@ -1,0 +1,35 @@
+## day83 heap 복합문제 1
+
+## 바이너리
+프로그램 동작 형태는 루프 형식
+메뉴에서 1 - 6번을 누르면 
+1. add
+2. delete
+3. show
+4. edit
+5. trigger
+6. exit
+
+add로 malloc 가능 delete는 free show는 출력인데 free 이후 널값으로 초기화가 없는걸 확인
+free 이후 show로 raw memory가 출력 가능
+edit 는 할당한 chunk전체를 overwrite 가능
+trigger는 callback(data -> slots[idx])
+
+구조체 구조는
+data[0x20]
+void callback = puts
+
+## 계획
+익스플로잇 프로그램에서 0번 인덱스로 chunk 할당
+free 이후 show 로 raw memory 확인 chunk전체 출력이니까 맨 뒤 8바이트는 puts임
+이걸 recvline으로 받아 파싱 puts leak
+libc.symbols로 puts offset 구함 puts_leak - puts_offset = libc_base
+libc_base + system_offset = system
+edit로 chunk 전체 overwrite
+paylaod = b"/bin/sh\x00".ljust(0x20, b"\x00")
+payload += p64(system)
+
+이러면 callback은 system으로 덮였고 trigger에서 인자로 사용될 data의 첫 8바이트는 binsh가 되었음
+
+## 검증
+성공
