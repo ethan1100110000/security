@@ -42,8 +42,8 @@ Daily review rule:
 ## Current Pointer
 
 - Last completed: Day083
-- Current focus: Day083 완료. `Note { data[0x20], callback }` 구조에서 `delete`가 slot을 NULL로 만들지 않아 UAF read/write가 가능했다. free 후 `data` 앞 16바이트는 tcache의 encoded next/key로 덮였지만 `obj+0x20`의 callback에는 add 시 저장된 stale `puts` 주소가 남았다. `show`의 raw 0x28바이트 중 `[0x20:0x28]`을 파싱해 `puts`를 leak하고, 실행 중인 것과 같은 libc의 symbol offset으로 libc base와 `system`을 계산했다. `edit`로 `data="/bin/sh\0"`와 callback=`system`을 기록한 뒤 `trigger`의 기존 `callback(data)` 호출을 이용해 shell을 획득했다. GDB에서 dangling pointer, raw chunk, stale callback, libc mapping/base를 확인했다. CS에서는 버그 → primitive → leak → target → trigger 순서의 heap triage를 정리했고, 마무리로 shellcode의 NULL terminator와 `RDI=문자열 주소`, `RDX=0`을 복습했다.
-- Next task: Day084 — 최신 `보안 계획표.xlsx` 기준 `Heap 실패 케이스 day`. 잘못된 allocation 순서, double-free abort, 잘못된 libc base를 각각 재현하고 chunk/tcache 상태를 GDB heap 명령과 raw memory로 교차검증한다. CS는 heap 실패 로그 분류법을 정리하고 `day84_heap.md`에 heap 구조 그림과 실패 케이스를 남긴다. 본 학습 종료 후 오래된/랜덤 주제 복습을 진행한다.
+- Current focus: Day084 실습과 CS 학습은 진행했다. 잘못된 free 순서에서 tcache LIFO 때문에 기대한 chunk 대신 마지막으로 free한 chunk가 반환되는 현상, 동일 chunk 재해제 시 glibc의 tcache 중복 검사로 `SIGABRT`가 발생하는 현상, `puts` leak에 잘못된 symbol offset을 적용해 `wrong_system == puts_leak`이 되어 `puts("/bin/sh")`만 실행되는 주소 계산 실패를 분류했다. GDB의 `tcachebins`, raw chunk metadata, libc mapping/page alignment를 검증 기준으로 정리했고, CS에서는 `SIGABRT`·`SIGSEGV`·정상 종료 오동작을 구분했다. GOT overwrite와 shellcode 인자 배치도 복습했다. 사용자 commit `12367541f1268d0a621e9b6d8631cfbf7ae7396a`은 확인했지만 write-up에 수정할 항목이 남아 Day084 완료 처리는 보류한다.
+- Next task: Day084 write-up을 수정하고 다시 commit한다. 실패 1의 `tcachebins`는 `b → a → NULL`, raw memory는 `b->next`가 `a`를 encode한 값으로 고친다. 실패 2의 첫 free 이후 `a+0x00 = a >> 12`(encoded NULL), `a+0x08 = tcache key`로 고치며, 일반 double-free abort 상태와 key 변조 후 `a → a` 우회 상태를 분리한다. `page alignment`는 하위 12비트/마지막 3 hex digit가 0임을 명시하고, `CS: 실패 로그 분류`를 commit에 추가한다. 수정 확인 후 Day085 Heap portfolio checkpoint로 진행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -85,6 +85,14 @@ Daily review rule:
 - Files: Day040-100/Day083/.gdb_history, Day040-100/Day083/Makefile, Day040-100/Day083/day83, Day040-100/Day083/day83.c, Day040-100/Day083/exploit.py, Day040-100/Day083/write_up.txt
 - Problems: `edit`를 `show`보다 먼저 실행하면 stale `puts`가 덮여 libc leak을 잃는다. freed chunk 전체 edit는 encoded next와 tcache key도 손상시키므로 이후 같은 size class에서 `malloc/free`를 다시 수행하면 allocator가 오염된 metadata를 해석해 실패할 수 있다. 이번 exploit은 edit 직후 allocator를 다시 사용하지 않고 dangling pointer의 callback을 직접 trigger했다.
 - Next: Day084
+
+### Day084
+- Topic: Heap 실패 케이스 day
+- Status: correction needed
+- Result: 잘못된 free 순서, double-free abort, 잘못된 libc base를 각각 재현·분류했다. tcache LIFO, tcache key 기반 중복 검사와 bin 순회, 잘못된 offset 상쇄로 `wrong_system == puts_leak`이 되는 원리를 설명했다. CS에서는 `SIGABRT`는 allocator가 의도적으로 종료한 경우, `SIGSEGV`는 잘못된 주소 접근/점프, 정상 종료 오동작은 유효하지만 틀린 함수가 실행된 경우로 분류했다. GOT overwrite와 shellcode stack 배치를 복습했다.
+- Files: Day040-100/Day084/day84, Day040-100/Day084/day84.c, Day040-100/Day084/write_up.txt
+- Problems: commit의 실패 1 tcache/raw-memory 방향이 반대로 기록됐고, 실패 2의 `a+0x00`과 `a+0x08` 설명이 뒤바뀌었다. 기본 abort 상태와 key 변조 우회 후 self-loop 상태가 혼재되어 있으며 CS 실패 로그 분류가 write-up에 누락됐다.
+- Next: Day084 write-up correction → Day085
 
 ---
 
