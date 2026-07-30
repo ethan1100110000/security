@@ -20,8 +20,10 @@ tcachebin은 LIFO방식을 사용 free 순서가 잘못되어 p == b가 되었�
 p == a를 만들려면 a를 나중에 free해야 함
 
 ### 검증
-- tcachebins: a -> b -> 0
-- raw memory: x/gx a = encode(b)
+- tcachebins: b -> a -> 0
+- raw memory:
+  - b+0x00 = Safe-Linking으로 인코딩된 a
+  - a+0x00 = Safe-Linking으로 인코딩된 NULL = a >> 12
 
 ## 실패 2: Double Free Abort
 
@@ -39,11 +41,20 @@ abort 오류
 
 ### 첫 번째 free 이후 상태
 - tcache[0x40]: a -> 0
-- a+0x00: tcache key
-- a+0x08: a >> 12
+- a+0x00: a >> 12
+- a+0x08: tcache key
 
 ### 검증
-- tcachebins: a -> a
+- abort 로그: free(): double free detected in tcache 2
+- GDB 종료 신호: SIGABRT
+- 두 번째 free 직전 tcachebins: a -> NULL
+- raw memory:
+  - a+0x00 = a >> 12
+  - a+0x08 = tcache key
+
+### 추가 실험: key 변조
+a+0x08의 key를 0으로 덮고 다시 free하면 abort를 우회할 수 있었고,
+tcache count는 2, decoded next는 a를 가리켜 a -> a 자기참조 상태가 됐다.
 
 ## 실패 3: 잘못된 libc base
 
