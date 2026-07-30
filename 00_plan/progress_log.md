@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day083
-- Current focus: Day084 실습과 CS 학습은 진행했다. 잘못된 free 순서에서 tcache LIFO 때문에 기대한 chunk 대신 마지막으로 free한 chunk가 반환되는 현상, 동일 chunk 재해제 시 glibc의 tcache 중복 검사로 `SIGABRT`가 발생하는 현상, `puts` leak에 잘못된 symbol offset을 적용해 `wrong_system == puts_leak`이 되어 `puts("/bin/sh")`만 실행되는 주소 계산 실패를 분류했다. GDB의 `tcachebins`, raw chunk metadata, libc mapping/page alignment를 검증 기준으로 정리했고, CS에서는 `SIGABRT`·`SIGSEGV`·정상 종료 오동작을 구분했다. GOT overwrite와 shellcode 인자 배치도 복습했다. 사용자 commit `12367541f1268d0a621e9b6d8631cfbf7ae7396a`은 확인했지만 write-up에 수정할 항목이 남아 Day084 완료 처리는 보류한다.
-- Next task: Day084 write-up을 수정하고 다시 commit한다. 실패 1의 `tcachebins`는 `b → a → NULL`, raw memory는 `b->next`가 `a`를 encode한 값으로 고친다. 실패 2의 첫 free 이후 `a+0x00 = a >> 12`(encoded NULL), `a+0x08 = tcache key`로 고치며, 일반 double-free abort 상태와 key 변조 후 `a → a` 우회 상태를 분리한다. `page alignment`는 하위 12비트/마지막 3 hex digit가 0임을 명시하고, `CS: 실패 로그 분류`를 commit에 추가한다. 수정 확인 후 Day085 Heap portfolio checkpoint로 진행한다.
+- Last completed: Day085
+- Current focus: Day084 수정본과 Day085 Heap Exploitation Capstone을 완료했다. Day084는 잘못된 free 순서의 실제 상태를 `b → a → NULL`로 바로잡고, freed tcache entry의 `+0x00 = encoded next`, `+0x08 = tcache key`를 정확히 구분했다. 기본 double-free `SIGABRT`와 key 변조 후 self-loop 상태도 분리했다. Day085에서는 PIE·Canary·NX·Full RELRO 환경의 small/large UAF를 이용해 Safe-Linking mask와 PIE callback을 leak하고, unsorted-bin `fd`로 libc base와 `system`을 계산했다. 이후 tcache poisoning으로 `.bss`의 `control_region+0x4000`을 할당받아 fake stack과 `leave; ret` callback을 작성하고, 정렬용 `ret → pop rdi → "/bin/sh" → system` 체인으로 shell 및 명령 실행을 확인했다. GDB에서 tcache 상태, raw chunk metadata, PIE/libc mapping, poisoning target, pivot 전후 레지스터를 확인했다. 사용자 commit `87fff5a81075e2384a7cb8f37efac85b3794e819` 확인 완료.
+- Next task: Day086 Reversing — Ghidra 1. 바이너리를 import하고 함수 목록, imports, strings, xref를 조사해 main flow를 복원한다. 함수 역할을 근거와 함께 rename하고, Ghidra 추론을 `objdump` 또는 GDB로 최소 1회 교차검증한다. CS는 x86-64 instruction 기본 형식이며 산출물은 `day86_rev.md`와 근거 스크린샷/명령 기록이다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -88,11 +88,19 @@ Daily review rule:
 
 ### Day084
 - Topic: Heap 실패 케이스 day
-- Status: correction needed
-- Result: 잘못된 free 순서, double-free abort, 잘못된 libc base를 각각 재현·분류했다. tcache LIFO, tcache key 기반 중복 검사와 bin 순회, 잘못된 offset 상쇄로 `wrong_system == puts_leak`이 되는 원리를 설명했다. CS에서는 `SIGABRT`는 allocator가 의도적으로 종료한 경우, `SIGSEGV`는 잘못된 주소 접근/점프, 정상 종료 오동작은 유효하지만 틀린 함수가 실행된 경우로 분류했다. GOT overwrite와 shellcode stack 배치를 복습했다.
+- Status: done
+- Result: 잘못된 free 순서, double-free abort, 잘못된 libc base를 각각 재현·분류했다. `free(a); free(b);` 이후 상태가 `b → a → NULL`임을 정정하고, raw metadata에서 `b+0x00`은 encoded `a`, `a+0x00`은 encoded NULL인 `a >> 12`, `a+0x08`은 tcache key임을 기록했다. 기본 재해제는 `free(): double free detected in tcache 2`와 `SIGABRT`를 발생시키며, key를 변조한 추가 실험에서는 count 2와 `a → a` self-loop가 만들어짐을 분리해 설명했다. 잘못된 libc offset에서는 `wrong_system == puts_leak`이 되어 `puts("/bin/sh")`만 실행되는 원리도 확인했다.
 - Files: Day040-100/Day084/day84, Day040-100/Day084/day84.c, Day040-100/Day084/write_up.txt
-- Problems: commit의 실패 1 tcache/raw-memory 방향이 반대로 기록됐고, 실패 2의 `a+0x00`과 `a+0x08` 설명이 뒤바뀌었다. 기본 abort 상태와 key 변조 우회 후 self-loop 상태가 혼재되어 있으며 CS 실패 로그 분류가 write-up에 누락됐다.
-- Next: Day084 write-up correction → Day085
+- Problems: allocator abort 상태와 metadata 변조 우회 상태를 혼동하지 않아야 하며, tcache freelist 방향과 raw encoded pointer를 별도로 검증해야 한다.
+- Next: Day085
+
+### Day085
+- Topic: Heap Exploitation Capstone / Heap 포트폴리오 checkpoint
+- Status: done
+- Result: small UAF raw read에서 단일 tcache entry의 encoded NULL을 Safe-Linking mask로 사용하고, 객체의 stale `self`와 `default_callback` 필드에서 heap/PIE 정보를 확인했다. large UAF는 guard allocation으로 top consolidation을 막아 unsorted-bin `fd`를 leak하고 libc base와 `system`을 계산했다. small tcache count를 2로 구성한 뒤 `encoded_target = (control_region+0x4000) ^ mask`로 poisoning해 writable `.bss` 주소를 두 번째 `malloc(0x60)` 반환값으로 얻었다. 해당 영역에 dummy RBP, 정렬용 `ret`, `pop rdi; ret`, `"/bin/sh"`, `system`, `leave; ret` callback을 배치해 stack pivot과 shell 실행에 성공했고 `id`, `whoami` 명령 결과까지 확인했다.
+- Files: Day040-100/Day085/.gdb_history, Day040-100/Day085/Makefile, Day040-100/Day085/day85, Day040-100/Day085/day85.c, Day040-100/Day085/exploit.py, Day040-100/Day085/write_up.txt
+- Problems: tcache count가 1이면 poisoned target이 반환되지 않는다. target을 평문으로 기록하면 Safe-Linking 검증/디코딩 과정에서 실패하며, 정렬용 `ret`을 제거하면 `system()` 진입 시 ABI 정렬 문제로 실패할 수 있다. Full RELRO에서는 GOT 대신 writable하고 trigger 가능한 control object를 선정해야 한다.
+- Next: Day086
 
 ---
 
