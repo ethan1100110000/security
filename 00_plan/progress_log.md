@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day085
-- Current focus: Day084 수정본과 Day085 Heap Exploitation Capstone을 완료했다. Day084는 잘못된 free 순서의 실제 상태를 `b → a → NULL`로 바로잡고, freed tcache entry의 `+0x00 = encoded next`, `+0x08 = tcache key`를 정확히 구분했다. 기본 double-free `SIGABRT`와 key 변조 후 self-loop 상태도 분리했다. Day085에서는 PIE·Canary·NX·Full RELRO 환경의 small/large UAF를 이용해 Safe-Linking mask와 PIE callback을 leak하고, unsorted-bin `fd`로 libc base와 `system`을 계산했다. 이후 tcache poisoning으로 `.bss`의 `control_region+0x4000`을 할당받아 fake stack과 `leave; ret` callback을 작성하고, 정렬용 `ret → pop rdi → "/bin/sh" → system` 체인으로 shell 및 명령 실행을 확인했다. GDB에서 tcache 상태, raw chunk metadata, PIE/libc mapping, poisoning target, pivot 전후 레지스터를 확인했다. 사용자 commit `87fff5a81075e2384a7cb8f37efac85b3794e819` 확인 완료.
-- Next task: Day086 Reversing — Ghidra 1. 바이너리를 import하고 함수 목록, imports, strings, xref를 조사해 main flow를 복원한다. 함수 역할을 근거와 함께 rename하고, Ghidra 추론을 `objdump` 또는 GDB로 최소 1회 교차검증한다. CS는 x86-64 instruction 기본 형식이며 산출물은 `day86_rev.md`와 근거 스크린샷/명령 기록이다.
+- Last completed: Day086
+- Current focus: Day086 Reversing — Ghidra 1을 완료했다. stripped PIE의 entry point `0x10c0`에서 `__libc_start_main` 호출 직전 RDI를 추적해 main offset `0x15d7`을 복원했다. Ghidra에서 입력 함수, 형식 검사, XOR+index 변환, 16바이트 `memcmp`, rolling hash 검사를 분리하고 성공 토큰 `xref_and_strings`를 역산했다. GDB에서는 변환 직후 스택 버퍼 `$rbp-0x20`과 바이너리 기대 배열 `$base+0x2020`의 16바이트가 동일함을 확인했고, `check_transformed()` 반환값 `EAX=1` 및 실제 성공 출력까지 검증했다. CS는 x86-64 기본 명령 형식, `lea`/`mov`, `cmp`/`test`, 분기, call/ret, stack frame, 레지스터 인자 규약을 정리했다. GOT overwrite와 shellcode null terminator 복습도 완료했다. 사용자 commit `2af38c21d47b0865761b0708d1c5e24844d52421` 확인 완료.
+- Next task: Day087 Reversing — Ghidra 2: xref와 strings 기반 흐름 추적. 입력·성공·실패 문자열의 xref에서 호출 함수를 역추적해 main flow를 복원하고, 함수 역할을 근거와 함께 rename한다. Ghidra 추론은 `objdump` 또는 GDB로 최소 1회 교차검증한다. CS는 general-purpose register와 special register의 역할이며 산출물은 `day87_rev.md`와 근거 스크린샷/명령 기록이다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -101,6 +101,14 @@ Daily review rule:
 - Files: Day040-100/Day085/.gdb_history, Day040-100/Day085/Makefile, Day040-100/Day085/day85, Day040-100/Day085/day85.c, Day040-100/Day085/exploit.py, Day040-100/Day085/write_up.txt
 - Problems: tcache count가 1이면 poisoned target이 반환되지 않는다. target을 평문으로 기록하면 Safe-Linking 검증/디코딩 과정에서 실패하며, 정렬용 `ret`을 제거하면 `system()` 진입 시 ABI 정렬 문제로 실패할 수 있다. Full RELRO에서는 GOT 대신 writable하고 trigger 가능한 control object를 선정해야 한다.
 - Next: Day086
+
+### Day086
+- Topic: Reversing — Ghidra 1: import와 함수 목록 파악
+- Status: done
+- Result: stripped PIE의 entry에서 `__libc_start_main` 첫 번째 인자를 추적해 main offset `0x15d7`을 찾았다. 문자열, xref, decompiler와 Listing을 이용해 `read_token`, `check_format`, `transform_token`, `check_transformed`, `calculate_token_hash`, 성공/실패 출력 함수의 역할을 복원했다. 변환식 `out[i] = (in[i] ^ key[i % 5]) + i`, key `13 37 21 5a 0c`, 기대 배열을 바탕으로 `xref_and_strings`를 역산하고 rolling hash `0xf3d270b4`까지 일치함을 확인했다. GDB에서 `$rbp-0x20`의 변환 결과와 `$base+0x2020`의 기대 배열이 동일하고 래퍼 반환값이 `EAX=1`임을 확인했으며 실제 실행도 성공했다.
+- Files: Day040-100/Day086/.gdb_history, Day040-100/Day086/README.txt, Day040-100/Day086/day86_challenge, Day040-100/Day086/write_up.txt
+- Problems: Ghidra 주소 `0x001014c5`에서 image base를 빼 RVA `0x14c5`를 구한 뒤 runtime PIE base를 더해야 한다. Ghidra 변수명 `local_28`과 실제 스택 offset `[rbp-0x20]`을 구분해야 하며, `memcmp` 자체는 같을 때 0이지만 bool 래퍼는 성공 시 1을 반환한다.
+- Next: Day087
 
 ---
 
