@@ -1,0 +1,21 @@
+Day86 Write-up — Ghidra 정적 분석
+
+day86_challenge는 Full RELRO, Canary, NX, PIE가 적용된 stripped ELF다. Entry point 0x10c0의 _start 흐름에서 __libc_start_main 호출 직전 RDI에 전달되는 주소를 추적해 main offset이 0x15d7임을 찾았다.
+
+Ghidra에서 함수 흐름을 복원한 결과 프로그램은 토큰을 입력받고 다음 조건을 검사했다.
+
+길이 16
+input[4] == '_'
+input[8] == '_'
+
+입력은 다음 식으로 변환된다.
+
+transformed[i] = (input[i] ^ key[i % 5]) + i;
+key = {0x13, 0x37, 0x21, 0x5a, 0x0c};
+
+변환 결과는 바이너리의 16바이트 배열과 memcmp로 비교한다. 이를 역산해 성공 토큰을 복원했다.
+
+input[i] = (expected[i] - i) ^ key[i % 5];
+xref_and_strings
+
+마지막으로 원본 토큰의 rolling hash가 0xf3d270b4인지 검사한다. GDB에서 변환 후 스택 버퍼 $rbp-0x20과 정답 배열 $base+0x2020의 16바이트가 동일하고, check_transformed() 반환값이 EAX=1임을 확인했다. 실제 실행에서도 성공 출력을 확인했다.
