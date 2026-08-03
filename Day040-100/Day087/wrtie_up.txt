@@ -1,0 +1,32 @@
+Day87 Write-up — Ghidra Strings/XREF 분석
+
+day87_challenge는 Full RELRO, Canary, NX, PIE가 적용된 stripped x86-64 ELF다. Ghidra의 Defined Strings에서 alias>, phrase>, 성공·실패 문자열을 찾고 XREF를 따라가 FUN_00101556이 전체 입력과 검사를 관리하는 main임을 확인했다.
+
+공용 입력 함수 FUN_0010134f는 프롬프트를 출력하고 fgets()로 입력을 받은 뒤 개행을 널 문자로 바꾸며, 입력 성공 여부를 반환한다.
+
+Alias 검사는 길이가 8이고 마지막 3바이트가 _87인지 확인한다. 앞의 5바이트는 다음 조건으로 검사한다.
+
+(alias[i] ^ mask[i]) == expected[i]
+mask     = 31 52 17 44 29
+expected = 43 3d 62 30 4c
+
+이를 역산한 alias는 다음과 같다.
+
+route_87
+
+Phrase는 길이 16이며 phrase[4]와 phrase[11]이 _인지 검사한다. 이후 다음 식으로 16바이트를 변환해 바이너리의 기대 배열과 memcmp()로 비교한다.
+
+out[i] = (phrase[i] ^ key[i % 6]) + i * 3;
+
+역산 결과 phrase는 다음과 같다.
+
+xref_guides_flow
+
+정상 입력은 다음과 같다.
+
+alias  : route_87
+phrase : xref_guides_flow
+
+[granted] maintenance override enabled 문자열은 FUN_00101510에서 사용되지만, 해당 함수의 XREF에는 unwind·데이터 참조만 존재하고 코드상 caller가 없었다. 따라서 정상 흐름에서 호출되지 않는 decoy 함수로 판정했다.
+
+GDB에서는 정상 alias 입력 후 check_alias() 호출 직후 EAX=1을 확인해 정적 분석 결과를 동적으로 교차검증했다. 실제 실행에서도 성공 출력을 확인했다.
