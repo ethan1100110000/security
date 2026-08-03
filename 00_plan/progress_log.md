@@ -42,8 +42,8 @@ Daily review rule:
 ## Current Pointer
 
 - Last completed: Day086
-- Current focus: Day086 Reversing — Ghidra 1을 완료했다. stripped PIE의 entry point `0x10c0`에서 `__libc_start_main` 호출 직전 RDI를 추적해 main offset `0x15d7`을 복원했다. Ghidra에서 입력 함수, 형식 검사, XOR+index 변환, 16바이트 `memcmp`, rolling hash 검사를 분리하고 성공 토큰 `xref_and_strings`를 역산했다. GDB에서는 변환 직후 스택 버퍼 `$rbp-0x20`과 바이너리 기대 배열 `$base+0x2020`의 16바이트가 동일함을 확인했고, `check_transformed()` 반환값 `EAX=1` 및 실제 성공 출력까지 검증했다. CS는 x86-64 기본 명령 형식, `lea`/`mov`, `cmp`/`test`, 분기, call/ret, stack frame, 레지스터 인자 규약을 정리했다. GOT overwrite와 shellcode null terminator 복습도 완료했다. 사용자 commit `2af38c21d47b0865761b0708d1c5e24844d52421` 확인 완료.
-- Next task: Day087 Reversing — Ghidra 2: xref와 strings 기반 흐름 추적. 입력·성공·실패 문자열의 xref에서 호출 함수를 역추적해 main flow를 복원하고, 함수 역할을 근거와 함께 rename한다. Ghidra 추론은 `objdump` 또는 GDB로 최소 1회 교차검증한다. CS는 general-purpose register와 special register의 역할이며 산출물은 `day87_rev.md`와 근거 스크린샷/명령 기록이다.
+- Current focus: Day087과 Day088의 핵심 정적 분석 및 정상 실행까지 진행했다. Day087에서는 strings/XREF/caller 흐름으로 main과 실제 성공 함수, caller가 없는 `FUN_00101510` decoy를 구분하고 `route_87` / `xref_guides_flow`를 복원했으며 GDB에서 `check_alias()` 직후 `EAX=1`을 확인했다. Day088에서는 공통 context의 구조를 `magic@0x00`, `version@0x04`, `flags@0x06`, `handle[16]@0x08`, `phrase[24]@0x18`, `key[8]@0x30`, `score@0x38`, `digest@0x3c`로 복원하고 `recover_the_type` phrase와 성공 출력을 확인했다. 사용자 commit `d78c581e6498d2c365ba08f3bde108fc1670ef6a`은 확인했으나, Day087 실패 경로 재현과 Day088의 `day88_rev.md`, type 적용 전후 근거, GDB/objdump 교차검증, 실패 경로 재현이 저장소에 아직 없다.
+- Next task: Day087 실패 경로 1개와 Day088 필수 근거를 마무리해 추가 commit/push한다. Day088에서는 Ghidra에 custom `AnalysisContext` 타입을 실제 적용해 raw offset 표현이 필드 접근으로 바뀐 전후 화면을 남기고, `score` 또는 `digest`를 GDB/objdump로 교차검증하며 잘못된 handle/phrase 실패 경로를 기록한다. 이 검증이 끝난 뒤 Day089로 이동한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -109,6 +109,22 @@ Daily review rule:
 - Files: Day040-100/Day086/.gdb_history, Day040-100/Day086/README.txt, Day040-100/Day086/day86_challenge, Day040-100/Day086/write_up.txt
 - Problems: Ghidra 주소 `0x001014c5`에서 image base를 빼 RVA `0x14c5`를 구한 뒤 runtime PIE base를 더해야 한다. Ghidra 변수명 `local_28`과 실제 스택 offset `[rbp-0x20]`을 구분해야 하며, `memcmp` 자체는 같을 때 0이지만 bool 래퍼는 성공 시 1을 반환한다.
 - Next: Day087
+
+### Day087
+- Topic: Reversing — Ghidra 2: strings / XREF / caller 흐름
+- Status: verification pending
+- Result: 문자열 XREF에서 main과 성공·실패 출력 함수를 추적하고, `FUN_00101510`에는 코드 caller가 없음을 확인해 maintenance 문자열을 decoy로 판정했다. alias `route_87`, phrase `xref_guides_flow`를 복원하고 실제 성공을 확인했으며 GDB에서 `check_alias()` 직후 `EAX=1`을 확인했다.
+- Files: Day040-100/Day087/README.txt, Day040-100/Day087/day87_challenge, Day040-100/Day087/wrtie_up.txt
+- Problems: 필수 실패 경로 재현이 저장소에 없다. write-up 파일명도 요청된 `day87_rev.md`가 아닌 `wrtie_up.txt`이므로 다음 commit에서 정리한다.
+- Next: Day088 evidence completion
+
+### Day088
+- Topic: Reversing — Ghidra 3: rename / type recovery
+- Status: verification pending
+- Result: 반복되는 offset으로 0x40바이트 `AnalysisContext` 구조를 복원했다. header 검사, handle 검사, phrase transform, digest 계산, 단계별 score 증가 흐름을 분석하고 정상 입력의 phrase `recover_the_type`와 성공 출력을 확인했다.
+- Files: Day040-100/Day088/README.txt, Day040-100/Day088/day88_challenge
+- Problems: commit에 `day88_rev.md`가 없고, custom structure를 실제 적용한 전후 화면/명령 기록, GDB 또는 objdump 교차검증, 실패 경로 재현이 없다.
+- Next: Day087-Day088 verification completion
 
 ---
 
