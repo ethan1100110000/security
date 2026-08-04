@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day086
-- Current focus: Day087과 Day088의 핵심 정적 분석 및 정상 실행까지 진행했다. Day087에서는 strings/XREF/caller 흐름으로 main과 실제 성공 함수, caller가 없는 `FUN_00101510` decoy를 구분하고 `route_87` / `xref_guides_flow`를 복원했으며 GDB에서 `check_alias()` 직후 `EAX=1`을 확인했다. Day088에서는 공통 context의 구조를 `magic@0x00`, `version@0x04`, `flags@0x06`, `handle[16]@0x08`, `phrase[24]@0x18`, `key[8]@0x30`, `score@0x38`, `digest@0x3c`로 복원하고 `recover_the_type` phrase와 성공 출력을 확인했다. 사용자 commit `d78c581e6498d2c365ba08f3bde108fc1670ef6a`은 확인했으나, Day087 실패 경로 재현과 Day088의 `day88_rev.md`, type 적용 전후 근거, GDB/objdump 교차검증, 실패 경로 재현이 저장소에 아직 없다.
-- Next task: Day087 실패 경로 1개와 Day088 필수 근거를 마무리해 추가 commit/push한다. Day088에서는 Ghidra에 custom `AnalysisContext` 타입을 실제 적용해 raw offset 표현이 필드 접근으로 바뀐 전후 화면을 남기고, `score` 또는 `digest`를 GDB/objdump로 교차검증하며 잘못된 handle/phrase 실패 경로를 기록한다. 이 검증이 끝난 뒤 Day089로 이동한다.
+- Last completed: Day090
+- Current focus: Day089에서는 stripped PIE의 ELF entry에서 `__libc_start_main` 호출을 추적하고 첫 번째 인자 `RDI`로 전달되는 offset `0x148c`를 실제 main으로 복원했다. GDB에서 런타임 `RDI - 0x148c`가 바이너리 PIE base와 일치함을 확인했으며, 조건식에서 `undry_umai_aaa`를 복원해 정상 실행과 잘못된 길이의 실패 경로를 확인했다. Day090에서는 main과 정상 입력 `boundary_xref_90`을 복원하고, `FUN_001011c0`을 직접 call XREF, SysV ABI 인자/반환 규칙, `ret`을 근거로 prologue 없는 독립 leaf 함수로 판정했다. 함수 경계는 `0x001011c0`부터 `0x001011cc`의 `ret`까지 13바이트이며 정상 출력 tag는 `875a32e8`이다. 사용자 commit `1e9cd59ef193ab39648391b46704f221ad48747e`을 확인했다.
+- Next task: Day091 시작. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day091 행을 확인하고, 해당 주제의 이론 → 실습 → 동적 교차검증 → 실패 케이스 → 짧은 write-up → CS → 복습 순서로 진행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -112,19 +112,35 @@ Daily review rule:
 
 ### Day087
 - Topic: Reversing — Ghidra 2: strings / XREF / caller 흐름
-- Status: verification pending
+- Status: study done; repository cleanup pending
 - Result: 문자열 XREF에서 main과 성공·실패 출력 함수를 추적하고, `FUN_00101510`에는 코드 caller가 없음을 확인해 maintenance 문자열을 decoy로 판정했다. alias `route_87`, phrase `xref_guides_flow`를 복원하고 실제 성공을 확인했으며 GDB에서 `check_alias()` 직후 `EAX=1`을 확인했다.
 - Files: Day040-100/Day087/README.txt, Day040-100/Day087/day87_challenge, Day040-100/Day087/wrtie_up.txt
-- Problems: 필수 실패 경로 재현이 저장소에 없다. write-up 파일명도 요청된 `day87_rev.md`가 아닌 `wrtie_up.txt`이므로 다음 commit에서 정리한다.
-- Next: Day088 evidence completion
+- Problems: 파일명 `wrtie_up.txt` 오타와 실패 경로 기록은 이후 저장소 정리 시 보완한다.
+- Next: Day088
 
 ### Day088
 - Topic: Reversing — Ghidra 3: rename / type recovery
-- Status: verification pending
+- Status: study done; repository cleanup pending
 - Result: 반복되는 offset으로 0x40바이트 `AnalysisContext` 구조를 복원했다. header 검사, handle 검사, phrase transform, digest 계산, 단계별 score 증가 흐름을 분석하고 정상 입력의 phrase `recover_the_type`와 성공 출력을 확인했다.
 - Files: Day040-100/Day088/README.txt, Day040-100/Day088/day88_challenge
-- Problems: commit에 `day88_rev.md`가 없고, custom structure를 실제 적용한 전후 화면/명령 기록, GDB 또는 objdump 교차검증, 실패 경로 재현이 없다.
-- Next: Day087-Day088 verification completion
+- Problems: standalone write-up과 custom type 적용 전후 증거는 이후 저장소 정리 시 보완한다.
+- Next: Day089
+
+### Day089
+- Topic: Reversing — Stripped 1: entry에서 main 찾기
+- Status: done
+- Result: ELF entry에서 `__libc_start_main` 호출을 추적해 `FUN_0010148c`를 main으로 복원했다. GDB에서 호출 시점의 `RDI`를 확인하고 `RDI - 0x148c`가 PIE base와 일치함을 검증했다. checker의 XOR 조건을 역산해 `undry_umai_aaa`로 성공했으며 마지막 세 문자는 길이만 검사되고 실제 비교에서 누락된 under-validation임을 확인했다.
+- Files: Day040-100/Day089/.gdb_history, Day040-100/Day089/README.txt, Day040-100/Day089/day89_challenge
+- Problems: ELF entry는 main이 아니라 `_start`이며, 문자열 XREF만으로 main을 확정하지 않고 `__libc_start_main`의 첫 번째 인자 흐름을 근거로 삼아야 한다.
+- Next: Day090
+
+### Day090
+- Topic: Reversing — Stripped 2: 함수 경계 복원
+- Status: done
+- Result: 정상 입력 `boundary_xref_90`과 출력 tag `875a32e8`을 확인했다. `FUN_001011c0`은 `0x0010142d`의 직접 call XREF, `EDI/SIL` 인자 사용, `EAX` 반환값, `0x001011cc`의 `ret`을 근거로 독립 leaf 함수로 판정했다. 경계는 `0x001011c0–0x001011cc`, 크기는 13바이트이며 표준 frame prologue가 없어도 함수일 수 있음을 확인했다.
+- Files: Day040-100/Day090/README.txt, Day040-100/Day090/day90_challenge, Day040-100/Day090/write_up.txt
+- Problems: `push rbp; mov rbp,rsp`는 함수 판정의 필수 조건이 아니다. `ret` 뒤의 NOP/UD2는 함수 본문이 아닌 패딩 또는 트랩 영역으로 구분해야 한다.
+- Next: Day091
 
 ---
 
