@@ -1,0 +1,35 @@
+[Day90] Stripped 2 — 함수 경계 복원
+
+목표:
+stripped PIE 바이너리에서 XREF, call, ABI, ret을 이용해 함수 경계를 복원한다.
+
+정상 입력:
+boundary_xref_90
+
+실행 결과:
+[granted] recovered tag=875a32e8
+
+main 복원:
+_start에서 __libc_start_main으로 전달되는 RDI 값을 확인하여 main을 찾았다.
+GDB에서도 런타임 RDI와 PIE base를 비교해 main 주소를 교차검증했다.
+
+프레임 없는 함수:
+FUN_001011c0
+
+함수 경계:
+start = 0x001011c0
+end   = 0x001011cc (ret)
+size  = 13 bytes
+
+어셈블리:
+001011c0  rol   edi, 5
+001011c3  movzx eax, sil
+001011c7  xor   eax, edi
+001011c9  add   eax, 0x31
+001011cc  ret
+
+FUN_001013e8의 0x0010142d에서 직접 call XREF가 존재하고,
+EDI/SIL로 인자를 받은 뒤 EAX로 결과를 반환하며 ret으로 복귀한다.
+따라서 표준 push rbp; mov rbp,rsp prologue가 없어도 독립 함수로 판단할 수 있다.
+
+ret 이후의 NOP, UD2 바이트는 함수 경계 밖의 패딩 또는 트랩 영역이다.
