@@ -1,0 +1,14 @@
+1. cmp와 test의 차이:
+cmp는 A-B를 수행해 플래그만 설정하고,
+test는 A&B를 수행해 플래그만 설정한다.
+둘 다 계산 결과는 저장하지 않는다.
+
+2. signed/unsigned 분기 사례:
+cmp al, 0x60 / jg
+→ signed 비교로 input[3] > 0x60
+
+cmp dl, al / jb
+→ unsigned 비교로 input[5] < input[4]
+
+3. 아직 헷갈리는 점:
+movzx와 movsx의 확장 방식, OF와 CF의 구별
