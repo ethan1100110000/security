@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day090
-- Current focus: Day089에서는 stripped PIE의 ELF entry에서 `__libc_start_main` 호출을 추적하고 첫 번째 인자 `RDI`로 전달되는 offset `0x148c`를 실제 main으로 복원했다. GDB에서 런타임 `RDI - 0x148c`가 바이너리 PIE base와 일치함을 확인했으며, 조건식에서 `undry_umai_aaa`를 복원해 정상 실행과 잘못된 길이의 실패 경로를 확인했다. Day090에서는 main과 정상 입력 `boundary_xref_90`을 복원하고, `FUN_001011c0`을 직접 call XREF, SysV ABI 인자/반환 규칙, `ret`을 근거로 prologue 없는 독립 leaf 함수로 판정했다. 함수 경계는 `0x001011c0`부터 `0x001011cc`의 `ret`까지 13바이트이며 정상 출력 tag는 `875a32e8`이다. 사용자 commit `1e9cd59ef193ab39648391b46704f221ad48747e`을 확인했다.
-- Next task: Day091 시작. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day091 행을 확인하고, 해당 주제의 이론 → 실습 → 동적 교차검증 → 실패 케이스 → 짧은 write-up → CS → 복습 순서로 진행한다.
+- Last completed: Day092
+- Current focus: Day091에서는 stripped PIE의 entry에서 `__libc_start_main` 첫 번째 인자로 전달되는 `0x161a`를 main으로 복원하고, `main(0x161a) → 처리 함수(0x1589) → 입력 래퍼(0x11d0) → 검증 래퍼(0x1458) → 결과 출력(0x14d0)`의 제어 흐름을 문서화했다. Day092에서는 새 stripped PIE Crackme의 main offset `0x135e`를 entry의 `RDI` 흐름으로 확인하고, `cmp/test/jcc`를 따라 8바이트 입력 조건을 복원했다. `cmp al, 0x60 / jg`를 signed 비교, `cmp dl, al / jb`를 unsigned 비교로 구별했으며 성공 입력 `R5AaYBGN`과 조건을 깨뜨린 실패 입력으로 `ACCESS GRANTED`/`ACCESS DENIED` 경로를 모두 확인했다. CS에서는 `cmp=A-B`, `test=A&B`가 결과를 저장하지 않고 플래그만 설정함을 정리했고, 남은 보완점으로 `movzx/movsx`, `OF/CF` 구별을 기록했다. 사용자 commit `13f5daa`를 확인했다.
+- Next task: Day093 시작. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day093 행을 확인하고, Crackme 입력 검증 루프를 문자열/배열 인덱스와 분기 기준으로 pseudo-C로 복원한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -141,6 +141,21 @@ Daily review rule:
 - Files: Day040-100/Day090/README.txt, Day040-100/Day090/day90_challenge, Day040-100/Day090/write_up.txt
 - Problems: `push rbp; mov rbp,rsp`는 함수 판정의 필수 조건이 아니다. `ret` 뒤의 NOP/UD2는 함수 본문이 아닌 패딩 또는 트랩 영역으로 구분해야 한다.
 - Next: Day091
+
+### Day091
+- Topic: Reversing — Stripped 3: control-flow 문서화
+- Status: done
+- Result: ELF entry에서 `__libc_start_main`의 첫 번째 인자 `RDI`를 추적해 main offset `0x161a`를 복원했다. main은 stdin/stdout buffering을 설정한 뒤 `0x1589`를 호출하며, 처리 함수는 `0x11d0`에서 입력을 받고 실패를 분기한 뒤 `0x1458`의 검증 결과를 `0x14d0`에 전달해 성공·실패 출력을 선택한다. caller/callee, 인자 레지스터, 반환값 검사와 분기 방향을 기준으로 전체 흐름을 정리했다.
+- Problems: 서로 다른 바이너리의 주소를 섞으면 main 후보와 함수 경계를 잘못 판정할 수 있다. 항상 현재 ELF의 entry와 `lea rdi, [rip+...]` 계산을 먼저 고정한 뒤 call graph를 작성해야 한다.
+- Next: Day092
+
+### Day092
+- Topic: Reversing — Crackme 1: 분기 조건 분석
+- Status: done
+- Result: stripped PIE의 `_start`에서 `lea rdi, [rip+0x2af]`를 추적해 main offset `0x135e`를 확인했다. 입력 래퍼의 `fgets`/`strcspn` 흐름과 검증 함수의 `strlen(input) == 8`을 복원한 뒤, equality·범위·문자 간 합/XOR·비트 마스크 조건을 조합해 성공 입력 `R5AaYBGN`을 만들었다. 실제 실행에서 `ACCESS GRANTED`를 확인하고 한 조건을 바꾼 입력으로 `ACCESS DENIED`도 확인했다.
+- Files: Day040-100/Day092/day92_crackme, Day040-100/Day092/s, Day040-100/Day092/write_up.txt
+- Problems: `cmp src/dst` 피연산자 순서와 `jg`의 signed 해석, `jb`의 unsigned 해석을 분리해야 한다. `movzx/movsx` 확장 방식과 `OF/CF`의 의미는 추가 복습이 필요하다.
+- Next: Day093
 
 ---
 
