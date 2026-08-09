@@ -4,8 +4,8 @@
 매일 공부가 끝나면 아래 포인터와 운영 규칙을 기준으로 갱신한다.
 
 - Last completed: 마지막으로 완료한 Day
-- Current focus: Day093에서는 반복문 기반 verifier의 정방향 식 `key_index = (3*i+1)%10`, XOR, `ROL8`, `+7*i+3`을 분리하고, 비교 대상에서 마지막 연산부터 `- (7*i+3) → ROR8 → 같은 key로 XOR` 순서로 역산해 입력 `R3-L00P-7N`을 복원했다. 실제 실행에서 `ACCESS GRANTED`를 확인했다. CS에서는 `strcmp`가 `\0`까지, `memcmp`가 지정 길이만큼 비교한다는 차이와 부분 비교 및 범위 밖 읽기/UB 위험을 정리했다. 사용자 commit `babf329`, `3e2845a`를 확인했다.
-- Next task: Day094 시작. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day094 행을 확인한다.
+- Current focus: 방금 완료한 핵심 내용과 검증
+- Next task: 다음에 바로 시작할 작업
 
 ---
 
@@ -42,8 +42,8 @@ Daily review rule:
 ## Current Pointer
 
 - Last completed: Day093
-- Current focus: Day091에서는 stripped PIE의 entry에서 `__libc_start_main` 첫 번째 인자로 전달되는 `0x161a`를 main으로 복원하고, `main(0x161a) → 처리 함수(0x1589) → 입력 래퍼(0x11d0) → 검증 래퍼(0x1458) → 결과 출력(0x14d0)`의 제어 흐름을 문서화했다. Day092에서는 새 stripped PIE Crackme의 main offset `0x135e`를 entry의 `RDI` 흐름으로 확인하고, `cmp/test/jcc`를 따라 8바이트 입력 조건을 복원했다. `cmp al, 0x60 / jg`를 signed 비교, `cmp dl, al / jb`를 unsigned 비교로 구별했으며 성공 입력 `R5AaYBGN`과 조건을 깨뜨린 실패 입력으로 `ACCESS GRANTED`/`ACCESS DENIED` 경로를 모두 확인했다. CS에서는 `cmp=A-B`, `test=A&B`가 결과를 저장하지 않고 플래그만 설정함을 정리했고, 남은 보완점으로 `movzx/movsx`, `OF/CF` 구별을 기록했다. 사용자 commit `13f5daa`를 확인했다.
-- Next task: Day093 시작. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day093 행을 확인하고, Crackme 입력 검증 루프를 문자열/배열 인덱스와 분기 기준으로 pseudo-C로 복원한다.
+- Current focus: Day093에서는 반복문 기반 verifier의 정방향 식 `key_index = (3*i+1)%10`, XOR, `ROL8`, `+7*i+3`을 분리하고, 비교 대상에서 마지막 연산부터 `- (7*i+3) → ROR8 → 같은 key로 XOR` 순서로 역산해 입력 `R3-L00P-7N`을 복원했다. 실제 실행에서 `ACCESS GRANTED`를 확인했다. CS에서는 `strcmp`가 `\0`까지, `memcmp`가 지정 길이만큼 비교한다는 차이와 부분 비교 및 범위 밖 읽기/UB 위험을 정리했다. 사용자 commit `babf329`, `3e2845a`를 확인했다.
+- Next task: Day094 시작. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day094 행을 확인한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
