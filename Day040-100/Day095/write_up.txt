@@ -1,0 +1,40 @@
+# Day95 — Reversing Write-up 1
+
+## 함수 흐름
+
+`fgets()`로 입력받은 뒤 개행을 제거하고, `strlen()`으로 입력 길이가 12바이트인지 검사한다.
+
+검증 루프는 초기 상태값 `0x3d`에서 시작한다.
+
+```c
+uint8_t old_state = 0x3d;
+
+for (int i = 0; i < 12; i++) {
+    mixed_input = key[(5 * i + 2) % 12] ^ input[i];
+    before_rotate = old_state + 3 * i + mixed_input;
+    new_state = rol8(before_rotate, i % 3 + 1);
+
+    calculated[i] = (0xa5 - 7 * i) ^ new_state;
+    old_state = new_state;
+}
+```
+
+각 반복에서 만들어진 `new_state`가 다음 반복의 `old_state`로 전달된다. 최종적으로 `memcmp(calculated, target, 12)`의 반환값이 0이면 성공하고, 다르면 실패한다.
+
+## 역산 흐름
+
+```text
+target[i]
+→ (0xa5 - 7*i)와 XOR하여 new_state 복원
+→ ROR8로 before_rotate 복원
+→ old_state와 3*i 제거
+→ key와 XOR하여 input[i] 복원
+```
+
+모든 계산은 8비트이므로 결과를 `uint8_t`로 잘라야 한다.
+
+## 교차검증 계획
+
+* `objdump`: `strlen()` 호출 당시 `rdi`가 입력 버퍼를 가리키는지 확인하고, 호출 뒤 `rax`가 `0xc`와 비교되는지 확인한다.
+* GDB: 반복마다 `state`가 저장되는 위치를 관찰하여 이전 결과가 다음 반복으로 전달되는지 확인한다.
+* `memcmp`: `rdi`, `rsi`가 계산 배열과 정답 배열을 가리키고 `rdx`가 12인지 확인한다. 반환값 `eax == 0`일 때 성공 분기로 가는지도 확인한다.
