@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day093
-- Current focus: Day093에서는 반복문 기반 verifier의 정방향 식 `key_index = (3*i+1)%10`, XOR, `ROL8`, `+7*i+3`을 분리하고, 비교 대상에서 마지막 연산부터 `- (7*i+3) → ROR8 → 같은 key로 XOR` 순서로 역산해 입력 `R3-L00P-7N`을 복원했다. 실제 실행에서 `ACCESS GRANTED`를 확인했다. CS에서는 `strcmp`가 `\0`까지, `memcmp`가 지정 길이만큼 비교한다는 차이와 부분 비교 및 범위 밖 읽기/UB 위험을 정리했다. 사용자 commit `babf329`, `3e2845a`를 확인했다.
-- Next task: Day094 시작. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day094 행을 확인한다.
+- Last completed: Day096
+- Current focus: Day096에서는 CFG를 basic block으로 나누고 조건부 분기, 순차 실행, 역방향 간선을 연결해 `ecx < 4` 반복과 짝수일 때의 `eax += ecx`를 C-like 의사코드로 복원했다. `B5 → B2`를 back edge, `B2 → B6`을 종료 간선으로 판정했으며 최종 `eax = 2`를 계산했다. CS에서는 `jcc`·`jmp`·`ret`의 함수 내부 CFG 후속 경로 수와 일반적인 `call` 처리 방식을 정리했다. Day096의 GDB/objdump 교차검증은 사용자 요청으로 생략했으며, 사용자 commit `28976c0`을 확인했다.
+- Next task: Day097 CFG 2 — switch/jump table. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day097 행을 확인한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -164,6 +164,31 @@ Daily review rule:
 - Files: Day040-100/Day093/.gdb_history, Day040-100/Day093/day93_crackme, Day040-100/Day093/write_up.txt
 - Problems: Ghidra의 `'\a'`와 `'\x03'`는 각각 7과 3이며, `target[i]`에서 이 덧셈을 먼저 제거해야 함수 반환값을 얻을 수 있다. 회전 함수의 역연산 결과는 입력 자체가 아니라 XOR 직후 값이므로 같은 key로 한 번 더 XOR해야 한다. 모든 중간값은 1바이트로 맞춘다.
 - Next: Day094
+
+
+### Day094
+- Topic: Reversing — Crackme 3: keygen logic / chained state verifier
+- Status: done
+- Result: 입력에서 시작해 각 반복의 상태 변화가 다음 반복으로 전달되고 최종 결과 배열과 비교되는 chained-state verifier 흐름을 분석했다. 독립적인 바이트 조건이 아니라 이전 state에 의존하는 순차 계산이라는 점을 기준으로 keygen 로직의 loop/state 추적을 완료했다.
+- Files: Day040-100/Day094/day94_crackme
+- Problems: 이전 반복의 state를 갱신하기 전에 덮어쓰면 데이터 의존성을 잃는다. 각 연산의 8비트 절삭과 정방향 계산 순서를 유지해야 한다.
+- Next: Day095
+
+### Day095
+- Topic: Reversing — 분석 write-up과 C-like pseudo-code
+- Status: done
+- Result: 12바이트 입력의 개행 제거와 길이 검사, `state = 0x3d`에서 시작하는 변환 루프, `memcmp(calculated, target, 12)` 성공 조건을 문서화했다. `key[(5*i+2)%12] ^ input[i]`, 이전 state와 `3*i`의 덧셈, `ROL8`, `(0xa5-7*i) ^ new_state`를 의사코드로 정리하고 역산 순서를 함께 기록했다. CS에서는 의사코드에 분기·반복, 상태 의존성, 자료형 크기와 8비트 오버플로를 보존해야 함을 정리했다.
+- Files: Day040-100/Day095/write_up.txt
+- Problems: `old_state → new_state` 의존성을 유지해야 하며, `movzx`와 `movsx`의 0 확장·부호 확장을 구분해야 한다. write-up에는 objdump/GDB 교차검증 계획만 기록되어 있다.
+- Next: Day096
+
+### Day096
+- Topic: Reversing — CFG 1: branch/loop 복원
+- Status: done; GDB/objdump cross-check skipped by user
+- Result: 어셈블리를 6개 basic block으로 나누고 `B5 → B2`의 back edge와 `B2 → B6`의 종료 간선을 찾아 반복문을 복원했다. `ecx < 4`인 동안 반복하고 짝수일 때만 `eax += ecx`를 수행하는 C-like 의사코드를 작성했으며 최종 `eax = 2`를 계산했다. CS에서는 조건부 점프는 보통 2개, 무조건 점프는 1개, `ret`은 함수 내부에서 0개의 후속 경로를 가지며 일반적인 함수 내부 CFG에서는 `call` 뒤 실행이 이어질 수 있음을 정리했다.
+- Files: Day040-100/Day096/write_up.txt
+- Problems: `test ecx, 1; jne`에서 홀수는 `add`를 건너뛰고 짝수는 fall-through한다. basic block의 총개수와 한 블록의 outgoing edge 수를 구분해야 한다. 계획표의 GDB/objdump 교차검증은 사용자 요청으로 생략했다.
+- Next: Day097
 
 ---
 
