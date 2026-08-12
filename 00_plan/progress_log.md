@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day096
-- Current focus: Day096에서는 CFG를 basic block으로 나누고 조건부 분기, 순차 실행, 역방향 간선을 연결해 `ecx < 4` 반복과 짝수일 때의 `eax += ecx`를 C-like 의사코드로 복원했다. `B5 → B2`를 back edge, `B2 → B6`을 종료 간선으로 판정했으며 최종 `eax = 2`를 계산했다. CS에서는 `jcc`·`jmp`·`ret`의 함수 내부 CFG 후속 경로 수와 일반적인 `call` 처리 방식을 정리했다. Day096의 GDB/objdump 교차검증은 사용자 요청으로 생략했으며, 사용자 commit `28976c0`을 확인했다.
-- Next task: Day097 CFG 2 — switch/jump table. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day097 행을 확인한다.
+- Last completed: Day097
+- Current focus: Day097에서는 stripped PIE의 switch 함수를 분석해 `a-0x14` 범위 검사, 4바이트 signed 상대 오프셋 jump table, case별 연산과 공통 반환 블록을 복원했다. 두 번째 검증식을 역산해 `b=0x4d2a9c17`을 구하고 case별 결과를 대입해 `a=0x1a`를 찾아 최종 입력 `26 1294638103`으로 성공했다. GDB에서 `edi=26`, `esi=0x4d2a9c17`, `ecx=6`, 초기 XOR 결과 `edx=0xe8e90266`과 실제 간접 점프 경로를 교차검증했다. CS에서는 조밀도에 따른 jump table 선택, `ja`의 unsigned 범위 검사, `movsxd`를 이용한 음수 상대 오프셋 해석을 정리했으며 사용자 commit `b12813b`을 확인했다.
+- Next task: Day098. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day098 행을 확인한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -189,6 +189,14 @@ Daily review rule:
 - Files: Day040-100/Day096/write_up.txt
 - Problems: `test ecx, 1; jne`에서 홀수는 `add`를 건너뛰고 짝수는 fall-through한다. basic block의 총개수와 한 블록의 outgoing edge 수를 구분해야 한다. 계획표의 GDB/objdump 교차검증은 사용자 요청으로 생략했다.
 - Next: Day097
+
+### Day097
+- Topic: Reversing — CFG 2: switch/jump table
+- Status: done
+- Result: stripped PIE의 switch 함수에서 `a-0x14`로 case 인덱스를 만들고 `ja`로 0~7 범위를 검사한 뒤, 4바이트 signed 상대 오프셋을 `movsxd`로 확장해 테이블 기준 주소에 더하고 간접 점프하는 흐름을 복원했다. 두 번째 함수의 `ROR32` 조건을 역산해 `b=0x4d2a9c17`을 구하고 case별 결과를 비교해 `a=0x1a`를 찾았으며 최종 입력 `26 1294638103`으로 성공했다. GDB에서 인자, case 인덱스, 초기 XOR 값과 실제 jump table 경로를 확인했다. CS에서는 case 밀도에 따른 `cmp`/분기 트리/jump table 선택, `ja`의 `CF=0 && ZF=0` 조건, signed 상대 오프셋의 부호 확장을 정리했다.
+- Files: Day040-100/Day097/.gdb_history, Day040-100/Day097/day97_switch_lab, Day040-100/Day097/write_up.txt
+- Problems: Ghidra의 함수 이름은 stripped 바이너리의 심볼이 아니며 PIE에서는 파일상 offset `0x1260`에 runtime base를 더해 breakpoint를 걸어야 한다. jump table 항목은 절대주소가 아니라 테이블 기준의 signed 32비트 상대 오프셋이므로 `mov ecx`의 zero-extension과 `movsxd rcx`의 sign-extension을 구분해야 한다.
+- Next: Day098
 
 ---
 
