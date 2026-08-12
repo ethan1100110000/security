@@ -1,0 +1,21 @@
+Day098 - CFG 3: indirect call
+
+Goal
+- Find the function-pointer or indirect-call candidate in Ghidra.
+- Explain where the call target comes from and how input selects it.
+- Recover one input that prints ACCESS GRANTED.
+- Cross-check at least once with GDB or objdump.
+
+Binary
+- day98_indirect_lab
+- Linux x86-64 ELF, PIE, stripped
+- SHA-256 is recorded in this folder after build.
+
+Suggested order
+1. Find main from the entry path.
+2. Recover the input format and length/range checks.
+3. Find the indirect call instruction.
+4. Trace the function pointer backward to its table.
+5. Analyze only the selected callee and invert its verifier.
+
+Do not brute-force the final input. Record evidence in day98_rev.md.
