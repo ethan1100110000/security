@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day097
-- Current focus: Day097에서는 stripped PIE의 switch 함수를 분석해 `a-0x14` 범위 검사, 4바이트 signed 상대 오프셋 jump table, case별 연산과 공통 반환 블록을 복원했다. 두 번째 검증식을 역산해 `b=0x4d2a9c17`을 구하고 case별 결과를 대입해 `a=0x1a`를 찾아 최종 입력 `26 1294638103`으로 성공했다. GDB에서 `edi=26`, `esi=0x4d2a9c17`, `ecx=6`, 초기 XOR 결과 `edx=0xe8e90266`과 실제 간접 점프 경로를 교차검증했다. CS에서는 조밀도에 따른 jump table 선택, `ja`의 unsigned 범위 검사, `movsxd`를 이용한 음수 상대 오프셋 해석을 정리했으며 사용자 commit `b12813b`을 확인했다.
-- Next task: Day098. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day098 행을 확인한다.
+- Last completed: Day098
+- Current focus: Day098에서는 stripped PIE 바이너리의 함수 포인터 테이블과 간접 호출 `call qword ptr [rcx+rax*8]`을 분석했다. `param_1-0x14`의 unsigned 범위 검사로 입력 20~23이 인덱스 0~3에 매핑되고, `RDI=입력`, `RSI=출력 버퍼`, `RDX=12`로 선택 함수가 호출됨을 복원했다. 0x1300·0x13d0 경로의 역산 결과를 제외하고, 0x14b0의 ROL8·XOR·연쇄 state 갱신을 역산해 최종 입력 `22 CALL_PTR_98!`을 구했다. GDB에서 `EAX=2`, `[RCX+RAX*8]=PIE base+0x14b0`, 실제 callee 진입과 인자를 교차검증했으며 문자 변경·함수 선택 변경 실패 케이스도 확인했다. CS에서는 범위 검사 부재 시 테이블 밖 함수 포인터 호출, 테이블 항목 변조, 읽기 전용 배치·CFI, NX 환경의 기존 코드 재사용을 정리했으며 사용자 commit `9096628`을 확인했다.
+- Next task: Day099. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day099 행을 확인한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -197,6 +197,15 @@ Daily review rule:
 - Files: Day040-100/Day097/.gdb_history, Day040-100/Day097/day97_switch_lab, Day040-100/Day097/write_up.txt
 - Problems: Ghidra의 함수 이름은 stripped 바이너리의 심볼이 아니며 PIE에서는 파일상 offset `0x1260`에 runtime base를 더해 breakpoint를 걸어야 한다. jump table 항목은 절대주소가 아니라 테이블 기준의 signed 32비트 상대 오프셋이므로 `mov ecx`의 zero-extension과 `movsxd rcx`의 sign-extension을 구분해야 한다.
 - Next: Day098
+
+
+### Day098
+- Topic: Reversing — CFG 3: indirect call / function pointer
+- Status: done
+- Result: `param_1-0x14`의 unsigned 범위 검사와 함수 포인터 테이블을 추적해 입력 20~23이 각각 0x1300, 0x13d0, 0x14b0, 0x15a0에 매핑됨을 복원했다. `call qword ptr [rcx+rax*8]`에서 RCX는 테이블 시작 주소, RAX는 인덱스이며 `RDI=입력`, `RSI=출력 버퍼`, `RDX=12`로 전달됨을 확인했다. 0x14b0 함수의 ROL8, XOR, 연쇄 state 갱신을 역산해 성공 입력 `22 CALL_PTR_98!`을 구하고 실제 성공을 확인했다. GDB에서 `EAX=2`, `[RCX+RAX*8]=PIE base+0x14b0`, 실제 함수 진입과 인자를 검증했으며 `22 CALL_PTR_98?`와 `21 CALL_PTR_98!`은 모두 실패했다. CS에서는 인덱스 범위 검사, 함수 포인터 테이블 변조, 읽기 전용 배치와 CFI, NX 환경에서의 기존 실행 코드 재사용을 정리했다.
+- Files: Day040-100/Day098/.gdb_history, Day040-100/Day098/SHA256SUMS, Day040-100/Day098/START_HERE.txt, Day040-100/Day098/day98_indirect_lab, Day040-100/Day098/day98_rev.md, Day040-100/Day098/write_up.txt
+- Problems: 간접 호출 분석의 핵심은 모든 후보 함수의 복잡한 연산을 푸는 것이 아니라 입력에서 인덱스와 함수 포인터가 만들어지는 경로를 먼저 복원하고, 가능한 callee 중 성공 조건을 만족하는 경로를 선별하는 것이다. 인덱스가 정상 범위여도 테이블 항목 자체가 변조되면 호출 대상이 바뀌므로 범위 검사만으로는 충분하지 않다.
+- Next: Day099
 
 ---
 
