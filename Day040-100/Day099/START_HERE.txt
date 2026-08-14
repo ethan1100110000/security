@@ -1,0 +1,21 @@
+Day099 - Anti-debug 1: ptrace pattern
+
+Goal
+- Find the anti-debug check in Ghidra and explain its evidence.
+- Recover the normal input-validation flow hidden behind the check.
+- Record at least two bypass ideas, then verify one in GDB.
+- Recover one input that prints ACCESS GRANTED.
+
+Binary
+- day99_ptrace_lab
+- Linux x86-64 ELF, PIE, stripped
+
+Suggested order
+1. Find main from the entry path.
+2. Identify the ptrace call and its arguments.
+3. Follow the return-value branch.
+4. Predict normal execution and execution under GDB.
+5. Choose one temporary GDB bypass.
+6. Analyze the token verifier only after reaching it.
+
+Do not brute-force the token. Record static evidence and dynamic evidence.
