@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day098
-- Current focus: Day098에서는 stripped PIE 바이너리의 함수 포인터 테이블과 간접 호출 `call qword ptr [rcx+rax*8]`을 분석했다. `param_1-0x14`의 unsigned 범위 검사로 입력 20~23이 인덱스 0~3에 매핑되고, `RDI=입력`, `RSI=출력 버퍼`, `RDX=12`로 선택 함수가 호출됨을 복원했다. 0x1300·0x13d0 경로의 역산 결과를 제외하고, 0x14b0의 ROL8·XOR·연쇄 state 갱신을 역산해 최종 입력 `22 CALL_PTR_98!`을 구했다. GDB에서 `EAX=2`, `[RCX+RAX*8]=PIE base+0x14b0`, 실제 callee 진입과 인자를 교차검증했으며 문자 변경·함수 선택 변경 실패 케이스도 확인했다. CS에서는 범위 검사 부재 시 테이블 밖 함수 포인터 호출, 테이블 항목 변조, 읽기 전용 배치·CFI, NX 환경의 기존 코드 재사용을 정리했으며 사용자 commit `9096628`을 확인했다.
-- Next task: Day099. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day099 행을 확인한다.
+- Last completed: Day099
+- Current focus: Day099에서는 stripped PIE 바이너리에서 `ptrace(PTRACE_TRACEME, 0, 0, 0)` 기반 anti-debug 함수를 찾고, 원본 반환값 `-1`을 bool `true(1)`로 변환해 `Debugger detected` 후 종료하는 흐름을 복원했다. GDB에서 PIE base `+0x124b`의 ptrace 호출 직후 `RAX=-1`을 확인하고 `set $rax=0`으로 바꿔 탐지 분기를 우회해 Token 입력 지점까지 진행했다. 검증 함수의 `strlen(input)==12`와 `diff |= input[i] ^ data1[i] ^ data2[i]`를 분석해 `input[i]=data1[i]^data2[i]`로 역산하고 `TRACE_BYPASS`로 성공했다. 같은 길이 오답과 13바이트 입력 실패도 확인했다. CS에서는 일시적 레지스터 변경과 정적 패치, LD_PRELOAD 심볼 interposition, PLT/GOT 연결 및 x86-64 `execve` shellcode 레지스터를 정리했으며 사용자 commit `70d553f`을 확인했다.
+- Next task: Day100. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day100 행을 확인한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -206,6 +206,15 @@ Daily review rule:
 - Files: Day040-100/Day098/.gdb_history, Day040-100/Day098/SHA256SUMS, Day040-100/Day098/START_HERE.txt, Day040-100/Day098/day98_indirect_lab, Day040-100/Day098/day98_rev.md, Day040-100/Day098/write_up.txt
 - Problems: 간접 호출 분석의 핵심은 모든 후보 함수의 복잡한 연산을 푸는 것이 아니라 입력에서 인덱스와 함수 포인터가 만들어지는 경로를 먼저 복원하고, 가능한 callee 중 성공 조건을 만족하는 경로를 선별하는 것이다. 인덱스가 정상 범위여도 테이블 항목 자체가 변조되면 호출 대상이 바뀌므로 범위 검사만으로는 충분하지 않다.
 - Next: Day099
+
+
+### Day099
+- Topic: Reversing — Anti-debug 1: ptrace pattern
+- Status: done
+- Result: `ptrace(PTRACE_TRACEME)`의 성공·실패 반환값을 bool로 변환하는 anti-debug wrapper와 caller의 종료 분기를 복원했다. GDB 추적 중 ptrace 호출 직후 `RAX=-1`을 확인한 뒤 `RAX=0`으로 변경해 wrapper 반환값을 false로 만들고 정상 Token 검증 흐름에 진입했다. 검증 함수는 12바이트 입력에 대해 `diff |= input[i] ^ data1[i] ^ data2[i]`를 누적하고 `diff==0`일 때 성공하므로 `input[i]=data1[i]^data2[i]`로 역산해 `TRACE_BYPASS`를 구했다. 실제 `ACCESS GRANTED`와 `TRACE_BYPAS?`, `TRACE_BYPASSX` 실패를 확인했다. CS에서는 동적 레지스터 우회, 정적 명령어 패치, LD_PRELOAD를 통한 동적 심볼 선점과 PLT/GOT 연결을 비교했고, shellcode 복습에서 `execve("/bin/sh", NULL, NULL)`의 `RAX=59`, `RDI=문자열 주소`, `RSI=0`, `RDX=0`을 정리했다.
+- Files: Day040-100/Day099/.gdb_history, Day040-100/Day099/SHA256SUMS, Day040-100/Day099/START_HERE.txt, Day040-100/Day099/day99_ptrace_lab, Day040-100/Day099/day99_rev.md, Day040-100/Day099/write_up.txt
+- Problems: `PTRACE_TRACEME`는 GDB를 직접 식별하는 것이 아니라 이미 tracer가 존재해 요청이 실패하는지를 이용한다. sandbox나 보안 정책이 ptrace를 막아도 `-1`이 반환될 수 있어 오탐이 가능하다. `set $rax=0`은 현재 프로세스에서만 유효하며 재실행 시 다시 우회해야 하고, 지속적인 우회는 정적 패치나 함수 interposition 같은 별도 방법이 필요하다.
+- Next: Day100
 
 ---
 
