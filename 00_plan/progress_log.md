@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day099
-- Current focus: Day099에서는 stripped PIE 바이너리에서 `ptrace(PTRACE_TRACEME, 0, 0, 0)` 기반 anti-debug 함수를 찾고, 원본 반환값 `-1`을 bool `true(1)`로 변환해 `Debugger detected` 후 종료하는 흐름을 복원했다. GDB에서 PIE base `+0x124b`의 ptrace 호출 직후 `RAX=-1`을 확인하고 `set $rax=0`으로 바꿔 탐지 분기를 우회해 Token 입력 지점까지 진행했다. 검증 함수의 `strlen(input)==12`와 `diff |= input[i] ^ data1[i] ^ data2[i]`를 분석해 `input[i]=data1[i]^data2[i]`로 역산하고 `TRACE_BYPASS`로 성공했다. 같은 길이 오답과 13바이트 입력 실패도 확인했다. CS에서는 일시적 레지스터 변경과 정적 패치, LD_PRELOAD 심볼 interposition, PLT/GOT 연결 및 x86-64 `execve` shellcode 레지스터를 정리했으며 사용자 commit `70d553f`을 확인했다.
-- Next task: Day100. 새 채팅에서 먼저 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day100 행을 확인한다.
+- Last completed: Day100
+- Current focus: Day100에서는 stripped PIE 바이너리의 `clock_gettime(CLOCK_MONOTONIC)` 기반 timing 검사와 `sigaction(SIGTRAP)`·`INT3` 기반 trap 검사를 분석했다. timing 함수는 루프 전후 경과 시간을 나노초로 계산해 `50,000,000ns(50ms)` 초과 시 `setg`로 true를 반환하며, trap 함수는 SIGTRAP handler가 전역 flag를 1로 변경하지 못한 경우 `test → sete`로 true를 반환한다. GDB에서 각 검사 함수의 호출 직후 `EAX=0`으로 변경해 두 탐지를 우회하고 `TIME_TRAP_100`으로 `ACCESS GRANTED`를 확인했다. objdump에서 `cmp rax,0x2faf080 → setg`와 `int3 → mov flag → test → sete`를 교차검증했다. CS에서는 CLOCK_REALTIME과 CLOCK_MONOTONIC, GDB의 SIGTRAP 전달 정책, Full RELRO의 GOT 보호, NX와 ret2libc를 복습했으며 사용자 commit `0d66bd0`을 확인했다.
+- Next task: Day101. 다음 공부 시작 전 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day101 행을 확인한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -215,6 +215,15 @@ Daily review rule:
 - Files: Day040-100/Day099/.gdb_history, Day040-100/Day099/SHA256SUMS, Day040-100/Day099/START_HERE.txt, Day040-100/Day099/day99_ptrace_lab, Day040-100/Day099/day99_rev.md, Day040-100/Day099/write_up.txt
 - Problems: `PTRACE_TRACEME`는 GDB를 직접 식별하는 것이 아니라 이미 tracer가 존재해 요청이 실패하는지를 이용한다. sandbox나 보안 정책이 ptrace를 막아도 `-1`이 반환될 수 있어 오탐이 가능하다. `set $rax=0`은 현재 프로세스에서만 유효하며 재실행 시 다시 우회해야 하고, 지속적인 우회는 정적 패치나 함수 interposition 같은 별도 방법이 필요하다.
 - Next: Day100
+
+
+### Day100
+- Topic: Reversing — Anti-debug 2: timing / trap
+- Status: done
+- Result: `clock_gettime(CLOCK_MONOTONIC)` 호출 사이의 루프 실행 시간을 계산하고 `cmp rax,0x2faf080; setg al`로 50ms 초과 여부를 반환하는 timing 검사를 복원했다. 루프에서 50ms 이상 정지해 `Timing anomaly detected`를 재현한 뒤 timing 함수 반환 직후 `EAX=0`으로 변경해 우회했다. trap 검사는 SIGTRAP handler 등록, 전역 flag 초기화, `INT3`, `test/sete` 순서이며 GDB가 SIGTRAP을 가로채 flag가 0으로 남으면 1을 반환해 `Trap anomaly detected`가 발생함을 확인했다. trap 함수 반환값도 0으로 변경해 정상 경로에 진입하고 `TIME_TRAP_100`으로 `ACCESS GRANTED`를 확인했다. objdump로 timing 상수와 `INT3` 이후 flag 검사 명령을 교차검증했다. CS에서는 monotonic clock의 필요성, SIGTRAP 전달 정책, Full RELRO, NX, ret2libc와 `pop rdi; ret`을 복습했다.
+- Files: Day040-100/Day100/.gdb_history, Day040-100/Day100/SHA256SUMS, Day040-100/Day100/START_HERE.txt, Day040-100/Day100/day100_timing_trap_lab, Day040-100/Day100/write_up.txt
+- Problems: `0x2faf080`은 80ms가 아니라 50,000,000ns인 50ms이며 `setg`이므로 정확히 50ms는 탐지하지 않는다. GDB가 의도적 `INT3`를 소비하면 프로그램 handler가 실행되지 않아 flag가 0으로 남는다. `handle SIGTRAP ... pass`의 전역 변경은 다른 trap/step 동작에도 영향을 줄 수 있으므로 특정 함수 반환값만 바꾸는 편이 영향 범위가 좁다. `set $eax=0` 우회는 현재 실행에만 유효하므로 재실행할 때 다시 적용해야 한다.
+- Next: Day101
 
 ---
 
