@@ -1,0 +1,24 @@
+Day100 - Anti-debug 2: timing / trap
+
+Goal
+- Find the timing measurement and threshold comparison.
+- Find the SIGTRAP handler and intentional INT3 instruction.
+- Predict normal execution and execution under GDB.
+- Verify one timing anomaly and one trap anomaly.
+- Record at least one bypass idea for each check.
+- Recover one input that prints ACCESS GRANTED.
+
+Binary
+- day100_timing_trap_lab
+- Linux x86-64 ELF, PIE, stripped
+
+Suggested order
+1. Find main from the entry path.
+2. Follow the timing-anomaly string XREF.
+3. Identify start/end measurements and the measured region.
+4. Follow the trap-anomaly string XREF.
+5. Identify handler registration, INT3, and the checked flag.
+6. Plan GDB verification before setting breakpoints.
+7. Analyze the token verifier only after both checks are understood.
+
+Do not brute-force the token. Keep the two anti-debug checks separate.
