@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day100
-- Current focus: Day100에서는 stripped PIE 바이너리의 `clock_gettime(CLOCK_MONOTONIC)` 기반 timing 검사와 `sigaction(SIGTRAP)`·`INT3` 기반 trap 검사를 분석했다. timing 함수는 루프 전후 경과 시간을 나노초로 계산해 `50,000,000ns(50ms)` 초과 시 `setg`로 true를 반환하며, trap 함수는 SIGTRAP handler가 전역 flag를 1로 변경하지 못한 경우 `test → sete`로 true를 반환한다. GDB에서 각 검사 함수의 호출 직후 `EAX=0`으로 변경해 두 탐지를 우회하고 `TIME_TRAP_100`으로 `ACCESS GRANTED`를 확인했다. objdump에서 `cmp rax,0x2faf080 → setg`와 `int3 → mov flag → test → sete`를 교차검증했다. CS에서는 CLOCK_REALTIME과 CLOCK_MONOTONIC, GDB의 SIGTRAP 전달 정책, Full RELRO의 GOT 보호, NX와 ret2libc를 복습했으며 사용자 commit `0d66bd0`을 확인했다.
-- Next task: Day101. 다음 공부 시작 전 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day101 행을 확인한다.
+- Last completed: Day101
+- Current focus: Day101에서는 stripped PIE 바이너리의 `ptrace(PTRACE_TRACEME)` 원본 반환값 `-1`이 wrapper의 bool `1`로 변환되고, main의 `TEST EAX,EAX → JNZ`가 탐지 실패 경로를 선택하는 흐름을 복원했다. 실행 가능한 LOAD segment의 `p_vaddr=0x1000`, `p_offset=0x1000`을 이용해 조건 분기 VA `0x1336`의 file offset도 `0x1336`임을 계산하고, 원본 `0f 85 8c 00 00 00`을 6개의 NOP로 바꾼 별도 패치본을 만들었다. GDB에서 wrapper 반환값이 여전히 `EAX=1`인 상태에서도 입력 경로에 도달하고 재실행 후에도 우회가 유지됨을 확인했다. 원본과 패치본 SHA-256 변화를 기록했으며, CS에서는 디스크 파일 패치와 runtime memory 변경, NX·Full RELRO의 보호 범위, 무결성 검사, GOT overwrite의 인자 호환성을 정리했다. 사용자 commit `9d4e7a5`을 확인했다.
+- Next task: Day102 — Pwn from Ghidra 1: 취약점 위치 찾기. 다음 공부 시작 전 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day102 행을 확인한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -224,6 +224,15 @@ Daily review rule:
 - Files: Day040-100/Day100/.gdb_history, Day040-100/Day100/SHA256SUMS, Day040-100/Day100/START_HERE.txt, Day040-100/Day100/day100_timing_trap_lab, Day040-100/Day100/write_up.txt
 - Problems: `0x2faf080`은 80ms가 아니라 50,000,000ns인 50ms이며 `setg`이므로 정확히 50ms는 탐지하지 않는다. GDB가 의도적 `INT3`를 소비하면 프로그램 handler가 실행되지 않아 flag가 0으로 남는다. `handle SIGTRAP ... pass`의 전역 변경은 다른 trap/step 동작에도 영향을 줄 수 있으므로 특정 함수 반환값만 바꾸는 편이 영향 범위가 좁다. `set $eax=0` 우회는 현재 실행에만 유효하므로 재실행할 때 다시 적용해야 한다.
 - Next: Day101
+
+
+### Day101
+- Topic: Reversing — Anti-debug 3: 우회 노트 / persistent branch patch
+- Status: done
+- Result: `ptrace(PTRACE_TRACEME)`의 원본 `RAX=-1`이 `cmp/sete/movzx`를 거쳐 wrapper 반환값 `EAX=1`이 되고, main의 `TEST → JNZ`가 탐지 실패 블록을 선택하는 흐름을 복원했다. `readelf -lW`로 실행 가능한 LOAD segment를 확인해 `file_offset = 0x1336 - 0x1000 + 0x1000 = 0x1336`을 계산했다. 원본을 보존한 채 복사본의 6바이트 `0f 85 8c 00 00 00`을 `90` 6개로 패치하고, GDB에서 `EAX=1`이 유지된 상태에서도 Token 입력 경로에 도달함을 확인했다. 패치본은 GDB 재실행 후에도 우회가 유지됐고 원본은 계속 탐지됐다. 원본 SHA-256은 `28e890295425379ce96d41e5dc14559e18acedc8f615c38b5d5dfbc7c8c6fefe`, 패치본은 `e78fcfee9f71de0991494be6db02cdf00f9edf56a06e6bde4012e76e5d437f03`이다. CS에서는 디스크 패치와 runtime patch의 지속성, NX·Full RELRO의 보호 대상, 무결성 검사와 GOT overwrite의 인자 호환성을 정리했다.
+- Files: Day101-160/Day101/.gdb_history, Day101-160/Day101/SHA256SUMS, Day101-160/Day101/START_HERE.txt, Day101-160/Day101/day101_patch_lab, Day101-160/Day101/day101_patch_lab_patched, Day101-160/Day101/day101_rev.md, Day101-160/Day101/write_up.txt
+- Problems: `-1`은 ptrace의 원본 반환값이고 main이 받는 wrapper 결과는 `1`이므로 두 관찰 지점을 구분해야 한다. Ghidra의 VA를 파일 오프셋으로 바로 가정하지 않고 해당 LOAD segment의 `p_vaddr/p_offset`으로 변환해야 한다. 6바이트 JNZ의 일부만 덮으면 남은 바이트가 잘못된 명령으로 해석될 수 있다. 정적 패치는 재실행 후에도 유지되지만 파일 해시와 코드가 바뀌므로 서명·self-integrity 검사에 탐지될 수 있다.
+- Next: Day102
 
 ---
 
