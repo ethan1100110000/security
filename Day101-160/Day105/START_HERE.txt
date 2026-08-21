@@ -1,0 +1,24 @@
+Day105 - Stripped Mini Exam
+
+제한시간 권장: 60분
+
+규칙
+- 소스는 제공하지 않는다.
+- 정답 함수명, 취약점 주소, offset은 먼저 묻지 않는다.
+- Ghidra 분석을 먼저 하고 llvm-objdump/llvm-readelf로 최소 1회 교차 검증한다.
+- macOS에서는 Linux ELF를 실행하지 않아도 정적 분석을 완료할 수 있다.
+
+분석 과제
+1. ELF 보호기법을 근거와 함께 판정한다.
+2. entry에서 main 후보를 찾는다.
+3. 문자열, Imports, XREF를 이용해 주요 함수 흐름을 복원한다.
+4. 외부 입력을 받는 모든 호출을 비교한다.
+5. 취약점 후보가 있다면 buffer 위치, 요청 길이, Canary/RIP offset을 계산한다.
+6. 도달 가능한 경로와 decoy 또는 안전한 호출을 구분한다.
+7. 취약점 존재 여부와 실제 exploitability를 별도로 평가한다.
+8. 핵심 판단을 llvm-objdump 또는 llvm-readelf 출력으로 검증한다.
+
+제출
+- day105_rev.md를 완성한다.
+- 사용한 명령과 주소 계산 근거를 남긴다.
+- 성공적인 분석뿐 아니라 오탐 후보 하나도 설명한다.
