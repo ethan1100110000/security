@@ -1,0 +1,130 @@
+# Day102–105: Pwn from Ghidra 종합 Write-up
+
+## 1. 취약점 탐색
+
+stripped PIE 바이너리를 Ghidra로 분석했다. `_start`에서 `__libc_start_main`의 첫 번째 인자로 전달되는 주소를 추적해 main을 찾고, Imports와 XREF를 이용해 `fgets`, `read`, `printf` 등의 호출 흐름을 확인했다.
+
+안전한 입력은 목적지 공간보다 작은 길이를 `fgets`에 전달했지만, 취약 함수는 다음과 같이 스택 버퍼보다 큰 입력을 받았다.
+
+```c
+read(0, stack_buffer, requested_size);
+```
+
+Day102 바이너리에서는 버퍼가 `[RBP-0x30]`, 카나리가 `[RBP-0x8]`에 있었고 `read` 요청 길이는 `0x90`, 즉 144바이트였다. 버퍼 시작부터 카나리까지는 40바이트뿐이므로 Stack BOF가 발생한다.
+
+출력은 `%.*s`로 최대 16바이트만 읽기 때문에 카나리까지 도달하지 못하며 leak primitive로 사용할 수 없다.
+
+## 2. Stack offset 계산
+
+Ghidra가 보여주는 배열 크기는 원본 C 배열과 padding을 합쳐 복원한 값일 수 있으므로, 정확한 offset은 어셈블리의 실제 주소 차이로 계산했다.
+
+Day102의 stack layout은 다음과 같다.
+
+```text
+RBP-0x30 : buffer
+RBP-0x08 : Canary
+RBP      : saved RBP
+RBP+0x08 : return address
+```
+
+따라서 offset은 다음과 같다.
+
+```text
+buffer → Canary   = 0x28
+buffer → saved RBP = 0x30
+buffer → RIP       = 0x38
+```
+
+최대 입력 144바이트에서 RIP까지의 56바이트와 RIP 8바이트를 제외하면 후속 ROP chain 공간은 80바이트다.
+
+```python
+payload  = b"A" * 0x28
+payload += p64(canary)
+payload += b"B" * 8
+payload += p64(new_rip)
+payload += rop_chain
+```
+
+## 3. Exploit 계획
+
+바이너리에는 NX, PIE, Stack Canary, Full RELRO가 적용되어 있었다.
+
+* Canary: 정확한 값을 모르면 RIP에 도달하기 전에 `__stack_chk_fail()`이 호출된다.
+* PIE: gadget과 PLT/GOT의 runtime 주소 계산에 PIE base가 필요하다.
+* NX: 스택에 넣은 shellcode를 직접 실행할 수 없다.
+* Full RELRO: GOT 읽기는 가능하지만 GOT overwrite는 불가능하다.
+
+따라서 조건부 exploit 순서는 다음과 같다.
+
+```text
+Canary leak
+→ PIE leak
+→ puts(puts@got)으로 libc leak
+→ libc base 계산
+→ ret / pop rdi / "/bin/sh" / system
+```
+
+하지만 현재 출력 경로에는 Canary·PIE 주소를 유출할 primitive가 없다. 따라서 BOF는 존재하지만 안정적인 RIP 제어와 ROP 실행은 불가능하며, 긴 입력으로 카나리 검사를 발생시키는 crash/DoS 정도가 가능하다.
+
+## 4. Day105 Stripped Mini Exam
+
+Day105 바이너리에서도 `_start`와 `__libc_start_main`을 통해 main을 복원하고 모든 입력 함수의 XREF를 비교했다. `inspect`와 명령 입력에 사용되는 `fgets`는 크기가 제한되어 안전했지만, `submit` 경로에서는 다음 BOF를 발견했다.
+
+```text
+buffer        = RBP-0x40
+Canary        = RBP-0x08
+read size     = 0xa0
+Canary offset = 0x38
+saved RBP     = 0x40
+RIP offset    = 0x48
+```
+
+`0xa0`은 160바이트이므로 RIP 뒤에 사용할 수 있는 ROP 공간은 다음과 같다.
+
+```text
+160 - 0x48 - 8 = 80바이트
+```
+
+`read` 반환값이 `0x18`보다 크면 계산 길이를 `0x18`로 제한하지만, 이 제한은 입력이 이미 스택에 기록된 이후 적용되므로 BOF를 방지하지 못한다.
+
+Receipt 계산은 다음 rolling hash였다.
+
+```c
+state = 0x13579bdf;
+
+for (i = 0; i < length; i++) {
+    state = ROL32(state, 5);
+    state ^= input[i] + i * 0x11;
+}
+```
+
+계산 함수는 공격자가 입력한 처음 24바이트만 읽으므로 56바이트 뒤의 Canary나 PIE 주소가 결과에 포함되지 않는다. 따라서 Receipt 역시 leak primitive가 아니다.
+
+## 5. Decoy 판별
+
+Defined Strings에서 main 흐름에 나타나지 않는 `"Archive self-test failed"` 문자열을 발견하고 XREF를 따라갔다. 해당 함수에는 들어오는 CALL 또는 DATA XREF가 없었다.
+
+함수 내부에서는 두 24바이트 영역을 모두 0으로 초기화한 뒤 다음 비교를 수행했다.
+
+```c
+memcmp(buffer_a, buffer_b, 0x18);
+```
+
+두 영역이 동일하므로 결과는 항상 0이며 실패 문자열도 출력되지 않는다. 따라서 이 함수는 취약점이 아니라 도달 불가능한 decoy로 판단했다.
+
+## 결론
+
+소스 없는 바이너리에서는 다음 순서로 분석했다.
+
+```text
+entry에서 main 복원
+→ Imports와 문자열 확인
+→ XREF로 입력 함수 추적
+→ 목적지와 요청 길이 비교
+→ 어셈블리로 stack offset 계산
+→ 보호기법과 leak primitive 확인
+→ 취약점과 exploitability 분리
+→ incoming XREF로 decoy 판별
+```
+
+Ghidra의 디컴파일 결과만 신뢰하지 않고 `llvm-objdump`와 `llvm-readelf`로 버퍼 주소, 입력 길이, 카나리 위치와 ELF 보호기법을 교차 검증했다.
