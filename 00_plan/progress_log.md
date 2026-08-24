@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day105
-- Current focus: Day102~105에서는 Ghidra와 어셈블리를 함께 사용해 입력 함수의 안전성, BOF offset, 보호 기법과 실제 exploitability를 판정했다. Day102의 `read(0, [rbp-0x30], 0x90)`에서 overflow를 찾고 안전한 `fgets`와 구분했으며, Day103에서는 버퍼 시작점과 `[rbp-0x8]` canary를 기준으로 canary/saved RBP/RIP offset을 계산했다. Day104에서는 NX·PIE·Canary·Full RELRO가 모두 켜진 상태에서 leak primitive가 없으면 신뢰할 수 있는 ROP로 이어지지 않고 주로 종료만 유발함을 정리했다. Day105 stripped mini exam에서는 `__libc_start_main`의 첫 번째 인자로 main을 확정하고, submit 경로의 56바이트 버퍼와 160바이트 `read`를 찾아 BOF를 확인했다. offset은 canary `0x38`, saved RBP `0x40`, RIP `0x48`, RIP 뒤 가용 공간 80바이트이며, 출력은 처음 24바이트로 제한돼 canary/PIE leak으로 쓰기 어렵다. caller/XREF가 없는 zero-buffer `memcmp` 함수는 decoy로 판정했다. 통합 write-up 사용자 commit `498b65b`을 확인했다.
-- Next task: Day106 — Malware static 1: 안전 환경. 네트워크 차단, 샘플 관리, 분석 노트 양식을 준비하고 Ghidra 추론을 objdump 등 정적 증거로 교차검증한다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day106
+- Current focus: Day106에서는 실제 샘플을 실행하지 않는 malware static analysis의 안전 절차를 정리했다. 가상 교육용 샘플을 기준으로 Sample ID, 원본 파일명, SHA-256, 크기, 형식·아키텍처, 출처와 실행 여부를 기록하고, VM 네트워크·공유 폴더·클립보드·드래그 앤 드롭·개인 계정 차단 및 clean snapshot을 문서화했다. strings/imports는 capability의 단서일 뿐 실제 동작의 확정 근거가 아니므로 문자열 XREF, caller 도달 가능성, 함수 인자와 반환값의 data flow를 확인해야 함을 구분했다. 보고서를 confirmed observations, reasonable inferences, unconfirmed claims로 나누고 `sha256sum`, `file`, `readelf`, `strings`, `objdump` 명령과 정적 분석의 한계를 기록했다. CS에서는 trust boundary, isolation, least privilege, attack surface, defense in depth와 VM snapshot이 VM 외부 피해를 복구하지 못한다는 점을 정리했다. 사용자 commit `cea4378`을 확인했다.
+- Next task: Day107 — Malware static 2: strings/imports. 문자열과 import의 XREF 및 데이터 흐름을 근거로 capability를 추정하되 관찰·추론·미확정 내용을 분리한다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -266,6 +266,15 @@ Daily review rule:
 - Files: Day101-160/Day105/write_up.txt; lab binary와 분석 템플릿은 draft PR #1의 `day105-stripped-exam` 브랜치에 보존
 - Problems: read 반환값을 나중에 24로 고정해도 이미 발생한 overflow는 취소되지 않는다. 반대로 출력이 항상 버퍼 앞부분 24바이트라면 BOF만으로 canary/PIE 값이 노출되지는 않는다. decoy 여부는 문자열 존재가 아니라 실제 caller와 참조 가능성으로 판정해야 한다.
 - Next: Day106
+
+
+### Day106
+- Topic: Reversing — Malware static 1: 안전 환경
+- Status: done
+- Result: 정적 분석 샘플의 식별 정보와 무결성 기록, VM 격리 설정, strings/imports/XREF 증거, 관찰·추론·미확정 주장, 재현 명령과 분석 한계를 하나의 보고서 양식으로 정리했다. 네트워크 Disconnected, 공유 기능 Disabled, 개인 계정 미사용, clean snapshot을 안전 기준으로 잡았고 샘플 실행 없이 분석하는 원칙을 확인했다. CS에서는 신뢰 경계, 최소 권한, 공격 표면, 다층 방어를 학습하고 snapshot은 VM 내부 상태만 복구하며 공유 폴더·정보 유출 같은 외부 피해는 취소하지 못함을 확인했다.
+- Files: Day101-160/Day106/write_up.txt
+- Problems: strings/imports의 존재와 실제 호출을 혼동하면 안 된다. capability를 판단하려면 XREF, caller 도달 가능성, 인자·반환값의 data flow가 필요하다. 격리는 위험을 완전히 제거하는 것이 아니라 VM과 호스트·내부망·외부망 사이 접점을 최소화하는 것이며, 스냅샷은 보안 경계 자체가 아니다. 이번 보고서는 가상 교육용 샘플을 전제로 작성했으므로 실제 실행 행위와 네트워크 결과는 검증하지 않았다.
+- Next: Day107
 
 ---
 
