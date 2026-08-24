@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day101
-- Current focus: Day101에서는 stripped PIE 바이너리의 `ptrace(PTRACE_TRACEME)` 원본 반환값 `-1`이 wrapper의 bool `1`로 변환되고, main의 `TEST EAX,EAX → JNZ`가 탐지 실패 경로를 선택하는 흐름을 복원했다. 실행 가능한 LOAD segment의 `p_vaddr=0x1000`, `p_offset=0x1000`을 이용해 조건 분기 VA `0x1336`의 file offset도 `0x1336`임을 계산하고, 원본 `0f 85 8c 00 00 00`을 6개의 NOP로 바꾼 별도 패치본을 만들었다. GDB에서 wrapper 반환값이 여전히 `EAX=1`인 상태에서도 입력 경로에 도달하고 재실행 후에도 우회가 유지됨을 확인했다. 원본과 패치본 SHA-256 변화를 기록했으며, CS에서는 디스크 파일 패치와 runtime memory 변경, NX·Full RELRO의 보호 범위, 무결성 검사, GOT overwrite의 인자 호환성을 정리했다. 사용자 commit `9d4e7a5`을 확인했다.
-- Next task: Day102 — Pwn from Ghidra 1: 취약점 위치 찾기. 다음 공부 시작 전 `git pull`을 실행한 뒤 이 파일과 최신 `보안 계획표.xlsx`의 Day102 행을 확인한다.
+- Last completed: Day105
+- Current focus: Day102~105에서는 Ghidra와 어셈블리를 함께 사용해 입력 함수의 안전성, BOF offset, 보호 기법과 실제 exploitability를 판정했다. Day102의 `read(0, [rbp-0x30], 0x90)`에서 overflow를 찾고 안전한 `fgets`와 구분했으며, Day103에서는 버퍼 시작점과 `[rbp-0x8]` canary를 기준으로 canary/saved RBP/RIP offset을 계산했다. Day104에서는 NX·PIE·Canary·Full RELRO가 모두 켜진 상태에서 leak primitive가 없으면 신뢰할 수 있는 ROP로 이어지지 않고 주로 종료만 유발함을 정리했다. Day105 stripped mini exam에서는 `__libc_start_main`의 첫 번째 인자로 main을 확정하고, submit 경로의 56바이트 버퍼와 160바이트 `read`를 찾아 BOF를 확인했다. offset은 canary `0x38`, saved RBP `0x40`, RIP `0x48`, RIP 뒤 가용 공간 80바이트이며, 출력은 처음 24바이트로 제한돼 canary/PIE leak으로 쓰기 어렵다. caller/XREF가 없는 zero-buffer `memcmp` 함수는 decoy로 판정했다. 통합 write-up 사용자 commit `498b65b`을 확인했다.
+- Next task: Day106 — Malware static 1: 안전 환경. 네트워크 차단, 샘플 관리, 분석 노트 양식을 준비하고 Ghidra 추론을 objdump 등 정적 증거로 교차검증한다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -233,6 +233,39 @@ Daily review rule:
 - Files: Day101-160/Day101/.gdb_history, Day101-160/Day101/SHA256SUMS, Day101-160/Day101/START_HERE.txt, Day101-160/Day101/day101_patch_lab, Day101-160/Day101/day101_patch_lab_patched, Day101-160/Day101/day101_rev.md, Day101-160/Day101/write_up.txt
 - Problems: `-1`은 ptrace의 원본 반환값이고 main이 받는 wrapper 결과는 `1`이므로 두 관찰 지점을 구분해야 한다. Ghidra의 VA를 파일 오프셋으로 바로 가정하지 않고 해당 LOAD segment의 `p_vaddr/p_offset`으로 변환해야 한다. 6바이트 JNZ의 일부만 덮으면 남은 바이트가 잘못된 명령으로 해석될 수 있다. 정적 패치는 재실행 후에도 유지되지만 파일 해시와 코드가 바뀌므로 서명·self-integrity 검사에 탐지될 수 있다.
 - Next: Day102
+
+
+### Day102
+- Topic: Reversing — Pwn from Ghidra 1: 취약점 위치 찾기
+- Status: done
+- Result: 안전한 `fgets` 경로와 `read(0, [rbp-0x30], 0x90)` 경로를 비교해 BOF를 찾았다. `[rbp-0x8]`의 TLS canary 저장·검사와 `__stack_chk_fail` 호출 조건을 확인했고, 출력 preview가 최대 16바이트라 후속 leak으로 바로 이어지지 않음을 구분했다.
+- Files: Day101-160/Day102/SHA256SUMS, Day101-160/Day102/START_HERE.txt, Day101-160/Day102/day102_unsafe_call_lab, Day101-160/Day105/write_up.txt
+- Problems: 입력 크기 제한과 출력 길이 제한은 서로 다른 보호다. Ghidra의 배열 표기만 믿지 않고 실제 `rbp` 상대 주소와 read 크기를 어셈블리에서 확인해야 한다.
+- Next: Day103
+
+### Day103
+- Topic: Reversing — Pwn from Ghidra 2: stack offset 근거
+- Status: done
+- Result: 버퍼 시작점에서 canary, saved RBP, saved RIP까지의 stack layout을 어셈블리 피연산자로 계산했다. 실습 기준 offset은 canary `0x28`, saved RBP `0x30`, RIP `0x38`이었고, 160바이트 입력에서 RIP 뒤에 사용할 수 있는 공간은 80바이트였다.
+- Files: Day101-160/Day105/write_up.txt
+- Problems: Ghidra의 `local_XX` 이름은 실제 `[rbp-offset]`과 혼동될 수 있고, 디컴파일러가 padding까지 배열로 묶을 수 있다. 원본 소스의 선언 크기는 어셈블리만으로 확정하지 않는다.
+- Next: Day104
+
+### Day104
+- Topic: Reversing — Pwn from Ghidra 3: exploitability 판단
+- Status: done
+- Result: NX, PIE, Canary, Full RELRO가 모두 활성화된 BOF를 대상으로 공격 전제조건을 정리했다. canary와 PIE를 유출할 primitive가 없으면 안정적인 제어 흐름 탈취가 어렵고, leak이 있다면 canary 보존 → PIE base 계산 → GOT read를 통한 libc leak → ret2libc 순서로 전환할 수 있음을 문서화했다.
+- Files: Day101-160/Day105/write_up.txt
+- Problems: BOF 존재와 exploit 가능성은 같은 결론이 아니다. Full RELRO는 GOT 쓰기를 막지만 GOT 읽기와 주소 leak 자체를 막지는 않는다.
+- Next: Day105
+
+### Day105
+- Topic: Reversing — Stripped mini exam
+- Status: done
+- Result: `__libc_start_main`의 첫 번째 인자에서 main을 찾고 inspect/submit/quit 입력 흐름을 복원했다. submit의 56바이트 버퍼에 160바이트를 받는 BOF와 canary `0x38`, saved RBP `0x40`, RIP `0x48` offset을 확인했다. Receipt 출력은 입력 길이를 24로 줄여 처음 24바이트만 노출하므로 stack leak이 되지 않았다. 전체 문자열과 XREF를 조사해 incoming reference가 없는 zero-buffer `memcmp` 함수를 decoy로 판정했다.
+- Files: Day101-160/Day105/write_up.txt; lab binary와 분석 템플릿은 draft PR #1의 `day105-stripped-exam` 브랜치에 보존
+- Problems: read 반환값을 나중에 24로 고정해도 이미 발생한 overflow는 취소되지 않는다. 반대로 출력이 항상 버퍼 앞부분 24바이트라면 BOF만으로 canary/PIE 값이 노출되지는 않는다. decoy 여부는 문자열 존재가 아니라 실제 caller와 참조 가능성으로 판정해야 한다.
+- Next: Day106
 
 ---
 
