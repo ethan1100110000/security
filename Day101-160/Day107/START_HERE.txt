@@ -1,0 +1,31 @@
+Day107 — Malware static 2: strings/imports
+
+Purpose
+- Practice capability estimation from strings and imported functions.
+- Separate presence, reachability, argument flow, and actual behavior.
+- This is a harmless training ELF. Static analysis is sufficient; do not run it for the assignment.
+
+Start
+1. Record SHA-256, file type, architecture, and protection properties.
+2. Extract strings with file offsets.
+3. List undefined dynamic function symbols and classify them by capability.
+4. In Ghidra, inspect XREFs from selected strings and imported functions.
+5. Decide whether each candidate function is reachable from main.
+6. Trace the actual arguments and returned values for at least two candidates.
+7. Cross-check one important Ghidra inference with readelf or objdump.
+
+Suggested commands
+  sha256sum day107_static_lab
+  file day107_static_lab
+  readelf -h day107_static_lab
+  readelf -lW day107_static_lab
+  readelf -dW day107_static_lab
+  readelf -Ws day107_static_lab
+  strings -a -n 5 -t x day107_static_lab
+  objdump -d -M intel day107_static_lab
+
+Rules
+- Do not treat an import or a string as proof of behavior by itself.
+- Record confirmed observations, reasonable inferences, and unconfirmed claims separately.
+- Do not search for or copy a complete solution before submitting your own analysis.
+
