@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day106
-- Current focus: Day106에서는 실제 샘플을 실행하지 않는 malware static analysis의 안전 절차를 정리했다. 가상 교육용 샘플을 기준으로 Sample ID, 원본 파일명, SHA-256, 크기, 형식·아키텍처, 출처와 실행 여부를 기록하고, VM 네트워크·공유 폴더·클립보드·드래그 앤 드롭·개인 계정 차단 및 clean snapshot을 문서화했다. strings/imports는 capability의 단서일 뿐 실제 동작의 확정 근거가 아니므로 문자열 XREF, caller 도달 가능성, 함수 인자와 반환값의 data flow를 확인해야 함을 구분했다. 보고서를 confirmed observations, reasonable inferences, unconfirmed claims로 나누고 `sha256sum`, `file`, `readelf`, `strings`, `objdump` 명령과 정적 분석의 한계를 기록했다. CS에서는 trust boundary, isolation, least privilege, attack surface, defense in depth와 VM snapshot이 VM 외부 피해를 복구하지 못한다는 점을 정리했다. 사용자 commit `cea4378`을 확인했다.
-- Next task: Day107 — Malware static 2: strings/imports. 문자열과 import의 XREF 및 데이터 흐름을 근거로 capability를 추정하되 관찰·추론·미확정 내용을 분리한다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day107
+- Current focus: Day107에서는 stripped PIE ELF를 대상으로 `file`, SHA-256, checksec, `strings -t x`, `readelf --dyn-syms`, Ghidra XREF와 objdump를 연결해 strings/imports 기반 capability 추정의 한계를 검증했다. main의 도달 가능한 흐름은 inspect에서 XOR `0x23`으로 `LOCAL_AUDIT`을 복원·출력하고, archive에서 `/tmp/day107_status.log`를 `O_WRONLY|O_CREAT|O_TRUNC`, mode `0600`으로 열어 상태 메시지를 기록하며, quit에서 종료하는 구조였다. 네트워크 후보 함수는 caller가 없고 생성한 socket FD를 먼저 닫은 뒤 `connect(-1,...)`, `recv(-1,...)`를 호출해 실제 통신이 불가능했다. 프로세스 후보도 caller가 없으며 `/bin/sh`는 puts 인자일 뿐, `execve`의 실제 경로는 `/usr/bin/true`였다. objdump에서 execve 직전 RDI/RSI/RDX 설정을 교차검증했고, imports에 존재하거나 Full RELRO의 BIND_NOW로 주소가 resolve되는 것과 실제 도달 가능한 call을 구분했다. CS에서는 FD의 출처에 따라 `write`가 파일 기록 또는 socket 송신이 되는 data flow와 호출 시도·성공·상대 수신을 분리했다. 사용자 commit `a22ca78`을 확인했다.
+- Next task: Day108 — Malware static 3: IOC note. 확인된 IOC, 행위 추정, 근거와 한계점을 분리해 분석 노트를 작성한다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -275,6 +275,15 @@ Daily review rule:
 - Files: Day101-160/Day106/write_up.txt
 - Problems: strings/imports의 존재와 실제 호출을 혼동하면 안 된다. capability를 판단하려면 XREF, caller 도달 가능성, 인자·반환값의 data flow가 필요하다. 격리는 위험을 완전히 제거하는 것이 아니라 VM과 호스트·내부망·외부망 사이 접점을 최소화하는 것이며, 스냅샷은 보안 경계 자체가 아니다. 이번 보고서는 가상 교육용 샘플을 전제로 작성했으므로 실제 실행 행위와 네트워크 결과는 검증하지 않았다.
 - Next: Day107
+
+
+### Day107
+- Topic: Reversing — Malware static 2: strings/imports
+- Status: done
+- Result: 문자열과 undefined dynamic symbol을 1차 단서로 분류한 뒤 Ghidra XREF, incoming caller, 실제 인자와 반환값 data flow를 따라 capability를 판정했다. main에서 도달 가능한 기능은 XOR 복원 출력과 로컬 상태 파일 기록뿐이었다. 네트워크 함수는 미호출이고 invalid FD를 사용하며, `/bin/sh`는 단순 출력 문자열이고 미호출 execve 함수의 실제 대상은 `/usr/bin/true`임을 확인했다. objdump로 execve 인자 레지스터를 교차검증했다.
+- Files: Day101-160/Day107/SHA256SUMS, Day101-160/Day107/START_HERE.txt, Day101-160/Day107/day107_static_lab, Day101-160/Day107/day107_rev.md, Day101-160/Day107/write_up.txt
+- Problems: `strings`에 나타나는 import 이름은 `.dynstr`의 동적 심볼 문자열일 수 있으므로 독립된 두 증거로 중복 계산하면 안 된다. import 존재, 동적 로더의 주소 resolve, 도달 가능한 실제 call은 서로 다르다. 함수가 main에서 직접 호출되지 않더라도 callback·함수 포인터·constructor 등 간접 경로를 확인해야 하며, `write`의 capability는 FD가 `open`과 `socket` 중 어디서 왔는지에 따라 달라진다.
+- Next: Day108
 
 ---
 
