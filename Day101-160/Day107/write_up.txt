@@ -1,0 +1,23 @@
+Main-reachable capability
+- inspect: XOR 0x23으로 LOCAL_AUDIT을 복원해 출력
+- archive: /tmp/day107_status.log를 0600 권한으로 생성·초기화하고
+  analysis_status=ready\n 기록
+- quit: 정상 종료
+
+Network candidate
+- socket, connect, recv와 IP·포트 구성 코드가 존재
+- main에서 도달하지 않음
+- 생성한 socket FD를 먼저 close함
+- connect와 recv에는 유효하지 않은 -1 FD를 전달함
+- 실제 네트워크 통신 capability로 판정할 수 없음
+
+Process candidate
+- execve import와 /bin/sh 문자열이 존재
+- /bin/sh는 puts의 인자일 뿐임
+- execve의 실제 첫 번째 인자는 /usr/bin/true
+- execve 호출 함수도 main에서 도달하지 않음
+- 셸 실행 capability로 판정할 수 없음
+
+Failure case
+- strings/imports만 조합하면 네트워크 통신과 셸 실행으로 오판할 수 있음
+- XREF, caller 도달성, 실제 인자 흐름을 확인해 오탐을 제거함
