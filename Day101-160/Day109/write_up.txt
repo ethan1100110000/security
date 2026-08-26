@@ -1,0 +1,19 @@
+# Day109 - Stripped Binary Analysis
+
+`day105_stripped_exam`은 stripped x86-64 PIE ELF이며 SHA-256은 `05985db435131d96ba48a4715ce0f583d8f3c2d1761b24a4a77de036d9bffbd1`이다. Full RELRO, Canary, NX, PIE가 활성화되어 있다.
+
+main은 `__libc_start_main`의 첫 번째 인자를 추적해 찾았다. `inspect`는 `fgets`로 안전하게 입력을 받고 최대 24바이트만 출력하며, `quit`는 종료한다. `submit`은 `[rbp-0x40]`의 56바이트 stack buffer에 `read`로 `0xa0`바이트를 입력받는다.
+
+```asm
+lea  rax,[rbp-0x40]
+mov  edx,0xa0
+mov  rsi,rax
+mov  edi,0
+call read@plt
+```
+
+Ghidra와 `objdump`에서 동일한 인자를 확인했다. 따라서 Canary offset은 `0x38`, saved RBP는 `0x40`, saved RIP는 `0x48`이며 BOF가 존재한다. Receipt 계산은 입력 앞부분 최대 24바이트만 사용하므로 Canary leak으로 사용할 수 없다.
+
+전체 문자열과 XREF를 조사한 결과, 두 개의 0 버퍼를 `memcmp`하는 함수는 incoming reference가 없고 main에서 도달하지 않아 decoy로 판단했다.
+
+BOF로 saved RIP까지 덮을 수 있지만 원본 Canary 값, PIE base, libc base를 유출할 primitive가 확인되지 않았다. 따라서 현재 기능만으로 안정적인 exploit을 구성하기는 어렵다.
