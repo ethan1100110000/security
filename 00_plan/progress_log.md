@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day107
-- Current focus: Day107에서는 stripped PIE ELF를 대상으로 `file`, SHA-256, checksec, `strings -t x`, `readelf --dyn-syms`, Ghidra XREF와 objdump를 연결해 strings/imports 기반 capability 추정의 한계를 검증했다. main의 도달 가능한 흐름은 inspect에서 XOR `0x23`으로 `LOCAL_AUDIT`을 복원·출력하고, archive에서 `/tmp/day107_status.log`를 `O_WRONLY|O_CREAT|O_TRUNC`, mode `0600`으로 열어 상태 메시지를 기록하며, quit에서 종료하는 구조였다. 네트워크 후보 함수는 caller가 없고 생성한 socket FD를 먼저 닫은 뒤 `connect(-1,...)`, `recv(-1,...)`를 호출해 실제 통신이 불가능했다. 프로세스 후보도 caller가 없으며 `/bin/sh`는 puts 인자일 뿐, `execve`의 실제 경로는 `/usr/bin/true`였다. objdump에서 execve 직전 RDI/RSI/RDX 설정을 교차검증했고, imports에 존재하거나 Full RELRO의 BIND_NOW로 주소가 resolve되는 것과 실제 도달 가능한 call을 구분했다. CS에서는 FD의 출처에 따라 `write`가 파일 기록 또는 socket 송신이 되는 data flow와 호출 시도·성공·상대 수신을 분리했다. 사용자 commit `a22ca78`을 확인했다.
-- Next task: Day108 — Malware static 3: IOC note. 확인된 IOC, 행위 추정, 근거와 한계점을 분리해 분석 노트를 작성한다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day109
+- Current focus: Day108에서는 Day107 정적 분석 결과를 IOC 노트로 재구성해 정확한 SHA-256, 조건부 파일 경로와 내용 표시자를 유효 IOC로 기록하고, caller가 없는 네트워크·셸 관련 decoy는 정상 실행 행위에서 제외했다. Confidence, false-positive risk, severity를 분리하고 정적 분석만으로 실제 파일 생성 성공과 환경 의존 동작을 확정할 수 없다는 한계를 명시했다. Day109에서는 stripped Day105 바이너리의 main과 inspect/submit/quit 흐름을 문서화했다. Ghidra와 objdump에서 `read(0, rbp-0x40, 0xa0)`을 교차검증해 56바이트 버퍼, canary `0x38`, saved RBP `0x40`, saved RIP `0x48`을 계산했다. Receipt는 앞부분 최대 24바이트의 32비트 계산값이라 canary leak이 아니며, incoming reference가 없는 zero-buffer `memcmp` 함수는 decoy로 판정했다. BOF는 존재하지만 canary 값, PIE base, libc base를 얻을 leak primitive가 없어 안정적인 exploit이 어렵다고 결론 냈다. 사용자 commits `1532db4`, `7ea7511`을 확인했다.
+- Next task: Day110 — Rev portfolio checkpoint. Ghidra 분석 문서 8개를 점검하고 증거·추론·결론, 재현 명령, 파일 경로를 보완한 뒤 README와 `day110_rev.md`를 정리한다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -263,7 +263,7 @@ Daily review rule:
 - Topic: Reversing — Stripped mini exam
 - Status: done
 - Result: `__libc_start_main`의 첫 번째 인자에서 main을 찾고 inspect/submit/quit 입력 흐름을 복원했다. submit의 56바이트 버퍼에 160바이트를 받는 BOF와 canary `0x38`, saved RBP `0x40`, RIP `0x48` offset을 확인했다. Receipt 출력은 입력 길이를 24로 줄여 처음 24바이트만 노출하므로 stack leak이 되지 않았다. 전체 문자열과 XREF를 조사해 incoming reference가 없는 zero-buffer `memcmp` 함수를 decoy로 판정했다.
-- Files: Day101-160/Day105/write_up.txt; lab binary와 분석 템플릿은 draft PR #1의 `day105-stripped-exam` 브랜치에 보존
+- Files: Day101-160/Day105/SHA256SUMS, Day101-160/Day105/START_HERE.txt, Day101-160/Day105/day105_stripped_exam, Day101-160/Day105/write_up.txt
 - Problems: read 반환값을 나중에 24로 고정해도 이미 발생한 overflow는 취소되지 않는다. 반대로 출력이 항상 버퍼 앞부분 24바이트라면 BOF만으로 canary/PIE 값이 노출되지는 않는다. decoy 여부는 문자열 존재가 아니라 실제 caller와 참조 가능성으로 판정해야 한다.
 - Next: Day106
 
@@ -284,6 +284,23 @@ Daily review rule:
 - Files: Day101-160/Day107/SHA256SUMS, Day101-160/Day107/START_HERE.txt, Day101-160/Day107/day107_static_lab, Day101-160/Day107/day107_rev.md, Day101-160/Day107/write_up.txt
 - Problems: `strings`에 나타나는 import 이름은 `.dynstr`의 동적 심볼 문자열일 수 있으므로 독립된 두 증거로 중복 계산하면 안 된다. import 존재, 동적 로더의 주소 resolve, 도달 가능한 실제 call은 서로 다르다. 함수가 main에서 직접 호출되지 않더라도 callback·함수 포인터·constructor 등 간접 경로를 확인해야 하며, `write`의 capability는 FD가 `open`과 `socket` 중 어디서 왔는지에 따라 달라진다.
 - Next: Day108
+
+
+### Day108
+- Topic: Reversing — Malware static 3: IOC note
+- Status: done
+- Result: Day107 샘플의 SHA-256을 exact-sample IOC로 기록하고, 정상 실행의 archive 분기에서 생성·덮어쓰기 되는 `/tmp/day107_status.log`와 `analysis_status=ready\n`을 조건부 host/content IOC로 분류했다. `198.51.100.20:4444` 네트워크 후보는 caller 부재와 invalid FD 사용 때문에, `/bin/sh`·`execve` 후보는 main에서 도달하지 않고 실제 execve 대상도 `/usr/bin/true`이므로 활성 행위에서 제외했다. Confidence, severity, false-positive risk를 서로 다른 판단 축으로 구분했다.
+- Files: Day101-160/Day108/write_up.txt
+- Problems: 해시는 동일 파일 식별에는 강하지만 한 바이트 변경에도 달라져 변종 탐지에 약하다. 경로·내용 IOC는 정상 프로그램과 겹칠 수 있으므로 단독 사용 시 오탐 가능성이 있다. 정적 분석만 수행해 실제 파일 생성·기록 성공과 간접 호출·환경 의존 분기를 모두 확인하지 못했다.
+- Next: Day109
+
+### Day109
+- Topic: Reversing — Reversing write-up 2
+- Status: done
+- Result: stripped Day105 ELF에서 `__libc_start_main` 첫 번째 인자를 근거로 main을 찾고 inspect/submit/quit 흐름을 문서화했다. submit의 Ghidra listing과 objdump에서 `RDI=0`, `RSI=rbp-0x40`, `RDX=0xa0`을 교차검증해 56바이트 stack buffer에 160바이트를 쓰는 BOF와 canary `0x38`, saved RBP `0x40`, saved RIP `0x48` offset을 확인했다. Receipt 계산은 앞부분 최대 24바이트만 사용해 canary까지 도달하지 않으며, incoming reference가 없는 zero-buffer `memcmp` 함수는 decoy로 판정했다. 증거 → 추론 → 결론 구조로 write-up을 완성했다.
+- Files: Day101-160/Day105/SHA256SUMS, Day101-160/Day105/START_HERE.txt, Day101-160/Day105/day105_stripped_exam, Day101-160/Day109/write_up.txt
+- Problems: `fgets(..., 0x20, ...)`은 최대 31문자와 NUL을 저장한다. read 반환값을 나중에 `0x18`로 제한해도 이미 발생한 overflow는 취소되지 않는다. BOF로 saved RIP까지 덮을 수 있어도 canary 값, PIE base, libc base를 얻는 leak primitive가 없으면 안정적인 exploit으로 이어지지 않는다.
+- Next: Day110
 
 ---
 
