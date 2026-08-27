@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day109
-- Current focus: Day108에서는 Day107 정적 분석 결과를 IOC 노트로 재구성해 정확한 SHA-256, 조건부 파일 경로와 내용 표시자를 유효 IOC로 기록하고, caller가 없는 네트워크·셸 관련 decoy는 정상 실행 행위에서 제외했다. Confidence, false-positive risk, severity를 분리하고 정적 분석만으로 실제 파일 생성 성공과 환경 의존 동작을 확정할 수 없다는 한계를 명시했다. Day109에서는 stripped Day105 바이너리의 main과 inspect/submit/quit 흐름을 문서화했다. Ghidra와 objdump에서 `read(0, rbp-0x40, 0xa0)`을 교차검증해 56바이트 버퍼, canary `0x38`, saved RBP `0x40`, saved RIP `0x48`을 계산했다. Receipt는 앞부분 최대 24바이트의 32비트 계산값이라 canary leak이 아니며, incoming reference가 없는 zero-buffer `memcmp` 함수는 decoy로 판정했다. BOF는 존재하지만 canary 값, PIE base, libc base를 얻을 leak primitive가 없어 안정적인 exploit이 어렵다고 결론 냈다. 사용자 commits `1532db4`, `7ea7511`을 확인했다.
-- Next task: Day110 — Rev portfolio checkpoint. Ghidra 분석 문서 8개를 점검하고 증거·추론·결론, 재현 명령, 파일 경로를 보완한 뒤 README와 `day110_rev.md`를 정리한다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day110
+- Current focus: Day090·098·099·100·101·105·107·109의 리버싱 문서 8개를 직접 증거, 추론, 결론, 재현 명령, 실패 사례, 파일 경로 기준으로 점검했다. 실제 내용이 있는 문서만 루트 `README.md`에 연결하고 전체 평가를 `Day101-160/Day110/day110_rev.md`에 정리했다. Day100의 깨진 Markdown 코드 블록을 수정했으며, Day109 문서는 `day109_rev.md`로 이름을 맞추고 분석 대상 경로, SHA-256/checksec/objdump 명령, 56/57바이트 입력 비교를 추가했다. `read(0, rbp-0x40, 0xa0)`의 정적 증거와 Canary offset `0x38`의 동적 경계를 분리해 기록했다. CS에서는 재현 가능한 문서가 동일 샘플 해시, 실행 명령, 기대 관찰값, 결론 계산과 실패 사례 또는 한계를 포함해야 함을 정리했으며 CS 기록은 사용자가 별도로 관리한다. 사용자 commit `5c5ed2d`을 확인했다.
+- Next task: Day111 — AFL++ 1: 설치와 sanity run. 간단한 target을 준비해 instrumentation이 적용된 바이너리를 빌드하고 AFL++가 정상적으로 corpus 실행과 coverage 탐색을 시작하는지 확인한다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -298,9 +298,17 @@ Daily review rule:
 - Topic: Reversing — Reversing write-up 2
 - Status: done
 - Result: stripped Day105 ELF에서 `__libc_start_main` 첫 번째 인자를 근거로 main을 찾고 inspect/submit/quit 흐름을 문서화했다. submit의 Ghidra listing과 objdump에서 `RDI=0`, `RSI=rbp-0x40`, `RDX=0xa0`을 교차검증해 56바이트 stack buffer에 160바이트를 쓰는 BOF와 canary `0x38`, saved RBP `0x40`, saved RIP `0x48` offset을 확인했다. Receipt 계산은 앞부분 최대 24바이트만 사용해 canary까지 도달하지 않으며, incoming reference가 없는 zero-buffer `memcmp` 함수는 decoy로 판정했다. 증거 → 추론 → 결론 구조로 write-up을 완성했다.
-- Files: Day101-160/Day105/SHA256SUMS, Day101-160/Day105/START_HERE.txt, Day101-160/Day105/day105_stripped_exam, Day101-160/Day109/write_up.txt
+- Files: Day101-160/Day105/SHA256SUMS, Day101-160/Day105/START_HERE.txt, Day101-160/Day105/day105_stripped_exam, Day101-160/Day109/day109_rev.md
 - Problems: `fgets(..., 0x20, ...)`은 최대 31문자와 NUL을 저장한다. read 반환값을 나중에 `0x18`로 제한해도 이미 발생한 overflow는 취소되지 않는다. BOF로 saved RIP까지 덮을 수 있어도 canary 값, PIE base, libc base를 얻는 leak primitive가 없으면 안정적인 exploit으로 이어지지 않는다.
 - Next: Day110
+
+### Day110
+- Topic: Reversing — Rev portfolio checkpoint
+- Status: done
+- Result: Day090·098·099·100·101·105·107·109 문서 8개를 포트폴리오 대상으로 선정하고 직접 증거, 추론, 결론, 재현 명령, 실패 사례와 저장소 경로 기준으로 품질을 점검했다. 과거 문서는 핵심 분석을 보존하고 부족한 재현 정보는 checkpoint에 기록했으며, 실제 내용이 있는 문서만 루트 `README.md`에 링크했다. Day100의 닫히지 않은 코드 블록과 줄바꿈을 수정했고, Day109는 `day109_rev.md`로 정리한 뒤 정확한 분석 대상 경로와 재현 명령을 추가했다. 56바이트 입력은 Canary를 보존하고 57바이트 입력은 `stack smashing detected`를 발생시켜 정적 계산한 offset `0x38`을 동적으로 검증했다. CS에서는 재현 가능성을 동일 샘플 식별, 실행 절차, 기대 관찰값, 증거에서 결론까지의 계산, 실패 사례 또는 분석 한계로 정의했다.
+- Files: README.md, Day040-100/Day100/write_up.txt, Day101-160/Day109/day109_rev.md, Day101-160/Day110/day110_rev.md
+- Problems: 일부 Day 폴더에는 비어 있는 `day*_rev.md` 양식과 실제 내용이 있는 `write_up.txt`가 함께 있어 README가 빈 양식을 가리키지 않도록 구분해야 한다. 문서가 길다고 재현성이 높아지는 것은 아니며, 명령만 있고 기대 관찰값이 없으면 독자가 결과를 다시 분석해야 한다. `[rbp-0x8]`을 관례만으로 Canary라고 가정하지 않고 `fs:0x28` 저장·비교와 `__stack_chk_fail` 경로를 직접 확인해야 한다. CS 기록은 사용자 요청에 따라 저장소 밖에서 별도로 관리한다.
+- Next: Day111
 
 ---
 
