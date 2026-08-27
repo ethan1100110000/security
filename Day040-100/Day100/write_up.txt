@@ -8,31 +8,35 @@
 elapsed = (end_sec - start_sec) * 1000000000
         + end_nsec - start_nsec;
 return elapsed > 50000000;
+```
 
 0x2faf080은 50,000,000ns, 즉 50ms다.
 cmp rax, 0x2faf080 이후 setg al을 사용하므로 정확히 50ms일 때는 0, 50ms를 초과하면 1을 반환한다.
 
 GDB에서 검사 함수가 반환된 직후 EAX=0으로 변경해 우회했다.
 
-2. Trap 검사
+## 2. Trap 검사
 
 프로그램은 SIGTRAP 핸들러를 등록하고 전역 플래그를 0으로 초기화한 뒤 INT3를 실행한다.
 
 핸들러가 정상적으로 실행되면 플래그가 1이 된다. GDB가 SIGTRAP을 가로채면 프로그램의 핸들러가 실행되지 않아 플래그가 0으로 남는다.
 
+```asm
 int3
 mov   eax, [flag]
 test  eax, eax
 sete  al
 movzx eax, al
+```
 플래그 0 → ZF=1 → 반환값 1 → Trap anomaly
 플래그 1 → ZF=0 → 반환값 0 → 정상
 
 trap 검사 함수가 반환된 직후에도 EAX=0으로 변경해 우회했다.
 
-3. 실행 결과
+## 3. 실행 결과
 Token: TIME_TRAP_100
 ACCESS GRANTED
-4. 정리
+
+## 4. 정리
 
 Anti-debug는 디버깅을 완전히 막는 기능이 아니라 분석 비용을 높이는 탐지 기법이다. 탐지 원인, 전역 상태, 함수 반환값 또는 호출자의 조건 분기 중 한 지점을 조작하면 우회할 수 있다.
