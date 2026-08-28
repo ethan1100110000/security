@@ -1,0 +1,28 @@
+# Day111 - AFL++ Sanity Run
+
+## 1. 환경과 빌드
+- AFL++ 버전: AFL++ 4.00c Clang 13.0.1
+- 컴파일 명령: afl-clang-fast -O0 -g -Wall -Wextra \ -o day111_target day111_target.c
+- instrumentation의 역할: afl-clang-fast는 컴파일 과정에서 coverage instrumentation을 삽입한다. 실행 중 관찰된 edge 정보는 AFL++가 입력별 실행 경로를 구분하는 데 사용된다.
+
+## 2. 실행 방법
+- 초기 seed: 'A'
+- afl-fuzz 명령: AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 \ afl-fuzz -i in -o out -- ./day111_target
+- 입력 전달 방식: 표준입력
+
+## 3. 실행 결과
+- 실행 시간: 526
+- 총 실행 횟수: 182544
+- corpus 수: 8
+- 발견한 edge: 9/11
+- crash / hang: 0
+- 최종 입력과 단독 검증 결과: deep path 출력 성공
+
+## 4. 결론
+- edge와 coverage의 차이: Edge는 CFG에서 한 basic block에서 다른 basic block으로 이동하는 경로 
+하나이며, coverage는 한 입력을 실행하면서 관찰된 edge들의 집합
+- 새로운 입력을 보존하는 기준: AFL++는 지금까지 발견하지 못한 edge나 새로운 실행 횟수 구간을 
+만든 입력을 corpus에 보존
+- coverage-guided fuzzing이 유리한 이유: 보존된 입력을 다시 변이하므로 
+`A → F → FU → FUZ → FUZZ`처럼 중간 진전을 발판으로 더 깊은 경로를 탐색할 수 있다
+- 분석 한계: `showmap`의 edge ID는 소스 코드나 어셈블리 주소와 직접 대응하지 않는다. 실제 위치를 확인하려면 별도의 source coverage 또는 디스어셈블리 분석이 필요
