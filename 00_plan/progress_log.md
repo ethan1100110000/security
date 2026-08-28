@@ -42,7 +42,7 @@ Daily review rule:
 ## Current Pointer
 
 - Last completed: Day111
-- Current focus: AFL++ 4.00c와 Clang 13.0.1 환경에서 `afl-clang-fast`로 coverage instrumentation이 적용된 `day111_target`을 빌드했다. seed `A`로 AFL++를 실행해 526초 동안 182,544회(평균 346.78 exec/s) 수행했고, 최초 seed를 포함한 corpus 8개와 `edges_found=9/11`(81.82%)을 확인했다. queue가 `A → F → F222 → FU\\x00\\x01 → FU → FUZ → FUZF → FUZZ`로 확장되는 과정과 최종 `id:000007`의 단독 실행에서 `deep path` 출력을 검증했다. `afl-showmap`으로 입력별 coverage ID 차이를 비교했으며, edge는 CFG의 이동 하나이고 coverage는 한 실행에서 관찰된 edge 집합임을 정리했다. 빈 입력과 `A`가 소스상 다른 흐름이어도 같은 map으로 관찰되어 showmap ID·줄 수가 소스 분기 및 주소와 직접 대응하지 않음을 확인했다. 사용자 commit `41abf7f`을 확인했다.
+- Current focus: AFL++ 4.00c와 Clang 13.0.1 환경에서 `afl-clang-fast`로 coverage instrumentation이 적용된 `day111_target`을 빌드했다. seed `A`로 AFL++를 실행해 526초 동안 182,544회(평균 346.78 exec/s) 수행했고, 최초 seed를 포함한 corpus 8개와 `edges_found=9/11`(81.82%)을 확인했다. queue가 `A → F → F222 → FU\x00\x01 → FU → FUZ → FUZF → FUZZ`로 확장되는 과정과 최종 `id:000007`의 단독 실행에서 `deep path` 출력을 검증했다. `afl-showmap`으로 입력별 coverage ID 차이를 비교했으며, edge는 CFG의 이동 하나이고 coverage는 한 실행에서 관찰된 edge 집합임을 정리했다. 빈 입력과 `A`가 소스상 다른 흐름이어도 같은 map으로 관찰되어 showmap ID·줄 수가 소스 분기 및 주소와 직접 대응하지 않음을 확인했다. 사용자 commit `41abf7f`을 확인했다.
 - Next task: Day112 — AFL++ 2: instrumentation/coverage. 컴파일 옵션과 coverage 지표의 의미를 비교·정리하고, CS에서 instrumentation과 edge coverage를 연결한다. 산출물은 `Day101-160/Day112/day112_fuzzing.md`이며 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
@@ -313,7 +313,7 @@ Daily review rule:
 ### Day111
 - Topic: Fuzzing — AFL++ 1: 설치와 sanity run
 - Status: done
-- Result: AFL++ 4.00c와 Clang 13.0.1을 설치하고, 4바이트 표준입력에서 `FUZZ`를 검사하는 타겟을 `afl-clang-fast`로 계측 빌드했다. seed `A`에서 시작한 AFL++가 526초 동안 182,544회 실행해 corpus 8개를 보존하고 11개 계측 edge 중 9개(81.82%)를 발견했다. queue의 parent 관계와 실제 바이트를 확인해 `A → F → F222 → FU\\x00\\x01 → FU → FUZ → FUZF → FUZZ`의 점진적 탐색을 복원했으며, 최종 queue 입력을 타겟에 직접 전달해 `deep path` 출력을 확인했다. `afl-showmap`으로 `A`, `F`, `FU`, `FUZZ`의 map을 비교해 같은 줄 수라도 edge ID 조합이 다르면 새로운 coverage가 될 수 있음을 확인했다.
+- Result: AFL++ 4.00c와 Clang 13.0.1을 설치하고, 4바이트 표준입력에서 `FUZZ`를 검사하는 타겟을 `afl-clang-fast`로 계측 빌드했다. seed `A`에서 시작한 AFL++가 526초 동안 182,544회 실행해 corpus 8개를 보존하고 11개 계측 edge 중 9개(81.82%)를 발견했다. queue의 parent 관계와 실제 바이트를 확인해 `A → F → F222 → FU\x00\x01 → FU → FUZ → FUZF → FUZZ`의 점진적 탐색을 복원했으며, 최종 queue 입력을 타겟에 직접 전달해 `deep path` 출력을 확인했다. `afl-showmap`으로 `A`, `F`, `FU`, `FUZZ`의 map을 비교해 같은 줄 수라도 edge ID 조합이 다르면 새로운 coverage가 될 수 있음을 확인했다.
 - Files: Day101-160/Day111/day111_target, Day101-160/Day111/day111_target.c, Day101-160/Day111/in/seed, Day101-160/Day111/out/default/fuzzer_stats, Day101-160/Day111/out/default/queue/, Day101-160/Day111/write_up.txt
 - Problems: WSL의 `core_pattern`이 외부 crash handler로 연결되어 있어 sanity run에만 `AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1`을 적용했다. 이 설정에서는 crash 수집을 신뢰하면 안 되지만 이번 타겟은 crash 탐지가 목적이 아니었다. `edges_found/total_edges`는 소스의 if 개수가 아니라 계측된 edge 기준이며, showmap ID만으로 소스·어셈블리 위치를 특정할 수 없다. 빈 입력과 `A`는 소스상 다른 흐름이지만 같은 coverage로 관찰되어 소스 분기와 instrumentation map이 1:1 대응하지 않음을 확인했다.
 - Next: Day112
