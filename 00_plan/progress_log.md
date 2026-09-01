@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day111
-- Current focus: AFL++ 4.00c와 Clang 13.0.1 환경에서 `afl-clang-fast`로 coverage instrumentation이 적용된 `day111_target`을 빌드했다. seed `A`로 AFL++를 실행해 526초 동안 182,544회(평균 346.78 exec/s) 수행했고, 최초 seed를 포함한 corpus 8개와 `edges_found=9/11`(81.82%)을 확인했다. queue가 `A → F → F222 → FU\x00\x01 → FU → FUZ → FUZF → FUZZ`로 확장되는 과정과 최종 `id:000007`의 단독 실행에서 `deep path` 출력을 검증했다. `afl-showmap`으로 입력별 coverage ID 차이를 비교했으며, edge는 CFG의 이동 하나이고 coverage는 한 실행에서 관찰된 edge 집합임을 정리했다. 빈 입력과 `A`가 소스상 다른 흐름이어도 같은 map으로 관찰되어 showmap ID·줄 수가 소스 분기 및 주소와 직접 대응하지 않음을 확인했다. 사용자 commit `41abf7f`을 확인했다.
-- Next task: Day112 — AFL++ 2: instrumentation/coverage. 컴파일 옵션과 coverage 지표의 의미를 비교·정리하고, CS에서 instrumentation과 edge coverage를 연결한다. 산출물은 `Day101-160/Day112/day112_fuzzing.md`이며 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day112
+- Current focus: 동일한 소스를 일반 Clang과 `afl-clang-fast`의 `-O0`로 각각 빌드해 일반 실행 결과는 같지만 AFL 계측과 forkserver 유무가 다름을 확인했다. 일반 바이너리는 기본 `afl-showmap`에서 handshake에 실패했고, 계측 바이너리는 입력 `A`에서 map size 11과 tuple 2개를 기록했다. `A`와 `FUZZ`는 tuple 개수는 같지만 coverage map hash가 달랐다. `-O2` 빌드에서는 map size가 8로 줄어 최적화가 CFG와 계측 지점을 바꿈을 확인했다. 반복 타겟에서 `-e`는 1회와 20회의 edge ID 집합이 같음을, `-r`은 같은 edge의 실제 hit count가 1과 20임을 보였다. `20→24`는 같은 16–31 bucket이라 변화가 없고 `15→16`은 bucket 경계를 넘어 새로운 hit-count coverage가 됨을 검증했다. 사용자 commit `dad0156`을 확인했다.
+- Next task: Day113 — AFL++ 3: seed corpus/minimization. 초기 seed가 탐색 결과에 주는 영향을 비교하고 corpus 품질 기준을 정리한다. 산출물은 `Day101-160/Day113/day113_fuzzing.md`이며 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -317,6 +317,14 @@ Daily review rule:
 - Files: Day101-160/Day111/day111_target, Day101-160/Day111/day111_target.c, Day101-160/Day111/in/seed, Day101-160/Day111/out/default/fuzzer_stats, Day101-160/Day111/out/default/queue/, Day101-160/Day111/write_up.txt
 - Problems: WSL의 `core_pattern`이 외부 crash handler로 연결되어 있어 sanity run에만 `AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1`을 적용했다. 이 설정에서는 crash 수집을 신뢰하면 안 되지만 이번 타겟은 crash 탐지가 목적이 아니었다. `edges_found/total_edges`는 소스의 if 개수가 아니라 계측된 edge 기준이며, showmap ID만으로 소스·어셈블리 위치를 특정할 수 없다. 빈 입력과 `A`는 소스상 다른 흐름이지만 같은 coverage로 관찰되어 소스 분기와 instrumentation map이 1:1 대응하지 않음을 확인했다.
 - Next: Day112
+
+### Day112
+- Topic: Fuzzing — AFL++ 2: instrumentation/coverage
+- Status: done
+- Result: 동일한 타겟을 `clang -O0`과 `afl-clang-fast -O0`로 빌드해 일반 실행 결과는 같지만 AFL 계측과 forkserver 지원이 다름을 확인했다. 일반 바이너리는 기본 `afl-showmap`에서 forkserver handshake가 실패했고, 계측 바이너리의 `A` 입력은 map size 11 중 tuple 2개를 기록했다. `A`와 `FUZZ`는 tuple 개수는 같지만 map hash가 달라 서로 다른 edge 조합임을 확인했다. `-O2` 계측 빌드는 map size가 8로 줄어 최적화별 coverage 비율을 직접 비교할 수 없음을 정리했다. 반복 타겟에서 `-e`로 1회와 20회의 edge 집합이 같음을 확인하고, `-r`로 같은 edge의 실제 hit count가 각각 1과 20임을 확인했다. hit-count bucket `1, 2, 3, 4–7, 8–15, 16–31, 32–127, 128+`를 기준으로 `20→24`는 같은 coverage, `15→16`은 새로운 coverage가 됨을 실험했다.
+- Files: Day101-160/Day112/day112_afl, Day101-160/Day112/day112_afl_O2, Day101-160/Day112/day112_loop, Day101-160/Day112/day112_loop.c, Day101-160/Day112/day112_plain, Day101-160/Day112/day112_target.c, Day101-160/Day112/write_up.txt
+- Problems: tuple 개수만 같다고 같은 coverage인 것은 아니며 edge ID 조합도 확인해야 한다. `map size`는 소스의 조건문 개수가 아니고 컴파일 최적화로 CFG와 계측 지점이 달라질 수 있다. AFL은 새 edge뿐 아니라 기존 edge의 새 hit-count bucket도 보존 근거로 사용하지만, 실제 실행 순서가 달라도 최종 edge ID와 bucket이 같으면 동일한 coverage로 판단한다. 계측 타겟은 map counter를 기록하고 새로움의 판단과 corpus 보존은 `afl-fuzz`가 담당한다.
+- Next: Day113
 
 ---
 
