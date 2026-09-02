@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day112
-- Current focus: 동일한 소스를 일반 Clang과 `afl-clang-fast`의 `-O0`로 각각 빌드해 일반 실행 결과는 같지만 AFL 계측과 forkserver 유무가 다름을 확인했다. 일반 바이너리는 기본 `afl-showmap`에서 handshake에 실패했고, 계측 바이너리는 입력 `A`에서 map size 11과 tuple 2개를 기록했다. `A`와 `FUZZ`는 tuple 개수는 같지만 coverage map hash가 달랐다. `-O2` 빌드에서는 map size가 8로 줄어 최적화가 CFG와 계측 지점을 바꿈을 확인했다. 반복 타겟에서 `-e`는 1회와 20회의 edge ID 집합이 같음을, `-r`은 같은 edge의 실제 hit count가 1과 20임을 보였다. `20→24`는 같은 16–31 bucket이라 변화가 없고 `15→16`은 bucket 경계를 넘어 새로운 hit-count coverage가 됨을 검증했다. 사용자 commit `dad0156`을 확인했다.
-- Next task: Day113 — AFL++ 3: seed corpus/minimization. 초기 seed가 탐색 결과에 주는 영향을 비교하고 corpus 품질 기준을 정리한다. 산출물은 `Day101-160/Day113/day113_fuzzing.md`이며 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day113
+- Current focus: Day112의 4바이트 `FUZZ` 타겟을 재사용해 seed corpus 품질과 최소화를 실험했다. `afl-showmap -e`로 `A/B`와 `FUZZ/FUZZJUNK`가 각각 동일한 edge 집합임을 확인한 뒤, `afl-cmin`으로 전체 coverage를 유지하며 corpus를 10개에서 8개로 줄였다. `afl-tmin`은 `FUZZJUNK`를 8바이트에서 4바이트 `FUZZ`로, AFL이 발견한 실제 14바이트 queue 입력도 4바이트 `FUZZ`로 줄이면서 `deep path`를 유지했다. 동일한 `-s 123 -E 5000` 조건에서 약한 seed `A`는 6/11 edge와 corpus 5개에 머물러 목표를 찾지 못했고, 강한 seed `FUZQ`는 9/11 edge와 corpus 8개를 만들며 230회 실행, 702ms에 목표 경로를 발견했다. 유효성·coverage 다양성·작은 크기와 빠른 실행·안정성을 좋은 seed corpus 기준으로 정리했으며, 단일 난수 seed 실험을 모든 실행으로 일반화할 수 없음을 확인했다. 사용자 commit `2fe9c92`을 확인했다.
+- Next task: Day114 — Toy parser 1: 타겟 설계. 취약한 C parser를 만들고 입력 형식을 정의한 뒤, CS에서 parser 구조와 state machine을 연결한다. 산출물은 `Day101-160/Day114/day114_fuzzing.md`이며 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -325,6 +325,14 @@ Daily review rule:
 - Files: Day101-160/Day112/day112_afl, Day101-160/Day112/day112_afl_O2, Day101-160/Day112/day112_loop, Day101-160/Day112/day112_loop.c, Day101-160/Day112/day112_plain, Day101-160/Day112/day112_target.c, Day101-160/Day112/write_up.txt
 - Problems: tuple 개수만 같다고 같은 coverage인 것은 아니며 edge ID 조합도 확인해야 한다. `map size`는 소스의 조건문 개수가 아니고 컴파일 최적화로 CFG와 계측 지점이 달라질 수 있다. AFL은 새 edge뿐 아니라 기존 edge의 새 hit-count bucket도 보존 근거로 사용하지만, 실제 실행 순서가 달라도 최종 edge ID와 bucket이 같으면 동일한 coverage로 판단한다. 계측 타겟은 map counter를 기록하고 새로움의 판단과 corpus 보존은 `afl-fuzz`가 담당한다.
 - Next: Day113
+
+### Day113
+- Topic: Fuzzing — AFL++ 3: seed corpus/minimization
+- Status: done
+- Result: 중복과 단계별 prefix를 포함한 seed 10개를 구성하고 `afl-showmap -e`로 `A/B`, `FUZZ/FUZZJUNK` 쌍의 edge 집합이 각각 같음을 확인했다. `afl-cmin`은 전체 corpus coverage를 유지하면서 10개를 8개로 줄였고, 같은 coverage의 `A/B` 중 `B`, `FUZZ/FUZZJUNK` 중 4바이트 `FUZZ`가 남았다. `afl-tmin`으로 인위적인 8바이트 `FUZZJUNK`와 AFL이 실제 발견한 14바이트 `FUZZYZZZZZZZZQ`를 각각 4바이트 `FUZZ`로 줄인 뒤 `deep path`가 유지됨을 재실행으로 검증했다. 동일한 타겟, 난수 seed 123, 약 5,000회 실행 예산에서 `A`는 6/11 edge·corpus 5개로 목표를 발견하지 못했고, `FUZQ`는 9/11 edge·corpus 8개를 만들며 `execs:230`, `time:702`에 목표 입력을 발견했다. 두 실행 모두 stability 100%였으며 좋은 seed corpus의 기준을 유효한 깊은 경로, coverage 다양성, 작은 크기와 실행 비용, 결정적 coverage로 정리했다.
+- Files: Day101-160/Day113/day113_target, Day101-160/Day113/day113_target.c, Day101-160/Day113/corpus_raw/, Day101-160/Day113/corpus_cmin/, Day101-160/Day113/seed_weak/, Day101-160/Day113/seed_strong/, Day101-160/Day113/out_weak/, Day101-160/Day113/out_strong/, Day101-160/Day113/minimized_FUZZ, Day101-160/Day113/minimized_found, Day101-160/Day113/write_up.txt
+- Problems: `afl-cmin`은 전체 coverage를 유지하는 파일 조합을 고르는 도구이고 `afl-tmin`은 입력 하나의 불필요한 바이트를 줄이는 도구이므로 목적을 혼동하면 안 된다. 동일한 tuple 수나 높은 `execs_per_sec`만으로 corpus 품질을 판단할 수 없고 실제 edge 확장과 목표 도달을 함께 확인해야 한다. 이번 `FUZQ`의 우위는 `-s 123` 단일 비교 결과이므로 여러 난수 seed에서 목표 발견률과 발견까지의 실행 횟수를 반복 측정해야 일반화할 수 있다. WSL의 `core_pattern` 우회를 위해 사용한 `AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1` 환경에서는 crash 수집 결과를 신뢰하지 않으며, 이번 실습은 coverage와 corpus 비교만을 대상으로 했다.
+- Next: Day114
 
 ---
 
