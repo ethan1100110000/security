@@ -1,0 +1,80 @@
+# Day113 - AFL++ Seed Corpus and Minimization
+
+## 1. 실습 타겟
+
+Day112 타겟을 `afl-clang-fast`로 다시 빌드했다. 타겟은 표준입력에서 최대 4바이트를 읽고 `FUZZ`가 입력되면 `deep path`를 출력한다.
+
+```bash
+afl-clang-fast -O0 -g \
+  -o day113_target day113_target.c
+```
+
+## 2. Corpus 최소화
+
+서로 다른 실행 경로와 중복 입력을 포함한 seed 10개를 `corpus_raw`에 준비했다.
+
+`afl-showmap -e`로 비교한 결과 `A/B`와 `FUZZ/FUZZJUNK`는 각각 동일한 edge 집합을 만들었다. `FUZZJUNK`는 타겟이 처음 4바이트만 읽으므로 `FUZZ`와 같은 경로를 실행한다.
+
+```bash
+AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 \
+afl-cmin -i corpus_raw -o corpus_cmin \
+  -- ./day113_target
+```
+
+`afl-cmin` 실행 후 corpus는 10개에서 8개로 줄었다. `A/B` 중 `B`가 남았고, `FUZZ/FUZZJUNK` 중 더 짧은 `FUZZ`가 남았다. `afl-cmin`은 전체 corpus coverage를 유지하면서 중복 coverage를 가진 파일을 제거한다.
+
+## 3. 개별 입력 최소화
+
+```bash
+AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 \
+afl-tmin \
+  -i corpus_raw/10_FUZZJUNK \
+  -o minimized_FUZZ \
+  -- ./day113_target
+```
+
+`FUZZJUNK`는 8바이트에서 `FUZZ` 4바이트로 줄었고 `deep path` 출력이 유지됐다.
+
+강한 seed 실행에서 AFL이 발견한 14바이트 queue 입력도 `afl-tmin`으로 4바이트까지 줄었다. 최소화 결과는 `46 55 5a 5a`, 즉 `FUZZ`였으며 동일한 coverage와 출력이 유지됐다.
+
+`afl-tmin`은 파일 수가 아니라 입력 하나에서 동작에 필요하지 않은 바이트를 제거한다.
+
+## 4. 초기 Seed 비교
+
+동일한 난수 seed와 실행 예산을 사용해 약한 seed `A`와 목표에 가까운 seed `FUZQ`를 비교했다.
+
+```bash
+AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 \
+AFL_NO_UI=1 \
+afl-fuzz -i seed_weak -o out_weak \
+  -s 123 -E 5000 -- ./day113_target
+```
+
+```bash
+AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 \
+AFL_NO_UI=1 \
+afl-fuzz -i seed_strong -o out_strong \
+  -s 123 -E 5000 -- ./day113_target
+```
+
+| 초기 seed | 실행 횟수 | Corpus | 발견한 edge | 목표 경로        |
+| ------- | ----: | -----: | -------: | ------------ |
+| `A`     | 5,000 |      5 |     6/11 | 미발견          |
+| `FUZQ`  | 5,003 |      8 |     9/11 | 230회 실행에서 발견 |
+
+`FUZQ`는 마지막 바이트만 변경하면 `FUZZ`가 되며 이미 더 깊은 분기까지 도달한다. 그 결과 이번 실험에서는 `A`보다 더 많은 edge를 발견하고 약 230회 실행 만에 목표 경로에 도달했다.
+
+`execs_per_sec`는 `A`가 더 높았지만, 처리 속도만으로 fuzzing 품질을 판단할 수는 없다. 목표 경로 발견 여부와 coverage 확장이 함께 평가되어야 한다.
+
+## 5. 결론
+
+좋은 seed corpus는 다음 조건을 만족해야 한다.
+
+* 유효한 구조로 깊은 코드까지 도달한다.
+* seed끼리 coverage가 다양하고 중복이 적다.
+* 같은 coverage라면 파일이 작고 실행이 빠르다.
+* 같은 입력을 반복해도 coverage가 안정적이다.
+
+이번 결과는 난수 seed `123`으로 한 번 수행한 비교이므로 `FUZQ`가 모든 실행에서 항상 우수하다고 일반화할 수 없다. 더 강한 결론을 위해서는 동일한 실행 예산으로 여러 난수 seed를 사용해 반복하고, 목표 발견률과 발견까지의 실행 횟수를 비교해야 한다.
+
+참고: [AFL++ Fuzzing in Depth](https://aflplus.plus/docs/fuzzing_in_depth/)
