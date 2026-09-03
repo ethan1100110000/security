@@ -4,8 +4,8 @@
 매일 공부가 끝나면 아래 포인터와 운영 규칙을 기준으로 갱신한다.
 
 - Last completed: 마지막으로 완료한 Day
-- Current focus: 방금 완료한 핵심 내용과 검증
-- Next task: 다음에 바로 시작할 작업
+- Current focus: `TPAR | Version | Command | Length | Payload` 형식의 취약한 C parser를 작성하고 `START → MAGIC → VERSION → COMMAND → LENGTH → PAYLOAD → DONE` state 흐름을 구성했다. 정상 입력, 잘린 Payload, 잘못된 Magic·Version 입력을 구분했으며 `afl-showmap -e`에서 실패 state와 정상 완료 경로가 서로 다른 edge ID 집합을 만든다는 점을 확인했다. 원본 입력에 `Length`만큼 데이터가 있는지는 검사하지만 `Length <= sizeof(payload)`를 검사하지 않은 채 `memcpy`를 호출하는 root cause를 찾았다. 20바이트 Payload를 16바이트 stack buffer에 복사한 PoC를 ASan으로 재현해 `WRITE of size 20`, `[32, 48) 'payload'`, offset 48 overflow와 `parse_record`의 `memcpy` 호출 지점을 확인했다. 사용자 commit `ab9e460`을 확인했다.
+- Next task: Day115 — Toy parser 2: harness 작성. Day114 parser의 입력 전달과 반복 실행을 fuzzing harness로 분리하고, CS에서 harness가 필요한 이유를 정리한다. 산출물은 `Day101-160/Day115/day115_fuzzing.md`이며 다음 공부 시작 전 `git pull`을 실행한다.
 
 ---
 
@@ -41,7 +41,7 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day113
+- Last completed: Day114
 - Current focus: Day112의 4바이트 `FUZZ` 타겟을 재사용해 seed corpus 품질과 최소화를 실험했다. `afl-showmap -e`로 `A/B`와 `FUZZ/FUZZJUNK`가 각각 동일한 edge 집합임을 확인한 뒤, `afl-cmin`으로 전체 coverage를 유지하며 corpus를 10개에서 8개로 줄였다. `afl-tmin`은 `FUZZJUNK`를 8바이트에서 4바이트 `FUZZ`로, AFL이 발견한 실제 14바이트 queue 입력도 4바이트 `FUZZ`로 줄이면서 `deep path`를 유지했다. 동일한 `-s 123 -E 5000` 조건에서 약한 seed `A`는 6/11 edge와 corpus 5개에 머물러 목표를 찾지 못했고, 강한 seed `FUZQ`는 9/11 edge와 corpus 8개를 만들며 230회 실행, 702ms에 목표 경로를 발견했다. 유효성·coverage 다양성·작은 크기와 빠른 실행·안정성을 좋은 seed corpus 기준으로 정리했으며, 단일 난수 seed 실험을 모든 실행으로 일반화할 수 없음을 확인했다. 사용자 commit `2fe9c92`을 확인했다.
 - Next task: Day114 — Toy parser 1: 타겟 설계. 취약한 C parser를 만들고 입력 형식을 정의한 뒤, CS에서 parser 구조와 state machine을 연결한다. 산출물은 `Day101-160/Day114/day114_fuzzing.md`이며 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
@@ -333,6 +333,15 @@ Daily review rule:
 - Files: Day101-160/Day113/day113_target, Day101-160/Day113/day113_target.c, Day101-160/Day113/corpus_raw/, Day101-160/Day113/corpus_cmin/, Day101-160/Day113/seed_weak/, Day101-160/Day113/seed_strong/, Day101-160/Day113/out_weak/, Day101-160/Day113/out_strong/, Day101-160/Day113/minimized_FUZZ, Day101-160/Day113/minimized_found, Day101-160/Day113/write_up.txt
 - Problems: `afl-cmin`은 전체 coverage를 유지하는 파일 조합을 고르는 도구이고 `afl-tmin`은 입력 하나의 불필요한 바이트를 줄이는 도구이므로 목적을 혼동하면 안 된다. 동일한 tuple 수나 높은 `execs_per_sec`만으로 corpus 품질을 판단할 수 없고 실제 edge 확장과 목표 도달을 함께 확인해야 한다. 이번 `FUZQ`의 우위는 `-s 123` 단일 비교 결과이므로 여러 난수 seed에서 목표 발견률과 발견까지의 실행 횟수를 반복 측정해야 일반화할 수 있다. WSL의 `core_pattern` 우회를 위해 사용한 `AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1` 환경에서는 crash 수집 결과를 신뢰하지 않으며, 이번 실습은 coverage와 corpus 비교만을 대상으로 했다.
 - Next: Day114
+
+
+### Day114
+- Topic: Fuzzing — Toy parser 1: 타겟 설계
+- Status: done
+- Result: `TPAR | Version | Command | Length | Payload` 형식의 C parser와 `START → MAGIC → VERSION → COMMAND → LENGTH → PAYLOAD → DONE` state 흐름을 작성했다. 정상 입력 `TPAR\\x01\\x01\\x04TEST`는 완료 state까지 처리됐고, `Length=20`에 실제 Payload가 10바이트인 입력은 state 4에서 `truncated payload`로 거부됐다. bad Magic, bad Version, valid 입력의 `afl-showmap -e` 결과를 비교해 tuple 수가 같아도 edge ID 집합이 다를 수 있고 정상 경로가 실패 경로의 단순한 상위 집합은 아님을 확인했다. 실제 20바이트 Payload를 포함한 27바이트 PoC는 원본 길이 검사를 통과했지만, ASan이 `parse_record`의 `memcpy`에서 `WRITE of size 20`, 16바이트 `payload` 영역 `[32, 48)`, offset 48의 `stack-buffer-overflow`를 탐지했다.
+- Files: Day101-160/Day114/asan_report.txt, Day101-160/Day114/crash_input.bin, Day101-160/Day114/day114_parser, Day101-160/Day114/day114_parser.c, Day101-160/Day114/day114_parser_asan, Day101-160/Day114/input_bad_magic, Day101-160/Day114/input_bad_version, Day101-160/Day114/input_valid, Day101-160/Day114/write_up.txt
+- Problems: `length <= input_size - 7`은 원본 범위 밖 읽기를 막고 `length <= sizeof(payload)`는 목적지 범위 밖 쓰기를 막으므로 두 검사의 역할을 구분해야 한다. 출력 길이를 `memcpy` 뒤에서 16바이트로 제한해도 이미 발생한 BOF는 취소되지 않는다. Magic·Version 통과는 공격자가 제어하는 Length의 신뢰 근거가 아니며, state는 개발자가 정의한 의미이고 AFL edge ID는 같은 빌드 안에서 경로 차이를 비교하는 불투명한 표식이다.
+- Next: Day115
 
 ---
 
