@@ -1,0 +1,14 @@
+# Day114 - Toy Parser Target Design
+
+`TPAR | Version | Command | Length | Payload` 형식의 C parser를 작성했다. Parser는 `START → MAGIC → VERSION → COMMAND → LENGTH → PAYLOAD → DONE` 순서로 입력을 검증하며, 실패 지점에 따라 서로 다른 AFL edge coverage가 생성됐다.
+
+원본 입력에 `Length`만큼의 Payload가 존재하는지는 검사하지만, `Length <= sizeof(payload)`인지는 검사하지 않고 다음 복사를 수행한다.
+
+```c
+char payload[16];
+memcpy(payload, input + 7, length);
+```
+
+정상 입력 `TPAR\x01\x01\x04TEST`는 정상 처리됐고, `Length=20`에 실제 Payload가 10바이트인 입력은 state 4에서 `truncated payload`로 거부됐다.
+
+실제 Payload도 20바이트인 입력은 원본 길이 검사를 통과한 뒤 ASan에서 `stack-buffer-overflow`가 발생했다. ASan은 16바이트 `payload` 영역 `[32, 48)`에 20바이트를 쓰면서 offset 48부터 범위를 벗어났음을 보여줬다. 따라서 목적지 버퍼 크기 검사의 누락이 BOF의 root cause다.
