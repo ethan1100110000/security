@@ -4,8 +4,8 @@
 매일 공부가 끝나면 아래 포인터와 운영 규칙을 기준으로 갱신한다.
 
 - Last completed: 마지막으로 완료한 Day
-- Current focus: `TPAR | Version | Command | Length | Payload` 형식의 취약한 C parser를 작성하고 `START → MAGIC → VERSION → COMMAND → LENGTH → PAYLOAD → DONE` state 흐름을 구성했다. 정상 입력, 잘린 Payload, 잘못된 Magic·Version 입력을 구분했으며 `afl-showmap -e`에서 실패 state와 정상 완료 경로가 서로 다른 edge ID 집합을 만든다는 점을 확인했다. 원본 입력에 `Length`만큼 데이터가 있는지는 검사하지만 `Length <= sizeof(payload)`를 검사하지 않은 채 `memcpy`를 호출하는 root cause를 찾았다. 20바이트 Payload를 16바이트 stack buffer에 복사한 PoC를 ASan으로 재현해 `WRITE of size 20`, `[32, 48) 'payload'`, offset 48 overflow와 `parse_record`의 `memcpy` 호출 지점을 확인했다. 사용자 commit `ab9e460`을 확인했다.
-- Next task: Day115 — Toy parser 2: harness 작성. Day114 parser의 입력 전달과 반복 실행을 fuzzing harness로 분리하고, CS에서 harness가 필요한 이유를 정리한다. 산출물은 `Day101-160/Day115/day115_fuzzing.md`이며 다음 공부 시작 전 `git pull`을 실행한다.
+- Current focus: 방금 완료한 핵심 내용과 검증
+- Next task: 다음에 바로 시작할 작업
 
 ---
 
@@ -42,8 +42,8 @@ Daily review rule:
 ## Current Pointer
 
 - Last completed: Day114
-- Current focus: Day112의 4바이트 `FUZZ` 타겟을 재사용해 seed corpus 품질과 최소화를 실험했다. `afl-showmap -e`로 `A/B`와 `FUZZ/FUZZJUNK`가 각각 동일한 edge 집합임을 확인한 뒤, `afl-cmin`으로 전체 coverage를 유지하며 corpus를 10개에서 8개로 줄였다. `afl-tmin`은 `FUZZJUNK`를 8바이트에서 4바이트 `FUZZ`로, AFL이 발견한 실제 14바이트 queue 입력도 4바이트 `FUZZ`로 줄이면서 `deep path`를 유지했다. 동일한 `-s 123 -E 5000` 조건에서 약한 seed `A`는 6/11 edge와 corpus 5개에 머물러 목표를 찾지 못했고, 강한 seed `FUZQ`는 9/11 edge와 corpus 8개를 만들며 230회 실행, 702ms에 목표 경로를 발견했다. 유효성·coverage 다양성·작은 크기와 빠른 실행·안정성을 좋은 seed corpus 기준으로 정리했으며, 단일 난수 seed 실험을 모든 실행으로 일반화할 수 없음을 확인했다. 사용자 commit `2fe9c92`을 확인했다.
-- Next task: Day114 — Toy parser 1: 타겟 설계. 취약한 C parser를 만들고 입력 형식을 정의한 뒤, CS에서 parser 구조와 state machine을 연결한다. 산출물은 `Day101-160/Day114/day114_fuzzing.md`이며 다음 공부 시작 전 `git pull`을 실행한다.
+- Current focus: `TPAR | Version | Command | Length | Payload` 형식의 취약한 C parser를 작성하고 `START → MAGIC → VERSION → COMMAND → LENGTH → PAYLOAD → DONE` state 흐름을 구성했다. 정상 입력, 잘린 Payload, 잘못된 Magic·Version 입력을 구분했으며 `afl-showmap -e`에서 실패 state와 정상 완료 경로가 서로 다른 edge ID 집합을 만든다는 점을 확인했다. 원본 입력에 `Length`만큼 데이터가 있는지는 검사하지만 `Length <= sizeof(payload)`를 검사하지 않은 채 `memcpy`를 호출하는 root cause를 찾았다. 20바이트 Payload를 16바이트 stack buffer에 복사한 PoC를 ASan으로 재현해 `WRITE of size 20`, `[32, 48) 'payload'`, offset 48 overflow와 `parse_record`의 `memcpy` 호출 지점을 확인했다. 사용자 commit `ab9e460`을 확인했다.
+- Next task: Day115 — Toy parser 2: harness 작성. Day114 parser의 입력 전달과 반복 실행을 fuzzing harness로 분리하고, CS에서 harness가 필요한 이유를 정리한다. 산출물은 `Day101-160/Day115/day115_fuzzing.md`이며 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
