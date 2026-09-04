@@ -1,0 +1,50 @@
+=================================================================
+==78==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x7ffc94a2b3f0 at pc 0x5741848d854a bp 0x7ffc94a2b3b0 sp 0x7ffc94a2ab80
+WRITE of size 20 at 0x7ffc94a2b3f0 thread T0
+    #0 0x5741848d8549 in __asan_memcpy (/mnt/d/security-roadmap/Day101-160/Day115/day115_stdin_asan+0xa0549) (BuildId: 4293cd7855fa5c88a4e38135b9eaae0ccdaeffe2)
+    #1 0x57418491442f in parse_record /mnt/d/security-roadmap/Day101-160/Day115/day115_parser.c:62:5
+    #2 0x5741849148c3 in main /mnt/d/security-roadmap/Day101-160/Day115/day115_stdin_harness.c:17:12
+    #3 0x78b2af429d8f in __libc_start_call_main csu/../sysdeps/nptl/libc_start_call_main.h:58:16
+    #4 0x78b2af429e3f in __libc_start_main csu/../csu/libc-start.c:392:3
+    #5 0x574184856324 in _start (/mnt/d/security-roadmap/Day101-160/Day115/day115_stdin_asan+0x1e324) (BuildId: 4293cd7855fa5c88a4e38135b9eaae0ccdaeffe2)
+
+Address 0x7ffc94a2b3f0 is located in stack of thread T0 at offset 48 in frame
+    #0 0x574184913ecf in parse_record /mnt/d/security-roadmap/Day101-160/Day115/day115_parser.c:23
+
+  This frame has 1 object(s):
+    [32, 48) 'payload' (line 59) <== Memory access at offset 48 overflows this variable
+HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork
+      (longjmp and C++ exceptions *are* supported)
+SUMMARY: AddressSanitizer: stack-buffer-overflow (/mnt/d/security-roadmap/Day101-160/Day115/day115_stdin_asan+0xa0549) (BuildId: 4293cd7855fa5c88a4e38135b9eaae0ccdaeffe2) in __asan_memcpy
+Shadow bytes around the buggy address:
+  0x10001293d620: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x10001293d630: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x10001293d640: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x10001293d650: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x10001293d660: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+=>0x10001293d670: 00 00 00 00 00 00 00 00 f1 f1 f1 f1 00 00[f3]f3
+  0x10001293d680: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x10001293d690: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x10001293d6a0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x10001293d6b0: f1 f1 f1 f1 00 00 00 00 00 00 00 00 00 00 00 00
+  0x10001293d6c0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==78==ABORTING
