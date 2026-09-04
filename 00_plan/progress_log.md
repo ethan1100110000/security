@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day114
-- Current focus: `TPAR | Version | Command | Length | Payload` 형식의 취약한 C parser를 작성하고 `START → MAGIC → VERSION → COMMAND → LENGTH → PAYLOAD → DONE` state 흐름을 구성했다. 정상 입력, 잘린 Payload, 잘못된 Magic·Version 입력을 구분했으며 `afl-showmap -e`에서 실패 state와 정상 완료 경로가 서로 다른 edge ID 집합을 만든다는 점을 확인했다. 원본 입력에 `Length`만큼 데이터가 있는지는 검사하지만 `Length <= sizeof(payload)`를 검사하지 않은 채 `memcpy`를 호출하는 root cause를 찾았다. 20바이트 Payload를 16바이트 stack buffer에 복사한 PoC를 ASan으로 재현해 `WRITE of size 20`, `[32, 48) 'payload'`, offset 48 overflow와 `parse_record`의 `memcpy` 호출 지점을 확인했다. 사용자 commit `ab9e460`을 확인했다.
-- Next task: Day115 — Toy parser 2: harness 작성. Day114 parser의 입력 전달과 반복 실행을 fuzzing harness로 분리하고, CS에서 harness가 필요한 이유를 정리한다. 산출물은 `Day101-160/Day115/day115_fuzzing.md`이며 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day115
+- Current focus: Day114의 `parse_record()`를 `day115_parser.c/.h`로 분리하고 외부 linkage로 바꿔 `nm -g`의 `T parse_record`를 확인했다. stdin harness는 FD 0에서 raw bytes와 `read` 반환 길이를 전달하고, file harness는 `argv[1]`의 파일을 열어 같은 parser를 호출하도록 작성했다. 정상 입력에서 두 harness의 동작이 같고, 20바이트 crash 입력에서 두 ASan 빌드 모두 `WRITE of size 20`, 16바이트 `payload`, `parse_record`의 `memcpy` stack-buffer-overflow를 동일하게 보고함을 확인했다. 서로 다른 harness 바이너리의 showmap은 각각 6 tuple이었지만 합쳐 12 edge로 해석할 수 없음을 정리했다. 사용자 commit `8d385ea`을 확인했다.
+- Next task: Day116 — Toy parser 3: crash 수집. AFL++를 실행해 crash/hang 결과를 확인하고, crash는 단독 재현과 sanitizer/GDB 증거로 검증한다. CS는 AFL++ crash 디렉터리 해석이며 산출물은 `Day101-160/Day116/day116_fuzzing.md`다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -342,6 +342,15 @@ Daily review rule:
 - Files: Day101-160/Day114/asan_report.txt, Day101-160/Day114/crash_input.bin, Day101-160/Day114/day114_parser, Day101-160/Day114/day114_parser.c, Day101-160/Day114/day114_parser_asan, Day101-160/Day114/input_bad_magic, Day101-160/Day114/input_bad_version, Day101-160/Day114/input_valid, Day101-160/Day114/write_up.txt
 - Problems: `length <= input_size - 7`은 원본 범위 밖 읽기를 막고 `length <= sizeof(payload)`는 목적지 범위 밖 쓰기를 막으므로 두 검사의 역할을 구분해야 한다. 출력 길이를 `memcpy` 뒤에서 16바이트로 제한해도 이미 발생한 BOF는 취소되지 않는다. Magic·Version 통과는 공격자가 제어하는 Length의 신뢰 근거가 아니며, state는 개발자가 정의한 의미이고 AFL edge ID는 같은 빌드 안에서 경로 차이를 비교하는 불투명한 표식이다.
 - Next: Day115
+
+
+### Day115
+- Topic: Fuzzing — Toy parser 2: harness 작성
+- Status: done
+- Result: Day114의 `parse_record()`를 `day115_parser.c`와 `day115_parser.h`로 분리하고 `static`을 제거했다. `nm -g day115_parser.o`에서 `T parse_record`를 확인해 다른 object에서 호출 가능한 전역 `.text` 심볼임을 검증했다. stdin harness는 FD 0에서 raw bytes를 읽어 buffer 주소와 `read` 반환 길이를 parser에 전달하며, file harness는 `argv[1]` 경로를 `open/read`한 뒤 같은 parser를 호출하도록 작성했다. 두 harness 모두 정상 입력에서 같은 결과를 냈고, Day114의 20바이트 crash 입력에서 두 ASan 빌드가 `WRITE of size 20`, `[32,48) 'payload'`, offset 48 overflow를 `parse_record`의 `memcpy`에서 동일하게 보고해 crash 신호가 숨겨지지 않음을 확인했다. `afl-showmap -e`는 두 harness에서 각각 6 tuple을 기록했지만 서로 다른 바이너리의 edge ID 공간이므로 단순 합산하지 않았다.
+- Files: Day101-160/Day115/day115_parser.c, Day101-160/Day115/day115_parser.h, Day101-160/Day115/day115_parser.o, Day101-160/Day115/day115_stdin_harness.c, Day101-160/Day115/day115_file_harness.c, Day101-160/Day115/day115_stdin, Day101-160/Day115/day115_file, Day101-160/Day115/day115_stdin_asan, Day101-160/Day115/day115_file_asan, Day101-160/Day115/stdin_asan_report.txt, Day101-160/Day115/file_asan_report.txt, Day101-160/Day115/write_up.txt
+- Problems: 바이너리 입력은 `fgets/strlen` 대신 raw `read`와 반환 길이를 사용해야 중간 NUL과 newline을 보존한다. file harness의 `@@`는 AFL++가 현재 변이 입력 파일 경로로 치환하는 placeholder이며 stdin harness에는 필요 없다. 좋은 harness는 불필요한 초기화와 외부 상태를 제거해 빠르고 결정적으로 target에 도달해야 하지만 실제 caller의 필수 precondition을 생략하면 실제 앱에서 도달 불가능한 crash를 만들 수 있다. 서로 다른 harness 빌드의 tuple 수와 edge ID는 직접 합산·비교할 수 없다.
+- Next: Day116
 
 ---
 
