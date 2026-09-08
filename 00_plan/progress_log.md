@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day115
-- Current focus: Day114의 `parse_record()`를 `day115_parser.c/.h`로 분리하고 외부 linkage로 바꿔 `nm -g`의 `T parse_record`를 확인했다. stdin harness는 FD 0에서 raw bytes와 `read` 반환 길이를 전달하고, file harness는 `argv[1]`의 파일을 열어 같은 parser를 호출하도록 작성했다. 정상 입력에서 두 harness의 동작이 같고, 20바이트 crash 입력에서 두 ASan 빌드 모두 `WRITE of size 20`, 16바이트 `payload`, `parse_record`의 `memcpy` stack-buffer-overflow를 동일하게 보고함을 확인했다. 서로 다른 harness 바이너리의 showmap은 각각 6 tuple이었지만 합쳐 12 edge로 해석할 수 없음을 정리했다. 사용자 commit `8d385ea`을 확인했다.
-- Next task: Day116 — Toy parser 3: crash 수집. AFL++를 실행해 crash/hang 결과를 확인하고, crash는 단독 재현과 sanitizer/GDB 증거로 검증한다. CS는 AFL++ crash 디렉터리 해석이며 산출물은 `Day101-160/Day116/day116_fuzzing.md`다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day117
+- Current focus: Day116에서 AFL++ 기본 PCGUARD 계측이 만든 9개 crash를 짧은 입력의 도달 가능성, CLASSIC/ASan 재실행, GDB의 AFL coverage bitmap fault를 근거로 false crash로 제외했다. CLASSIC+ASan 재실행은 120초 동안 36,299회 실행해 stability 100%, saved crash 1개를 기록했고, Length 0x40 입력이 16바이트 payload에 64바이트를 복사해 48바이트를 초과 기록함을 확인했다. Day117에서는 24바이트 경계 PoC와 84바이트 crash PoC를 해시로 보존했다. Length 17은 일반 빌드에서 exit 0이지만 ASan에서 stack-buffer-overflow와 exit 134를 냈고, Length 64는 일반 CLASSIC 빌드에서 3회 모두 SIGSEGV(exit 139)가 재현됐다. GDB에서 input, input_size와 반환 흐름 손상을 확인했으며 사용자 commit `d93a5cc`을 검증했다.
+- Next task: Day118 — Crash triage 2: dedup. 여러 crash를 signal·fault 위치·ASan/GDB stack trace·손상 객체·root cause 기준으로 묶고, 동일 root cause crash의 중복 판정 기준을 작성한다. CS는 crash deduplication 기준이며 산출물은 `Day101-160/Day118/day118_fuzzing.md`다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -351,6 +351,23 @@ Daily review rule:
 - Files: Day101-160/Day115/day115_parser.c, Day101-160/Day115/day115_parser.h, Day101-160/Day115/day115_parser.o, Day101-160/Day115/day115_stdin_harness.c, Day101-160/Day115/day115_file_harness.c, Day101-160/Day115/day115_stdin, Day101-160/Day115/day115_file, Day101-160/Day115/day115_stdin_asan, Day101-160/Day115/day115_file_asan, Day101-160/Day115/stdin_asan_report.txt, Day101-160/Day115/file_asan_report.txt, Day101-160/Day115/write_up.txt
 - Problems: 바이너리 입력은 `fgets/strlen` 대신 raw `read`와 반환 길이를 사용해야 중간 NUL과 newline을 보존한다. file harness의 `@@`는 AFL++가 현재 변이 입력 파일 경로로 치환하는 placeholder이며 stdin harness에는 필요 없다. 좋은 harness는 불필요한 초기화와 외부 상태를 제거해 빠르고 결정적으로 target에 도달해야 하지만 실제 caller의 필수 precondition을 생략하면 실제 앱에서 도달 불가능한 crash를 만들 수 있다. 서로 다른 harness 빌드의 tuple 수와 edge ID는 직접 합산·비교할 수 없다.
 - Next: Day116
+
+
+### Day116
+- Topic: Fuzzing — Toy parser 3: crash 수집
+- Status: done
+- Result: AFL++ 기본 PCGUARD 계측에서 저장된 9개 crash는 1바이트 입력도 parser 검증 전에 죽고, CLASSIC/ASan 재실행에서는 정상 거부되며, GDB fault가 `__afl_area_initial` coverage bitmap 접근에 있음을 확인해 false crash로 제외했다. CLASSIC+ASan 빌드는 120초 동안 36,299회 실행해 corpus 12개, stability 100%, saved crash 1개를 기록했다. 저장된 84바이트 입력은 유효한 `TPAR | 01 | 01 | 40` 헤더와 77바이트 실제 payload를 가져 길이 검사를 통과하고, 16바이트 `payload`에 64바이트를 복사해 48바이트를 초과 기록했다. 일반 CLASSIC 빌드에서 SIGSEGV(exit 139)를 재현하고 GDB에서 `input`, `input_size`, 반환 흐름이 입력 바이트로 손상된 것을 확인했다.
+- Files: Day101-160/Day116/day116_parser.c, Day101-160/Day116/day116_parser.h, Day101-160/Day116/day116_stdin_harness.c, Day101-160/Day116/day116_classic, Day101-160/Day116/day116_asan, Day101-160/Day116/day116_fuzz_asan, Day101-160/Day116/crash_000000.bin, Day101-160/Day116/out_classic_asan/, Day101-160/Day116/write_up.txt
+- Problems: AFL++의 `saved_crashes` 개수는 취약점 개수가 아니다. 계측 오류와 실제 target crash를 단독 재현·fault 위치·sanitizer/GDB 증거로 분리해야 한다. 일반 빌드에서 즉시 죽지 않는 overflow도 있으므로 crash 부재만으로 메모리 안전성을 판단하지 않는다.
+- Next: Day117
+
+### Day117
+- Topic: Fuzzing — Crash triage 1: reproduce
+- Status: done
+- Result: 24바이트 `poc_len17.bin`과 84바이트 `poc_len64.bin`을 각각 SHA-256 `002546b8c963b5dd9236f681dcd52abcace9ad6cb6cd354ffb4ad5128483e541`, `012a6b742258e0ade6aa6159d5b09fe4549f18653fec1e2da589b09969f00ce0`으로 보존했다. Length 16 경계 입력은 정상 종료했고, Length 17 PoC는 일반 CLASSIC 빌드에서 exit 0이지만 ASan이 1바이트 stack-buffer-overflow를 검출해 exit 134로 중단했다. Length 64 PoC는 일반 CLASSIC 빌드에서 3회 모두 SIGSEGV(exit 139)가 재현됐다. GDB에서 실제 crash 위치는 손상된 `input`을 다시 읽는 `parse_record` 64행이고, 최초 root cause는 62행의 크기 검증 없는 `memcpy`임을 구분했다.
+- Files: Day101-160/Day117/poc_len17.bin, Day101-160/Day117/poc_len64.bin, Day101-160/Day117/write_up.txt
+- Problems: `length > 16`은 메모리 손상이 시작되는 조건이지 일반 빌드의 SIGSEGV가 반드시 시작되는 조건은 아니다. 재현 문서에는 대상 빌드와 해시, PoC 크기와 해시, 정확한 실행 방식, 반복 결과, signal/종료 코드, sanitizer/GDB 근거를 함께 기록해야 한다.
+- Next: Day118
 
 ---
 
