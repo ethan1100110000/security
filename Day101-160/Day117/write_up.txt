@@ -1,0 +1,25 @@
+# Day117 - Crash Reproduction
+
+## 대상
+
+- `Day101-160/Day116/day116_classic`: 실제 crash 재현용
+- `Day101-160/Day116/day116_asan`: 메모리 오류 검증용
+
+## PoC
+
+| 파일 | 크기 | SHA-256 |
+|---|---:|---|
+| `poc_len17.bin` | 24바이트 | `002546b8c963b5dd9236f681dcd52abcace9ad6cb6cd354ffb4ad5128483e541` |
+| `poc_len64.bin` | 84바이트 | `012a6b742258e0ade6aa6159d5b09fe4549f18653fec1e2da589b09969f00ce0` |
+
+## 재현 결과
+
+`poc_len17.bin`은 `length=17`로, 16바이트 `payload`를 1바이트 초과한다. 일반 바이너리는 `exit=0`이지만 ASan은 `stack-buffer-overflow`를 검출하고 `exit=134`로 종료했다.
+
+`poc_len64.bin`은 `length=64`로 48바이트를 초과 기록한다. `day116_classic`에서 3회 모두 SIGSEGV(`exit=139`)가 재현됐다.
+
+GDB에서 `input`, `input_size`와 반환 흐름이 입력 바이트로 손상됐으며, 손상된 `input`을 다시 참조하는 `parse_record` 64행에서 crash가 발생했다.
+
+## 결론
+
+실제 crash 위치는 64행이지만 근본 원인은 62행의 크기 검증 없는 `memcpy`다. 일반 바이너리의 정상 종료만으로 메모리 오류가 없다고 판단할 수 없으며, sanitizer 또는 debugger 증거가 필요하다.

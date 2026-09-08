@@ -1,0 +1,10 @@
+# Day116 - AFL++ Crash 수집
+
+AFL++로 parser를 퍼징했다. 기본 PCGUARD 계측에서 발생한 9개 crash는 짧은 입력도 AFL bitmap 코드에서 죽었으므로 가짜 crash로 제외했다.
+
+CLASSIC+ASan으로 다시 퍼징한 결과 실제 crash 입력 1개를 수집했다. 입력의 `length`는 64바이트였지만 목적지 `payload`는 16바이트이므로 `memcpy`에서 48바이트가 초과 기록됐다.
+
+일반 바이너리에서 단독 실행 시 SIGSEGV가 재현됐으며, GDB에서 `input`, `input_size`, 반환 주소가 입력 바이트로 손상된 것을 확인했다. 실제 crash는 손상된 `input`을 다시 읽는 64행에서 발생했지만 근본 원인은 62행의 크기 검증 없는 `memcpy`다.
+
+PoC SHA-256:
+`012a6b742258e0ade6aa6159d5b09fe4549f18653fec1e2da589b09969f00ce0`
