@@ -1,0 +1,28 @@
+# Day118 - Crash Deduplication
+
+## 1. 목적
+
+AFL++가 저장한 crash 개수는 취약점 개수와 같지 않다. 여러 crash를 원인별로 분류하고 중복을 제거했다.
+
+## 2. 분류 기준
+
+* 파일 크기와 해시는 입력 식별에만 사용한다.
+* signal과 `함수명+offset`은 1차 분류 기준으로 사용한다.
+* 최종적으로 ASan 오류 종류, 문제 코드 위치, 손상 객체와 누락된 검사를 비교한다.
+* PIE/ASLR 환경에서는 절대주소 대신 `parse_record+1455`와 같은 상대 위치를 확인한다.
+* 같은 crash 위치라도 root cause가 같은지는 별도로 검증해야 한다.
+
+## 3. 분석 결과
+
+`poc_len17.bin`과 `poc_len64.bin`은 실행 결과가 달랐지만 모두 `parse_record`의 `memcpy`가 `payload[16]`을 초과해 기록하면서 발생했다. 따라서 두 입력은 동일한 stack-buffer-overflow 취약점으로 분류했다.
+
+PCGUARD에서 수집된 crash 9개는 일반 빌드에서 재현되지 않았으며, GDB 분석 결과 AFL coverage bitmap 접근 중 발생한 계측 문제였다. 따라서 parser 취약점에서는 제외했다.
+
+## 4. 결론
+
+수집된 입력은 다음 두 그룹으로 나뉜다.
+
+1. AFL 계측 과정에서 발생한 crash
+2. `payload[16]`의 길이 검증 누락으로 발생한 parser overflow
+
+실제 target 취약점은 1개이며, crash 파일 수를 그대로 취약점 수로 판단해서는 안 된다.
