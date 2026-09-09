@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day117
-- Current focus: Day116에서 AFL++ 기본 PCGUARD 계측이 만든 9개 crash를 짧은 입력의 도달 가능성, CLASSIC/ASan 재실행, GDB의 AFL coverage bitmap fault를 근거로 false crash로 제외했다. CLASSIC+ASan 재실행은 120초 동안 36,299회 실행해 stability 100%, saved crash 1개를 기록했고, Length 0x40 입력이 16바이트 payload에 64바이트를 복사해 48바이트를 초과 기록함을 확인했다. Day117에서는 24바이트 경계 PoC와 84바이트 crash PoC를 해시로 보존했다. Length 17은 일반 빌드에서 exit 0이지만 ASan에서 stack-buffer-overflow와 exit 134를 냈고, Length 64는 일반 CLASSIC 빌드에서 3회 모두 SIGSEGV(exit 139)가 재현됐다. GDB에서 input, input_size와 반환 흐름 손상을 확인했으며 사용자 commit `d93a5cc`을 검증했다.
-- Next task: Day118 — Crash triage 2: dedup. 여러 crash를 signal·fault 위치·ASan/GDB stack trace·손상 객체·root cause 기준으로 묶고, 동일 root cause crash의 중복 판정 기준을 작성한다. CS는 crash deduplication 기준이며 산출물은 `Day101-160/Day118/day118_fuzzing.md`다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day118
+- Current focus: Day118에서 crash 파일 수와 취약점 수를 구분하고 dedup 기준을 정리했다. 파일 크기와 해시는 입력 식별에만 사용하고, signal과 `함수명+offset`은 1차 분류 기준으로 사용하며, ASan 오류 종류·최초 문제 코드·손상 객체·위험 sink·누락된 검증을 최종 root-cause 기준으로 삼았다. `poc_len17.bin`과 `poc_len64.bin`은 증상과 overwrite 크기가 달라도 `parse_record`의 무검증 `memcpy`가 `payload[16]`을 넘긴 동일 취약점으로 묶었다. PCGUARD의 9개 false crash는 AFL coverage bitmap 계측 문제로 분리했으며 사용자 commit `382074d`을 검증했다.
+- Next task: Day119 — Crash triage 3: root cause. fault가 발생한 crash symptom과 최초 잘못된 상태를 만든 root cause를 구분하고, sanitizer/GDB stack trace에서 원인 코드까지 역추적한다. CS는 root cause와 crash symptom의 차이다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -368,6 +368,14 @@ Daily review rule:
 - Files: Day101-160/Day117/poc_len17.bin, Day101-160/Day117/poc_len64.bin, Day101-160/Day117/write_up.txt
 - Problems: `length > 16`은 메모리 손상이 시작되는 조건이지 일반 빌드의 SIGSEGV가 반드시 시작되는 조건은 아니다. 재현 문서에는 대상 빌드와 해시, PoC 크기와 해시, 정확한 실행 방식, 반복 결과, signal/종료 코드, sanitizer/GDB 근거를 함께 기록해야 한다.
 - Next: Day118
+
+### Day118
+- Topic: Fuzzing — Crash triage 2: dedup
+- Status: done
+- Result: AFL++가 저장한 crash 개수와 실제 취약점 개수를 분리했다. 입력의 크기와 해시는 입력 식별값으로, signal과 정규화한 `함수명+offset`은 1차 crash signature로 사용했다. 최종 dedup은 ASan 오류 종류, 최초 문제 소스 행, 손상 객체, 위험 연산과 누락된 검증을 기준으로 수행했다. `poc_len17.bin`과 `poc_len64.bin`은 일반 빌드의 종료 결과와 덮어쓴 크기는 달랐지만 모두 `parse_record`의 `memcpy`가 `payload[16]`을 초과한 동일 root cause이므로 하나의 취약점으로 묶었다. PCGUARD에서 수집된 9개 false crash는 일반 빌드에서 재현되지 않고 GDB fault가 AFL coverage bitmap에 있어 parser 취약점에서 제외했다.
+- Files: Day101-160/Day118/write_up.txt
+- Problems: PIE/ASLR은 실행마다 절대주소를 바꾸므로 같은 빌드에서는 module 상대주소 또는 `function+offset`으로 위치를 정규화해야 한다. 같은 crash 위치는 같은 증상의 강한 단서지만 같은 root cause를 단독으로 확정하지 못하며, 서로 다른 signal이나 종료 코드도 같은 메모리 손상에서 나올 수 있다. `saved_crashes`와 PoC 파일 수를 취약점 수로 해석하지 않는다.
+- Next: Day119
 
 ---
 
