@@ -1,0 +1,44 @@
+# Day119 - Crash triage 3: Root Cause
+
+## 1. 원인 추적
+
+`poc_len64.bin`은 전체 84바이트이며 헤더를 제외하면 77바이트가 존재한다. Length 필드는 64이므로 원본 길이 검사는 통과하지만, `payload[16]`에 64바이트를 복사해 48바이트 overflow가 발생한다.
+
+GDB에서 다음 스택 배치를 확인했다.
+
+* `input_size`: `payload + 24`
+* `input`: `payload + 32`
+* 복사 범위: `payload + 0`부터 `payload + 63`
+
+따라서 `memcpy`가 두 변수를 덮었고, 손상된 `input` 값은 `0x9f9f9f889f9f9f9f`가 됐다. 이후 64행에서 `input[5]`가 잘못된 주소 `0x9f9f9f889f9f9fa4`를 읽으면서 SIGSEGV가 발생했다.
+
+## 2. Root cause와 symptom
+
+* Root cause: `length`를 `sizeof(payload)`와 비교하지 않은 검증 누락
+* 최초 잘못된 연산: 62행의 `memcpy`
+* Crash symptom: 64행에서 손상된 `input`을 역참조해 발생한 SIGSEGV
+
+ASan에서는 잘못된 쓰기를 62행에서 즉시 탐지하지만, 일반 빌드에서는 메모리 손상 후 64행에서 crash가 나타났다.
+
+## 3. 수정 및 검증
+
+`memcpy` 전에 다음 검사를 추가했다.
+
+```c
+if (length > sizeof(payload)) {
+    fprintf(stderr, "reject at state 4: oversized payload\n");
+    return 1;
+}
+```
+
+검증 결과:
+
+* Length 4: 정상 처리, exit 0
+* Length 16: 경계값 정상 처리, exit 0
+* Length 17: 복사 전에 거부, exit 1
+* Length 64: 복사 전에 거부, exit 1
+* 수정 후 ASan 오류 없음
+
+## 4. 결론
+
+`parse_record()`의 길이 검증 누락이 메모리 손상을 만들고, 손상된 포인터의 후속 사용이 crash를 발생시켰다. 수정 후 기존 PoC가 위험한 `memcpy`에 도달하지 않으므로 해당 stack-buffer-overflow는 차단됐다. 단, 이 결과만으로 parser의 모든 메모리 취약점이 제거됐다고 판단할 수는 없다.

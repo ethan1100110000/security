@@ -1,0 +1,18 @@
+
+../Day116/in/seed
+TEST
+state=6
+exit=0
+
+../Day116/in/seed_len16
+AAAAAAAAAAAAAAAA
+state=6
+exit=0
+
+../Day117/poc_len17.bin
+reject at state 4: oversized payload
+exit=1
+
+../Day117/poc_len64.bin
+reject at state 4: oversized payload
+exit=1

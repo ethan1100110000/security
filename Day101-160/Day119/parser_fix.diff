@@ -1,0 +1,14 @@
+--- ../Day116/day116_parser.c	2026-09-07 18:33:09.296486600 +0900
++++ day119_parser_fixed.c	2026-09-10 21:00:20.178382800 +0900
+@@ -58,6 +58,11 @@
+ 
+     char payload[16] = {0};
+ 
++if (length > sizeof(payload)) {
++    fprintf(stderr, "reject at state 4: oversized payload\n");
++    return 1;
++}
++
+     /* 의도적 취약점: length와 sizeof(payload)를 비교하지 않는다. */
+     memcpy(payload, input + 7, length);
+ 
