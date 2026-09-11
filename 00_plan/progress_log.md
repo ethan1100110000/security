@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day118
-- Current focus: Day118에서 crash 파일 수와 취약점 수를 구분하고 dedup 기준을 정리했다. 파일 크기와 해시는 입력 식별에만 사용하고, signal과 `함수명+offset`은 1차 분류 기준으로 사용하며, ASan 오류 종류·최초 문제 코드·손상 객체·위험 sink·누락된 검증을 최종 root-cause 기준으로 삼았다. `poc_len17.bin`과 `poc_len64.bin`은 증상과 overwrite 크기가 달라도 `parse_record`의 무검증 `memcpy`가 `payload[16]`을 넘긴 동일 취약점으로 묶었다. PCGUARD의 9개 false crash는 AFL coverage bitmap 계측 문제로 분리했으며 사용자 commit `382074d`을 검증했다.
-- Next task: Day119 — Crash triage 3: root cause. fault가 발생한 crash symptom과 최초 잘못된 상태를 만든 root cause를 구분하고, sanitizer/GDB stack trace에서 원인 코드까지 역추적한다. CS는 root cause와 crash symptom의 차이다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day119
+- Current focus: Day119에서 `poc_len64.bin`의 일반 빌드 crash를 GDB로 역추적해 62행의 무검증 `memcpy`가 `payload[16]`을 넘어 `input_size`와 `input`을 손상시킨 최초 잘못된 연산이고, 64행의 손상된 `input[5]` 역참조는 crash symptom임을 구분했다. `length > sizeof(payload)` 검사를 복사 전에 추가한 뒤 Length 4·16은 정상 처리되고 Length 17·64는 state 4에서 거부되며 ASan 오류가 사라짐을 확인했다. 해당 stack-buffer-overflow는 막았지만 parser 전체의 메모리 안전성을 증명한 것은 아니며 사용자 commit `5c359838`을 검증했다.
+- Next task: Day120 — Fuzzing write-up 1. Day114~119의 toy parser fuzzing을 target과 입력 형식, harness, seed/corpus, 실행 환경과 계측, crash 재현, dedup, root cause, 패치 검증, 한계 순서로 하나의 재현 가능한 문서로 통합한다. CS는 fuzzing write-up 필수 항목이다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -376,6 +376,14 @@ Daily review rule:
 - Files: Day101-160/Day118/write_up.txt
 - Problems: PIE/ASLR은 실행마다 절대주소를 바꾸므로 같은 빌드에서는 module 상대주소 또는 `function+offset`으로 위치를 정규화해야 한다. 같은 crash 위치는 같은 증상의 강한 단서지만 같은 root cause를 단독으로 확정하지 못하며, 서로 다른 signal이나 종료 코드도 같은 메모리 손상에서 나올 수 있다. `saved_crashes`와 PoC 파일 수를 취약점 수로 해석하지 않는다.
 - Next: Day119
+
+### Day119
+- Topic: Fuzzing — Crash triage 3: root cause
+- Status: done
+- Result: 84바이트 `poc_len64.bin`의 Length 64가 원본 입력 길이 검사는 통과하지만 `payload[16]`에 64바이트를 복사해 48바이트 overflow를 만드는 흐름을 추적했다. GDB에서 `input_size`는 `payload+24`, `input`은 `payload+32`에 놓이고, 62행의 `memcpy`가 두 변수를 덮어 `input=0x9f9f9f889f9f9f9f`로 손상시킨 뒤 64행의 `input[5]` 역참조에서 SIGSEGV가 발생함을 확인했다. 복사 전에 `length > sizeof(payload)` 검사를 추가하고 ASan 빌드로 Length 4와 16은 exit 0, Length 17과 64는 state 4에서 exit 1로 거부되며 기존 PoC가 위험한 `memcpy`에 도달하지 않음을 검증했다.
+- Files: Day101-160/Day119/.gdb_history, Day101-160/Day119/day119_fixed_asan, Day101-160/Day119/day119_parser_fixed.c, Day101-160/Day119/fixed_test_results.txt, Day101-160/Day119/parser_fix.diff, Day101-160/Day119/write_up.txt
+- Problems: crash가 관찰된 64행은 symptom이고 메모리 손상을 처음 만든 62행의 `memcpy`와 목적지 크기 검증 누락이 root cause다. `length <= input_size - 7` 검사는 원본 범위 밖 읽기만 막으므로 `length <= sizeof(payload)` 목적지 검사도 별도로 필요하다. 경계값과 기존 PoC 검증으로 이번 stack-buffer-overflow가 차단됐다고 말할 수 있지만 parser 전체의 모든 취약점이 제거됐다고 일반화할 수는 없다.
+- Next: Day120
 
 ---
 
