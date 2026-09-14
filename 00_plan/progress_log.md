@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day119
-- Current focus: Day119에서 `poc_len64.bin`의 일반 빌드 crash를 GDB로 역추적해 62행의 무검증 `memcpy`가 `payload[16]`을 넘어 `input_size`와 `input`을 손상시킨 최초 잘못된 연산이고, 64행의 손상된 `input[5]` 역참조는 crash symptom임을 구분했다. `length > sizeof(payload)` 검사를 복사 전에 추가한 뒤 Length 4·16은 정상 처리되고 Length 17·64는 state 4에서 거부되며 ASan 오류가 사라짐을 확인했다. 해당 stack-buffer-overflow는 막았지만 parser 전체의 메모리 안전성을 증명한 것은 아니며 사용자 commit `5c359838`을 검증했다.
-- Next task: Day120 — Fuzzing write-up 1. Day114~119의 toy parser fuzzing을 target과 입력 형식, harness, seed/corpus, 실행 환경과 계측, crash 재현, dedup, root cause, 패치 검증, 한계 순서로 하나의 재현 가능한 문서로 통합한다. CS는 fuzzing write-up 필수 항목이다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day120
+- Current focus: Day120에서 Day114~119의 toy parser fuzzing 과정을 target/입력 구조, harness, seed·corpus, 실행 환경과 계측, crash 재현, dedup, root cause, 패치 검증, 한계 순서로 통합했다. CLASSIC+ASan fuzzing의 120초·36,299회·302.48 exec/s·corpus 12개·stability 100%·saved crash 1개를 기록하고, Length 17과 64 PoC의 크기·SHA-256 및 빌드별 예상 증상을 분리했다. 두 PoC를 목적지 크기 검증이 없는 `memcpy`라는 하나의 root cause로 분류했으며, `length <= sizeof(payload)` 검사를 복사 전에 추가해 Length 4·16은 허용되고 17·64는 거부됨을 확인했다. CS에서는 target/build/PoC/실행 결과가 재현 문서의 최소 식별 축임을 정리했고, Full RELRO에서도 GOT read로 libc 주소를 leak해 ret2libc로 연결할 수 있음을 복습했다. Day120 문서 commit `3ddf64139531d8d81b3ff9693d394225d603455c`을 확인했다.
+- Next task: Day121 — Open-source target 선정. 작고 빌드 가능한 C/C++ 오픈소스 타겟 후보 3개를 buildability와 attack surface 기준으로 비교하고 하나를 선정한다. CS는 target selection 기준: buildability/attack surface이다. 산출물은 `day121_fuzzing.md`이며, 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -384,6 +384,15 @@ Daily review rule:
 - Files: Day101-160/Day119/.gdb_history, Day101-160/Day119/day119_fixed_asan, Day101-160/Day119/day119_parser_fixed.c, Day101-160/Day119/fixed_test_results.txt, Day101-160/Day119/parser_fix.diff, Day101-160/Day119/write_up.txt
 - Problems: crash가 관찰된 64행은 symptom이고 메모리 손상을 처음 만든 62행의 `memcpy`와 목적지 크기 검증 누락이 root cause다. `length <= input_size - 7` 검사는 원본 범위 밖 읽기만 막으므로 `length <= sizeof(payload)` 목적지 검사도 별도로 필요하다. 경계값과 기존 PoC 검증으로 이번 stack-buffer-overflow가 차단됐다고 말할 수 있지만 parser 전체의 모든 취약점이 제거됐다고 일반화할 수는 없다.
 - Next: Day120
+
+
+### Day120
+- Topic: Fuzzing — Fuzzing write-up 1
+- Status: done
+- Result: Day114~119의 toy parser fuzzing을 하나의 재현 가능한 문서로 통합했다. `TPAR | Version | Command | Length | Payload` 입력 구조와 stdin/file harness, raw `read` 길이 전달, seed·corpus, CLASSIC+ASan 실행 환경을 기록했다. 120초 동안 36,299회 실행, 302.48 exec/s, corpus 12개, stability 100%, saved crash 1개라는 통계를 해석하고, 24바이트 Length 17 PoC와 84바이트 Length 64 PoC의 SHA-256 및 CLASSIC/ASan별 재현 결과를 분리했다. 두 PoC는 증상과 overflow 크기는 다르지만 모두 `payload[16]`에 대한 목적지 크기 검증 없이 `memcpy`를 수행한 동일 root cause로 dedup했다. 복사 전에 `length <= sizeof(payload)` 검사를 추가한 뒤 Length 4 일반 입력, Length 16 최대 정상 경계, Length 17 최초 비정상 경계, Length 64 기존 crash PoC를 검증해 해당 stack-buffer-overflow 경로가 차단됐음을 확인했다. CS에서는 target identity, build 환경, PoC identity, 정확한 실행·판정 방법을 write-up 필수 항목으로 정리했고, Full RELRO에서 GOT overwrite는 불가능하지만 GOT read로 libc base를 계산해 ret2libc로 연결하는 흐름을 복습했다.
+- Files: Day101-160/Day120/day120_fuzzing.md
+- Problems: CLASSIC의 정상 종료는 메모리 손상 부재를 뜻하지 않으며 ASan의 최초 잘못된 쓰기 증거와 함께 해석해야 한다. `saved_crashes` 및 PoC 파일 수는 취약점 수가 아니고, 같은 root cause가 서로 다른 signal·종료 결과를 만들 수 있다. 경계값과 기존 PoC 검증으로 확인된 Length 검증 누락 경로는 막았다고 말할 수 있지만 parser의 모든 BOF나 모든 취약점을 수정했다고 일반화할 수는 없다.
+- Next: Day121
 
 ---
 
