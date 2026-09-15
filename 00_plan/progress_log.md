@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day120
-- Current focus: Day120에서 Day114~119의 toy parser fuzzing 과정을 target/입력 구조, harness, seed·corpus, 실행 환경과 계측, crash 재현, dedup, root cause, 패치 검증, 한계 순서로 통합했다. CLASSIC+ASan fuzzing의 120초·36,299회·302.48 exec/s·corpus 12개·stability 100%·saved crash 1개를 기록하고, Length 17과 64 PoC의 크기·SHA-256 및 빌드별 예상 증상을 분리했다. 두 PoC를 목적지 크기 검증이 없는 `memcpy`라는 하나의 root cause로 분류했으며, `length <= sizeof(payload)` 검사를 복사 전에 추가해 Length 4·16은 허용되고 17·64는 거부됨을 확인했다. CS에서는 target/build/PoC/실행 결과가 재현 문서의 최소 식별 축임을 정리했고, Full RELRO에서도 GOT read로 libc 주소를 leak해 ret2libc로 연결할 수 있음을 복습했다. Day120 문서 commit `3ddf64139531d8d81b3ff9693d394225d603455c`을 확인했다.
-- Next task: Day121 — Open-source target 선정. 작고 빌드 가능한 C/C++ 오픈소스 타겟 후보 3개를 buildability와 attack surface 기준으로 비교하고 하나를 선정한다. CS는 target selection 기준: buildability/attack surface이다. 산출물은 `day121_fuzzing.md`이며, 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day121
+- Current focus: Day121에서 C/C++ 오픈소스 fuzzing 후보로 TinyXML-2, cJSON, LibYAML을 buildability, attack surface, harness 작성 가능성과 crash triage 비용 기준으로 비교했다. TinyXML-2는 CMake를 지원하고 핵심 소스가 두 파일이며 `XMLDocument::Parse(data, size)` 메모리 입력 API와 충분한 XML 파싱 경로가 있어 균형이 가장 좋다고 판단했다. 대상은 `master`의 commit `8224e427b655b83dae5e2298f1e6919523a78737`로 고정했고 `git ls-remote` 결과가 일치함을 확인했다. 다만 실제 buildability는 아직 잠정 판단이며 Day122의 일반·ASan·UBSan·AFL++ 빌드로 확정한다. CS에서는 프로그램 전체 attack surface와 현재 harness에서 입력으로 도달 가능한 campaign attack surface를 구분했다. 일일 shellcode 복습은 사용자 요청으로 생략했다. Day121 문서 commit `9a03ead43faff0ee268038f76dd03efe4eeba37b`을 확인했다.
+- Next task: Day122 — Target build with sanitizer. TinyXML-2를 고정 commit으로 checkout하고 일반 `clang++`, ASan·UBSan 및 `afl-clang-fast++` 빌드를 수행한다. 정상·비정상 XML smoke test와 반복 실행으로 결정성을 확인하고 빌드 명령, 버전, 결과와 실패 사례를 `day122_fuzzing.md`에 기록한다. CS는 sanitizer: ASAN/UBSAN 역할이다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -393,6 +393,15 @@ Daily review rule:
 - Files: Day101-160/Day120/day120_fuzzing.md
 - Problems: CLASSIC의 정상 종료는 메모리 손상 부재를 뜻하지 않으며 ASan의 최초 잘못된 쓰기 증거와 함께 해석해야 한다. `saved_crashes` 및 PoC 파일 수는 취약점 수가 아니고, 같은 root cause가 서로 다른 signal·종료 결과를 만들 수 있다. 경계값과 기존 PoC 검증으로 확인된 Length 검증 누락 경로는 막았다고 말할 수 있지만 parser의 모든 BOF나 모든 취약점을 수정했다고 일반화할 수는 없다.
 - Next: Day121
+
+
+### Day121
+- Topic: Fuzzing — Open-source target 선정
+- Status: done
+- Result: TinyXML-2, cJSON과 LibYAML을 buildability, attack surface, harness 작성 가능성과 crash triage 비용 기준으로 비교했다. TinyXML-2는 CMake를 지원하고 핵심 C++ 소스가 `tinyxml2.cpp`, `tinyxml2.h` 두 파일이며 `XMLDocument::Parse(const char *xml, size_t nBytes)`로 메모리 입력을 직접 전달할 수 있다. 태그, 속성, 텍스트, 중첩과 엔티티 처리 등 충분한 XML 파싱 경로가 있으면서 분석 범위가 과도하지 않아 최종 대상으로 선정했다. cJSON은 빌드가 쉽지만 공식 fuzz harness가 이미 있어 예비 후보로 두었고, LibYAML은 공격 표면은 더 넓지만 상태 관리와 triage 비용이 커 제외했다. TinyXML-2 `master`의 commit `8224e427b655b83dae5e2298f1e6919523a78737`을 `git ls-remote`로 확인해 고정했다. CS에서는 buildability를 반복 빌드와 계측 실행 가능성으로, attack surface를 외부 입력이 도달 가능한 처리 경로로 정의하고 프로그램 전체와 현재 fuzz campaign의 도달 범위를 구분했다.
+- Files: Day101-160/Day121/day121_fuzzing.md
+- Problems: XML은 웹 로직이 아니라 TinyXML-2의 C++ parser가 읽는 입력 형식이며, AFL++는 XML 바이트를 변이하고 sanitizer는 이를 처리하는 C++ 코드의 오류를 탐지한다. CMake와 메모리 입력 API의 존재는 buildability의 정적 근거일 뿐 실제 빌드 성공을 증명하지 않으므로 Day122에서 동적으로 검증해야 한다. attack surface가 넓어도 harness에서 도달하지 못하는 코드는 이번 campaign의 검사 범위가 아니다. 일일 shellcode 복습은 사용자 요청으로 생략했다.
+- Next: Day122
 
 ---
 
