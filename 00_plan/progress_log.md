@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day121
-- Current focus: Day121에서 C/C++ 오픈소스 fuzzing 후보로 TinyXML-2, cJSON, LibYAML을 buildability, attack surface, harness 작성 가능성과 crash triage 비용 기준으로 비교했다. TinyXML-2는 CMake를 지원하고 핵심 소스가 두 파일이며 `XMLDocument::Parse(data, size)` 메모리 입력 API와 충분한 XML 파싱 경로가 있어 균형이 가장 좋다고 판단했다. 대상은 `master`의 commit `8224e427b655b83dae5e2298f1e6919523a78737`로 고정했고 `git ls-remote` 결과가 일치함을 확인했다. 다만 실제 buildability는 아직 잠정 판단이며 Day122의 일반·ASan·UBSan·AFL++ 빌드로 확정한다. CS에서는 프로그램 전체 attack surface와 현재 harness에서 입력으로 도달 가능한 campaign attack surface를 구분했다. 일일 shellcode 복습은 사용자 요청으로 생략했다. Day121 문서 commit `9a03ead43faff0ee268038f76dd03efe4eeba37b`을 확인했다.
-- Next task: Day122 — Target build with sanitizer. TinyXML-2를 고정 commit으로 checkout하고 일반 `clang++`, ASan·UBSan 및 `afl-clang-fast++` 빌드를 수행한다. 정상·비정상 XML smoke test와 반복 실행으로 결정성을 확인하고 빌드 명령, 버전, 결과와 실패 사례를 `day122_fuzzing.md`에 기록한다. CS는 sanitizer: ASAN/UBSAN 역할이다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day122
+- Current focus: Day122에서 TinyXML-2 고정 commit `8224e427b655b83dae5e2298f1e6919523a78737`을 일반 `clang++`, ASan·UBSan 및 `afl-clang-fast++`로 빌드했다. 일반 빌드는 공식 CTest와 20회 반복 실행을 통과했다. PIE sanitizer 빌드는 ASan 보고서 없이 간헐적으로 SIGSEGV(exit 139)를 냈고 ASan 단독, leak 검사 ON/OFF에서도 재현됐다. TinyXML-2와 무관한 최소 probe도 `/mnt/d`와 `/tmp`에서 같은 현상을 보였지만 non-PIE probe는 20회 모두 정상 종료해, 대상 취약점이 아니라 현재 WSL에서 PIE·ASLR 배치와 ASan runtime이 상호작용하는 환경 문제로 범위를 좁혔다. 검사 전용 ASan·UBSan non-PIE 빌드는 공식 테스트 10회 모두 통과했다. AFL++ 빌드도 CTest를 통과했고 `afl-showmap`에서 2,197개 tuple을 기록해 계측을 확인했다. 단, `xmltest`는 변이 입력을 받는 harness가 아니므로 실제 fuzzing 준비 완료나 취약점 부재를 의미하지 않는다. CS에서는 ASan의 메모리 오류 탐지와 UBSan의 undefined behavior 탐지를 구분했고, Full RELRO에서 GOT write는 막혀도 GOT read로 libc 주소를 leak해 ret2libc로 연결할 수 있음을 복습했다. Day122 commit `edfe027fef5f47662a17478e1a09a13c3f2615f1`을 확인했다.
+- Next task: Day123 — Real seed corpus 구성. TinyXML-2에 사용할 XML 샘플을 10개 이상 수집하고 태그·속성·텍스트·중첩·엔티티·주석·CDATA·선언 등 문법 특성, 파일 크기와 예상 parse 결과를 기준으로 분류한다. 의미가 겹치는 입력과 서로 다른 파싱 경로를 구분해 seed 선정 근거를 `day123_fuzzing.md`에 기록한다. 아직 input harness가 없으므로 coverage 기반 `afl-cmin`은 Day124 이후에 수행하고, Day123 CS에서는 seed minimization과 corpus curation의 목적 차이를 정리한다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 
 ---
@@ -402,6 +402,16 @@ Daily review rule:
 - Files: Day101-160/Day121/day121_fuzzing.md
 - Problems: XML은 웹 로직이 아니라 TinyXML-2의 C++ parser가 읽는 입력 형식이며, AFL++는 XML 바이트를 변이하고 sanitizer는 이를 처리하는 C++ 코드의 오류를 탐지한다. CMake와 메모리 입력 API의 존재는 buildability의 정적 근거일 뿐 실제 빌드 성공을 증명하지 않으므로 Day122에서 동적으로 검증해야 한다. attack surface가 넓어도 harness에서 도달하지 못하는 코드는 이번 campaign의 검사 범위가 아니다. 일일 shellcode 복습은 사용자 요청으로 생략했다.
 - Next: Day122
+
+
+### Day122
+- Topic: Fuzzing — Target build with sanitizer
+- Status: done
+- Result: TinyXML-2 commit `8224e427b655b83dae5e2298f1e6919523a78737`을 일반 Clang, ASan·UBSan, AFL++ 세 환경으로 분리 빌드했다. 일반 빌드는 CTest와 20회 반복 실행을 통과했다. PIE ASan·UBSan 빌드는 보고서 없이 간헐적 SIGSEGV가 발생했으며 ASan 단독과 leak 검사 ON/OFF에서도 재현됐다. 정상 최소 ASan probe도 `/mnt/d` 및 `/tmp`에서 같은 증상을 보였고 non-PIE probe는 20/20 정상이라, TinyXML-2가 아닌 WSL의 PIE·ASLR/ASan runtime 상호작용으로 분리했다. 시스템 ASLR은 유지한 채 검사 전용 바이너리에만 `-fno-pie -no-pie`를 적용했고 ASan·UBSan 공식 테스트를 10/10 통과했다. AFL++ 계측 빌드는 CTest를 통과했으며 `afl-showmap`으로 2,197개 tuple을 확인했다.
+- Files: Day101-160/Day122/day122_fuzzing.md, Day101-160/Day122/asan_probe.cpp, Day101-160/Day122/environment.txt, Day101-160/Day122/plain_ctest.txt, Day101-160/Day122/plain_repeat_summary.txt, Day101-160/Day122/sanitize_ctest.txt, Day101-160/Day122/sanitize_repeat.txt, Day101-160/Day122/direct_exact_summary.txt, Day101-160/Day122/noleak_summary.txt, Day101-160/Day122/leak_summary.txt, Day101-160/Day122/asan_only_summary.txt, Day101-160/Day122/asan_probe_summary.txt, Day101-160/Day122/asan_probe_tmp_summary.txt, Day101-160/Day122/asan_probe_nopie_summary.txt, Day101-160/Day122/sanitize_nopie_repeat.txt, Day101-160/Day122/afl_build.txt, Day101-160/Day122/afl_ctest.txt, Day101-160/Day122/xmltest_afl.map
+- Problems: 일반 빌드의 정상 종료는 메모리 안전 증거가 아니며 sanitizer의 오류 종류·최초 잘못된 연산·stack trace·소스 행이 있어야 대상 취약점으로 분류할 수 있다. non-PIE는 현재 환경의 검사 안정화를 위한 설정이지 TinyXML-2 수정이나 배포 설정이 아니다. 2,197 tuple은 취약점 수나 소스 분기 수가 아니며, `xmltest`는 변이 입력을 전달하는 harness가 아니므로 실제 fuzzing campaign은 아직 시작하지 않았다.
+- Next: Day123
+
 
 ---
 
