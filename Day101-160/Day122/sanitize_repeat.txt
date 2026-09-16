@@ -1,0 +1,50 @@
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize
+Test project /mnt/d/tinyxml2-day122/build-sanitize
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.47 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.50 sec
+run=1 exit=0
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize
+Test project /mnt/d/tinyxml2-day122/build-sanitize
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................***Exception: SegFault  0.13 sec
+
+
+0% tests passed, 1 tests failed out of 1
+
+Total Test time (real) =   0.16 sec
+
+The following tests FAILED:
+	  1 - xmltest (SEGFAULT)
+Errors while running CTest
+run=2 exit=8
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize
+Test project /mnt/d/tinyxml2-day122/build-sanitize
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.54 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.57 sec
+run=3 exit=0
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize
+Test project /mnt/d/tinyxml2-day122/build-sanitize
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.53 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.57 sec
+run=4 exit=0
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize
+Test project /mnt/d/tinyxml2-day122/build-sanitize
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.53 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.57 sec
+run=5 exit=0

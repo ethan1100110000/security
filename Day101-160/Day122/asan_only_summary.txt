@@ -1,0 +1,10 @@
+asan-only run=1 raw_exit=0
+asan-only run=2 raw_exit=0
+asan-only run=3 raw_exit=139
+asan-only run=4 raw_exit=0
+asan-only run=5 raw_exit=0
+asan-only run=6 raw_exit=139
+asan-only run=7 raw_exit=0
+asan-only run=8 raw_exit=0
+asan-only run=9 raw_exit=0
+asan-only run=10 raw_exit=0

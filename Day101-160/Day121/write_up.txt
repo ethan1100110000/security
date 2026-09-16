@@ -1,0 +1,26 @@
+# Day121 - Open-source fuzzing target 선정
+
+## 1. 선정 기준
+- Buildability
+- Attack surface
+- Harness 작성 가능성
+- Crash triage 비용
+
+## 2. 후보 비교
+- TinyXML-2
+- cJSON
+- LibYAML
+
+## 3. 최종 선정
+- Target:
+- Repository:
+- Commit:
+- Memory input API:
+
+## 4. 선정 이유
+
+## 5. 제외 후보와 이유
+
+## 6. 전환 조건과 한계
+
+## 7. Day122 계획

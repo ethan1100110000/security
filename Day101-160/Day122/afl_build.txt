@@ -1,0 +1,6 @@
+[ 25%] Building CXX object CMakeFiles/tinyxml2.dir/tinyxml2.cpp.o
+[ 50%] Linking CXX static library libtinyxml2.a
+[ 50%] Built target tinyxml2
+[ 75%] Building CXX object CMakeFiles/xmltest.dir/xmltest.cpp.o
+[100%] Linking CXX executable xmltest
+[100%] Built target xmltest

@@ -1,0 +1,90 @@
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize-nopie
+Test project /mnt/d/tinyxml2-day122/build-sanitize-nopie
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.51 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.55 sec
+nopie-sanitize run=1 ctest_exit=0
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize-nopie
+Test project /mnt/d/tinyxml2-day122/build-sanitize-nopie
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.49 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.54 sec
+nopie-sanitize run=2 ctest_exit=0
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize-nopie
+Test project /mnt/d/tinyxml2-day122/build-sanitize-nopie
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.45 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.49 sec
+nopie-sanitize run=3 ctest_exit=0
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize-nopie
+Test project /mnt/d/tinyxml2-day122/build-sanitize-nopie
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.45 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.49 sec
+nopie-sanitize run=4 ctest_exit=0
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize-nopie
+Test project /mnt/d/tinyxml2-day122/build-sanitize-nopie
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.47 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.51 sec
+nopie-sanitize run=5 ctest_exit=0
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize-nopie
+Test project /mnt/d/tinyxml2-day122/build-sanitize-nopie
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.48 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.51 sec
+nopie-sanitize run=6 ctest_exit=0
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize-nopie
+Test project /mnt/d/tinyxml2-day122/build-sanitize-nopie
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.48 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.52 sec
+nopie-sanitize run=7 ctest_exit=0
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize-nopie
+Test project /mnt/d/tinyxml2-day122/build-sanitize-nopie
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.50 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.53 sec
+nopie-sanitize run=8 ctest_exit=0
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize-nopie
+Test project /mnt/d/tinyxml2-day122/build-sanitize-nopie
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.54 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.58 sec
+nopie-sanitize run=9 ctest_exit=0
+Internal ctest changing into directory: /mnt/d/tinyxml2-day122/build-sanitize-nopie
+Test project /mnt/d/tinyxml2-day122/build-sanitize-nopie
+    Start 1: xmltest
+1/1 Test #1: xmltest ..........................   Passed    0.53 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.57 sec
+nopie-sanitize run=10 ctest_exit=0

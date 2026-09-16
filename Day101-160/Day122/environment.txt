@@ -1,0 +1,5 @@
+8224e427b655b83dae5e2298f1e6919523a78737
+## HEAD (no branch)
+Ubuntu clang version 14.0.0-1ubuntu1.1
+Ubuntu clang version 13.0.1-2ubuntu2.2
+cmake version 3.22.1
