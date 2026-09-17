@@ -41,11 +41,10 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day122
-- Current focus: Day122에서 TinyXML-2 고정 commit `8224e427b655b83dae5e2298f1e6919523a78737`을 일반 `clang++`, ASan·UBSan 및 `afl-clang-fast++`로 빌드했다. 일반 빌드는 공식 CTest와 20회 반복 실행을 통과했다. PIE sanitizer 빌드는 ASan 보고서 없이 간헐적으로 SIGSEGV(exit 139)를 냈고 ASan 단독, leak 검사 ON/OFF에서도 재현됐다. TinyXML-2와 무관한 최소 probe도 `/mnt/d`와 `/tmp`에서 같은 현상을 보였지만 non-PIE probe는 20회 모두 정상 종료해, 대상 취약점이 아니라 현재 WSL에서 PIE·ASLR 배치와 ASan runtime이 상호작용하는 환경 문제로 범위를 좁혔다. 검사 전용 ASan·UBSan non-PIE 빌드는 공식 테스트 10회 모두 통과했다. AFL++ 빌드도 CTest를 통과했고 `afl-showmap`에서 2,197개 tuple을 기록해 계측을 확인했다. 단, `xmltest`는 변이 입력을 받는 harness가 아니므로 실제 fuzzing 준비 완료나 취약점 부재를 의미하지 않는다. CS에서는 ASan의 메모리 오류 탐지와 UBSan의 undefined behavior 탐지를 구분했고, Full RELRO에서 GOT write는 막혀도 GOT read로 libc 주소를 leak해 ret2libc로 연결할 수 있음을 복습했다. Day122 commit `edfe027fef5f47662a17478e1a09a13c3f2615f1`을 확인했다.
-- Next task: Day123 — Real seed corpus 구성. TinyXML-2에 사용할 XML 샘플을 10개 이상 수집하고 태그·속성·텍스트·중첩·엔티티·주석·CDATA·선언 등 문법 특성, 파일 크기와 예상 parse 결과를 기준으로 분류한다. 의미가 겹치는 입력과 서로 다른 파싱 경로를 구분해 seed 선정 근거를 `day123_fuzzing.md`에 기록한다. 아직 input harness가 없으므로 coverage 기반 `afl-cmin`은 Day124 이후에 수행하고, Day123 CS에서는 seed minimization과 corpus curation의 목적 차이를 정리한다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day123
+- Current focus: Day123에서 TinyXML-2 고정 commit `8224e427b655b83dae5e2298f1e6919523a78737`용 XML seed corpus 12개를 구성했다. 정상 seed 9개는 최소 요소, 텍스트, 속성, 중첩, 형제 요소, 주석, CDATA, 엔티티 참조, XML 선언을 각각 대표하고, 비정상 seed 3개는 닫는 태그 불일치, 속성값 따옴표 누락, 종료되지 않은 주석을 대상으로 한다. 각 파일의 크기, 문법 특성, 예상 parse 결과와 선정 이유를 `day123_fuzzing.md`에 분류했고 SHA-256 목록을 저장해 12개 모두 바이트 단위로 서로 다름을 확인했다. 아직 input harness가 없으므로 정상·오류 결과는 예상값이며 semantic·coverage 중복이나 TinyXML-2의 실제 처리 결과는 확정하지 않았다. CS에서는 corpus curation을 seed 수집·분류·선정의 전체 과정으로, seed minimization을 coverage나 동작을 보존하며 corpus의 파일 수 또는 개별 입력의 바이트를 줄이는 과정으로 구분했다. 복습에서는 NX로 비실행 스택의 shellcode가 직접 실행되지 않는 이유, ROP로 `mprotect`를 호출할 때 페이지 경계가 필요한 이유, Full RELRO에서도 `puts@got`을 읽어 libc base를 구한 뒤 `system("/bin/sh")`로 이어지는 2단계 ret2libc를 확인했다. Day123 commit `04c48c2c899daae27172482f9da8b5d3d5e0b3d0`을 확인했다.
+- Next task: Day124 — Harness 1: input API. TinyXML-2의 `XMLDocument::Parse(const char*, size_t)` 호출 조건과 반환값을 먼저 확인하고, 변이 buffer의 주소와 실제 길이를 직접 전달하는 최소 harness를 작성한다. Day122에서 안정성을 확인한 non-PIE ASan·UBSan 빌드와 AFL++ 계측 빌드로 컴파일한 뒤 Day123 seed 12개를 각각 실행해 예상한 성공·실패 결과, sanitizer 오류 부재, 반복 실행 안정성과 `afl-showmap` coverage를 확인한다. harness 검증 전에는 coverage 기반 `afl-cmin`을 실행하지 않는다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
-
 ---
 
 ## Recent Daily Log
@@ -412,6 +411,15 @@ Daily review rule:
 - Problems: 일반 빌드의 정상 종료는 메모리 안전 증거가 아니며 sanitizer의 오류 종류·최초 잘못된 연산·stack trace·소스 행이 있어야 대상 취약점으로 분류할 수 있다. non-PIE는 현재 환경의 검사 안정화를 위한 설정이지 TinyXML-2 수정이나 배포 설정이 아니다. 2,197 tuple은 취약점 수나 소스 분기 수가 아니며, `xmltest`는 변이 입력을 전달하는 harness가 아니므로 실제 fuzzing campaign은 아직 시작하지 않았다.
 - Next: Day123
 
+
+
+### Day123
+- Topic: Fuzzing — Real seed corpus 구성
+- Status: done
+- Result: TinyXML-2용 XML seed 12개를 수집·작성하고 문법 기능과 예상 parse 결과를 기준으로 분류했다. 정상 seed 9개는 최소 빈 요소, 텍스트 노드, 속성, 중첩, 형제 요소, 주석, CDATA, 엔티티 참조, XML 선언을 대표하며, 비정상 seed 3개는 닫는 태그 불일치, 속성값 따옴표 누락, 종료되지 않은 주석을 대표한다. 파일 크기는 7~45바이트이며 SHA-256을 기록하고 중복 해시가 없음을 확인했다. `01_minimal.xml`은 `09_declaration.xml`과 일부 구조가 겹쳐 보여도 최소 정상 입력이라는 목적이 있고 아직 coverage 증거가 없으므로 유지했다. CS에서는 corpus curation, `afl-cmin`의 corpus 단위 축소, `afl-tmin`의 개별 입력 축소를 구분했다. 복습에서는 NX 환경의 shellcode 실행 제한, ROP 기반 `mprotect`, Full RELRO에서 GOT read를 이용한 2단계 ret2libc를 확인했다.
+- Files: Day101-160/Day123/corpus_raw/, Day101-160/Day123/corpus_sha256.txt, Day101-160/Day123/day123_fuzzing.md, Day101-160/Day123/write_up.txt
+- Problems: 서로 다른 SHA-256은 바이트 단위 중복이 없다는 뜻일 뿐 서로 다른 parser coverage를 보장하지 않는다. 현재 성공·실패 분류는 문법에 따른 예상값으로 TinyXML-2에서 직접 검증한 결과가 아니며, 비정상 seed도 crash가 아니라 서로 다른 오류 처리 경로를 목표로 한다. input harness가 없으므로 `afl-showmap`, `afl-cmin`, `afl-tmin`을 이용한 coverage 기반 curation과 minimization은 아직 수행하지 않았다.
+- Next: Day124
 
 ---
 
