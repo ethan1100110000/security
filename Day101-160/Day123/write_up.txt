@@ -1,0 +1,6 @@
+### Day123 - Seed minimization과 corpus curation
+
+- 핵심 정의: Seed minimization은 필요한 동작이나 coverage를 유지하면서 corpus의 파일 수 또는 개별 입력의 바이트를 줄이는 과정이다.
+- 핵심 정의: Corpus curation은 목적에 맞는 seed를 수집·분류·선정하고 중복이나 비효율적인 입력을 관리하는 전체 과정이다.
+- 오늘 실습 연결: TinyXML-2용 XML seed 12개를 문법 특성에 따라 분류했으므로 오늘은 수동 corpus curation을 수행했다. 아직 harness와 coverage 측정이 없어 coverage 기반 minimization은 수행하지 않았다.
+- 불명확한 점: 현재 seed 중 실제로 같은 coverage를 만드는 입력이 무엇인지는 Day124 harness 작성 이후 확인해야 한다.
