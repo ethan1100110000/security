@@ -1,0 +1,48 @@
+=== 01_minimal.xml ===
+size=7 error=XML_SUCCESS(0)
+exit=0
+
+=== 02_text.xml ===
+size=18 error=XML_SUCCESS(0)
+exit=0
+
+=== 03_attribute.xml ===
+size=14 error=XML_SUCCESS(0)
+exit=0
+
+=== 04_nested.xml ===
+size=32 error=XML_SUCCESS(0)
+exit=0
+
+=== 05_siblings.xml ===
+size=21 error=XML_SUCCESS(0)
+exit=0
+
+=== 06_comment.xml ===
+size=31 error=XML_SUCCESS(0)
+exit=0
+
+=== 07_cdata.xml ===
+size=34 error=XML_SUCCESS(0)
+exit=0
+
+=== 08_entity.xml ===
+size=29 error=XML_SUCCESS(0)
+exit=0
+
+=== 09_declaration.xml ===
+size=45 error=XML_SUCCESS(0)
+exit=0
+
+=== 10_bad_close.xml ===
+size=20 error=XML_ERROR_MISMATCHED_ELEMENT(14)
+exit=0
+
+=== 11_bad_attribute.xml ===
+size=12 error=XML_ERROR_PARSING_ATTRIBUTE(7)
+exit=0
+
+=== 12_unclosed_comment.xml ===
+size=21 error=XML_ERROR_PARSING_COMMENT(10)
+exit=0
+

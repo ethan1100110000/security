@@ -1,0 +1,2 @@
+size=1048576 error=XML_ERROR_PARSING_TEXT(8)
+exit=0

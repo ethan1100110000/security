@@ -1,0 +1,2 @@
+size=0 error=XML_ERROR_EMPTY_DOCUMENT(13)
+exit=0
