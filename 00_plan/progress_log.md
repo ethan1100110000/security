@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day123
-- Current focus: Day123에서 TinyXML-2 고정 commit `8224e427b655b83dae5e2298f1e6919523a78737`용 XML seed corpus 12개를 구성했다. 정상 seed 9개는 최소 요소, 텍스트, 속성, 중첩, 형제 요소, 주석, CDATA, 엔티티 참조, XML 선언을 각각 대표하고, 비정상 seed 3개는 닫는 태그 불일치, 속성값 따옴표 누락, 종료되지 않은 주석을 대상으로 한다. 각 파일의 크기, 문법 특성, 예상 parse 결과와 선정 이유를 `day123_fuzzing.md`에 분류했고 SHA-256 목록을 저장해 12개 모두 바이트 단위로 서로 다름을 확인했다. 아직 input harness가 없으므로 정상·오류 결과는 예상값이며 semantic·coverage 중복이나 TinyXML-2의 실제 처리 결과는 확정하지 않았다. CS에서는 corpus curation을 seed 수집·분류·선정의 전체 과정으로, seed minimization을 coverage나 동작을 보존하며 corpus의 파일 수 또는 개별 입력의 바이트를 줄이는 과정으로 구분했다. 복습에서는 NX로 비실행 스택의 shellcode가 직접 실행되지 않는 이유, ROP로 `mprotect`를 호출할 때 페이지 경계가 필요한 이유, Full RELRO에서도 `puts@got`을 읽어 libc base를 구한 뒤 `system("/bin/sh")`로 이어지는 2단계 ret2libc를 확인했다. Day123 commit `04c48c2c899daae27172482f9da8b5d3d5e0b3d0`을 확인했다.
-- Next task: Day124 — Harness 1: input API. TinyXML-2의 `XMLDocument::Parse(const char*, size_t)` 호출 조건과 반환값을 먼저 확인하고, 변이 buffer의 주소와 실제 길이를 직접 전달하는 최소 harness를 작성한다. Day122에서 안정성을 확인한 non-PIE ASan·UBSan 빌드와 AFL++ 계측 빌드로 컴파일한 뒤 Day123 seed 12개를 각각 실행해 예상한 성공·실패 결과, sanitizer 오류 부재, 반복 실행 안정성과 `afl-showmap` coverage를 확인한다. harness 검증 전에는 coverage 기반 `afl-cmin`을 실행하지 않는다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day124
+- Current focus: Day124에서 TinyXML-2 고정 commit `8224e427b655b83dae5e2298f1e6919523a78737`의 `XMLDocument::Parse(const char*, size_t)`를 직접 호출하는 stdin harness를 작성했다. raw `read()`가 반환한 buffer 주소와 실제 길이를 전달하고, XML 문법 오류는 정상적인 parser rejection이므로 crash로 만들지 않고 `return 0`으로 처리했다. non-PIE ASan·UBSan 디버그 빌드와 AFL++ CLASSIC 계측 빌드를 검증했으며 Day123 seed 12개에서 정상 9개는 `XML_SUCCESS`, 비정상 3개는 예상한 TinyXML-2 오류 코드를 반환하고 모두 exit 0, sanitizer 오류 없음이 확인됐다. `afl-showmap -e` 결과는 12개 중 11개의 고유 map hash였고 `02_text.xml`과 `08_entity.xml`은 tuple 392 및 map hash가 동일해 동일 coverage로 관찰됐다. 정상 seed와 비정상 seed를 각각 5회 반복했을 때 map hash가 매회 같았다. 빈 입력은 `XML_ERROR_EMPTY_DOCUMENT(13)`, `<root/>\x00<<<<`는 size 12가 전달됐지만 NUL 뒤가 파싱되지 않아 `XML_SUCCESS(0)`, 1 MiB+32 입력은 앞의 1 MiB만 읽혀 `XML_ERROR_PARSING_TEXT(8)`로 정상 종료했다. CS에서는 `Parse(data, size)`가 `Parse(data)`나 파일 기반 `LoadFile()`보다 현재 fuzz target에 적합한 이유와 target 오류·harness 오류·sanitizer crash의 판정 기준을 구분했다. Day124 commit `1ea328dfc6fcccf9f6044e997edd5338524b9b6b`을 확인했다.
+- Next task: Day125 — Harness 2: persistent mode 검토. 현재 stdin one-shot harness와 AFL++ persistent loop의 입력 전달·객체 수명·iteration 간 상태 초기화 조건을 먼저 비교한다. TinyXML-2를 iteration마다 독립된 `XMLDocument` 상태로 실행할 수 있는지 확인하고, 가능하면 persistent harness를 작성해 one-shot과 실행 속도 및 coverage 안정성을 비교한다. 불가능하거나 현재 환경에서 불안정하면 구체적인 이유와 근거를 기록한다. crash는 단독 재현과 sanitizer/GDB 증거가 있을 때만 인정하며 결과를 `day125_fuzzing.md`에 정리한다. CS에서는 persistent mode가 프로세스 생성·초기화 비용을 줄여 빠른 이유를 오늘 실습과 연결한다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 ---
 
@@ -420,6 +420,15 @@ Daily review rule:
 - Files: Day101-160/Day123/corpus_raw/, Day101-160/Day123/corpus_sha256.txt, Day101-160/Day123/day123_fuzzing.md, Day101-160/Day123/write_up.txt
 - Problems: 서로 다른 SHA-256은 바이트 단위 중복이 없다는 뜻일 뿐 서로 다른 parser coverage를 보장하지 않는다. 현재 성공·실패 분류는 문법에 따른 예상값으로 TinyXML-2에서 직접 검증한 결과가 아니며, 비정상 seed도 crash가 아니라 서로 다른 오류 처리 경로를 목표로 한다. input harness가 없으므로 `afl-showmap`, `afl-cmin`, `afl-tmin`을 이용한 coverage 기반 curation과 minimization은 아직 수행하지 않았다.
 - Next: Day124
+
+
+### Day124
+- Topic: Fuzzing — Harness 1: input API
+- Status: done
+- Result: TinyXML-2의 `XMLDocument::Parse(const char*, size_t)`에 stdin raw buffer 주소와 `read()` 반환 길이를 직접 전달하는 최소 harness를 작성했다. non-PIE ASan·UBSan 디버그 빌드와 AFL++ CLASSIC 계측 빌드를 확인했고, Day123 seed 12개를 실행해 정상 9개는 `XML_SUCCESS`, 비정상 3개는 각각 `XML_ERROR_MISMATCHED_ELEMENT(14)`, `XML_ERROR_PARSING_ATTRIBUTE(7)`, `XML_ERROR_PARSING_COMMENT(10)`을 반환하며 모두 exit 0이고 sanitizer 오류가 없음을 확인했다. `afl-showmap -e`에서는 11개의 고유 coverage map이 나왔고 `02_text.xml`과 `08_entity.xml`은 tuple 392와 SHA-256이 동일했다. `01_minimal.xml`과 `10_bad_close.xml`을 각각 5회 반복한 map hash는 입력별로 매회 동일했다. 빈 입력, 중간 NUL, 1 MiB 초과 입력도 경계값으로 검증했다. CS에서는 pointer+size 메모리 API, 불필요한 파일 I/O 제거, parser rejection과 crash의 분리를 정리했다.
+- Files: Day101-160/Day124/day124_harness.cpp, Day101-160/Day124/write_up.txt, Day101-160/Day124/seed_results.txt, Day101-160/Day124/showmap_summary.txt, Day101-160/Day124/stability_summary.txt, Day101-160/Day124/empty_input_result.txt, Day101-160/Day124/nul_boundary_result.txt, Day101-160/Day124/oversize_input_result.txt
+- Problems: `size`를 전달하면 전체 바이트의 복사 경계는 보존되지만 TinyXML-2의 내부 파싱은 첫 NUL을 문자열 끝으로 취급하므로 그 뒤의 변이는 실행 경로에 영향을 주지 않을 수 있다. 한 번의 `read()`는 최대 1 MiB만 처리하므로 더 큰 입력의 나머지는 무시되는 harness 범위 제한이 있다. XML 오류 코드는 정상적인 target 결과이므로 `abort()`로 가짜 crash를 만들면 안 된다. tuple 개수가 같거나 map hash가 같으면 coverage 중복 가능성이 있으므로 `02_text.xml`과 `08_entity.xml`의 유지 여부는 이후 `afl-cmin` 결과로 판단해야 한다.
+- Next: Day125
 
 ---
 
