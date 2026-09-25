@@ -1,0 +1,28 @@
+[out_oneshot_run1/default/fuzzer_stats]
+run_time          : 60
+execs_done        : 40758
+execs_per_sec     : 679.21
+corpus_count      : 134
+stability         : 100.00%
+saved_crashes     : 0
+[out_oneshot_run2/default/fuzzer_stats]
+run_time          : 60
+execs_done        : 39311
+execs_per_sec     : 654.97
+corpus_count      : 133
+stability         : 100.00%
+saved_crashes     : 0
+[out_persistent_run1/default/fuzzer_stats]
+run_time          : 60
+execs_done        : 426027
+execs_per_sec     : 7098.44
+corpus_count      : 234
+stability         : 100.00%
+saved_crashes     : 0
+[out_persistent_run2/default/fuzzer_stats]
+run_time          : 60
+execs_done        : 449257
+execs_per_sec     : 7486.99
+corpus_count      : 236
+stability         : 100.00%
+saved_crashes     : 0

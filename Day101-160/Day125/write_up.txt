@@ -1,0 +1,103 @@
+# Day125 - TinyXML2 Persistent Mode Harness
+
+## 1. 목표
+
+Day124의 one-shot harness를 AFL++ persistent mode로 변경하고, 동일한 공유 메모리 입력 방식을 사용하는 one-shot harness와 실행 속도 및 안정성을 비교한다.
+
+## 2. 대상 및 빌드 조건
+
+- Target: TinyXML2
+- Commit: `8224e427b655b83dae5e2298f1e6919523a78737`
+- Instrumentation: AFL++ CLASSIC
+- Sanitizer: ASan + UBSan
+- Build type: non-PIE
+- Maximum input size: 1 MiB
+- Seed corpus: Day123에서 작성한 XML 12개
+
+WSL 환경에서 PIE와 ASan 조합이 간헐적으로 SIGSEGV를 발생시킨 전력이 있으므로 검증된 non-PIE 설정을 유지했다.
+
+## 3. Persistent harness 구조
+
+AFL++의 공유 메모리 입력 인터페이스를 사용했다.
+
+- `__AFL_FUZZ_INIT()`으로 공유 메모리 입력 기능 선언
+- `__AFL_INIT()`에서 deferred forkserver 시작
+- `__AFL_FUZZ_TESTCASE_BUF`로 입력 시작 주소 획득
+- `__AFL_FUZZ_TESTCASE_LEN`으로 실제 입력 크기 획득
+- `__AFL_LOOP(1000)`으로 child 하나가 최대 1,000개 입력 처리
+- 1 MiB를 초과하는 입력은 파싱하지 않고 정상 종료
+- 빈 입력은 별도로 거부하지 않고 TinyXML2에 전달
+
+각 반복에서 `test_one_input()`을 호출하고 함수 내부에서 새로운 `XMLDocument`를 생성한다. 파싱이 끝나면 객체가 소멸하므로 이전 입력의 DOM, 오류 상태, 메모리 풀 등이 다음 입력에 남을 가능성을 줄였다.
+
+## 4. 비교 기준
+
+Persistent mode의 효과만 비교하기 위해 Day124의 stdin 기반 harness를 직접 기준으로 사용하지 않았다.
+
+별도의 `day125_oneshot_shmem.cpp`를 작성해 다음 조건을 persistent harness와 동일하게 맞췄다.
+
+- 동일한 공유 메모리 입력
+- 동일한 `test_one_input()` 함수
+- 동일한 TinyXML2 소스
+- 동일한 CLASSIC, ASan, UBSan, non-PIE 옵션
+- 동일한 seed corpus와 AFL random seed
+- 동일한 60초 실행 시간
+
+두 harness의 핵심 차이는 `__AFL_LOOP(1000)`을 사용해 child를 재사용하는지 여부다.
+
+## 5. 기본 동작 검증
+
+Persistent harness를 `afl-showmap`으로 실행한 결과:
+
+- 12개 seed 모두 처리
+- 317개 튜플 수집
+- sanitizer 오류 없음
+- 정상 종료
+
+Forkserver handshake와 shared-memory fuzzing 기능도 정상적으로 확인됐다.
+
+## 6. 속도 비교
+
+| Mode | Run | Runtime | Executions | Exec/s | Corpus | Stability | Crashes |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| One-shot | 1 | 60s | 40,758 | 679.21 | 134 | 100% | 0 |
+| One-shot | 2 | 60s | 39,311 | 654.97 | 133 | 100% | 0 |
+| Persistent | 1 | 60s | 426,027 | 7,098.44 | 234 | 100% | 0 |
+| Persistent | 2 | 60s | 449,257 | 7,486.99 | 236 | 100% | 0 |
+
+평균 실행 속도:
+
+- One-shot: 667.09 exec/s
+- Persistent: 7,292.72 exec/s
+- Persistent mode 향상: 약 10.93배
+
+## 7. 결과 해석
+
+One-shot 모드에서도 forkserver 부모는 유지되지만 입력마다 새로운 child를 생성하고 종료한다.
+
+Persistent mode에서는 동일한 child가 최대 1,000개의 입력을 처리한다. 따라서 입력마다 반복되는 `fork`, 프로세스 종료, `wait` 등의 비용이 감소한다.
+
+`XMLDocument`는 매 입력마다 생성하고 소멸하므로 이번 속도 향상은 XMLDocument 재사용 때문이 아니라 child 프로세스 재사용에서 발생한 것이다.
+
+Persistent 실행에서 corpus 수가 더 많았지만, 이를 persistent mode가 새로운 실행 경로를 직접 만들었다는 의미로 해석할 수는 없다. 같은 시간 동안 약 11배 많은 변이를 실행한 영향이 크며, 서로 다른 harness 바이너리의 coverage 값과 corpus 수를 직접 비교하는 데도 한계가 있다.
+
+## 8. 안정성과 한계
+
+두 번의 실행에서 stability는 모두 100%였으며 crash와 sanitizer 오류는 발견되지 않았다. 이는 이번 실험 범위에서 입력 간 상태 누수가 관찰되지 않았다는 의미다.
+
+다만 다음 사항까지 증명하지는 않는다.
+
+- 상태 누수가 절대 존재하지 않음
+- 반복 횟수 1000이 최적값임
+- TinyXML2에 취약점이 없음
+- 더 긴 fuzzing에서도 동일한 안정성이 유지됨
+
+반복 횟수 1000은 속도와 상태 격리를 위한 시작값이다. 장시간 실행이나 100, 1000, 10000회 비교 없이 최적값이라고 단정할 수 없다.
+
+시스템의 `core_pattern`이 외부 처리기로 연결되어 있어 속도 실험에서는 `AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1`을 사용했다. 따라서 향후 crash가 저장되면 AFL의 개수만 신뢰하지 않고 별도 실행과 sanitizer 보고서로 재현해야 한다.
+
+## 9. 결론
+
+TinyXML2 메모리 입력 harness에 AFL++ persistent mode를 적용했다. 공유 메모리 one-shot 기준과 비교해 평균 약 10.93배의 실행 속도 향상을 확인했으며, 두 번의 60초 실험에서 stability 100%를 유지했다.
+
+현재 결과는 persistent mode 적용 가능성과 단기 안정성을 확인한 것이며, 취약점 발견이나 상태 누수 부재를 확정한 결과는 아니다.

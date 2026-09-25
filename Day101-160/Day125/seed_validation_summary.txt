@@ -1,0 +1,2 @@
+[1;92m[+] [0mProcessed 12 input files.[0m
+[1;92m[+] [0mCaptured 317 tuples (map size 65536, highest value 1, total values 4287) in 'persistent_seed_maps_run1'.[0m[0m
