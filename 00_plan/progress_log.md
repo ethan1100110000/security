@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day124
-- Current focus: Day124에서 TinyXML-2 고정 commit `8224e427b655b83dae5e2298f1e6919523a78737`의 `XMLDocument::Parse(const char*, size_t)`를 직접 호출하는 stdin harness를 작성했다. raw `read()`가 반환한 buffer 주소와 실제 길이를 전달하고, XML 문법 오류는 정상적인 parser rejection이므로 crash로 만들지 않고 `return 0`으로 처리했다. non-PIE ASan·UBSan 디버그 빌드와 AFL++ CLASSIC 계측 빌드를 검증했으며 Day123 seed 12개에서 정상 9개는 `XML_SUCCESS`, 비정상 3개는 예상한 TinyXML-2 오류 코드를 반환하고 모두 exit 0, sanitizer 오류 없음이 확인됐다. `afl-showmap -e` 결과는 12개 중 11개의 고유 map hash였고 `02_text.xml`과 `08_entity.xml`은 tuple 392 및 map hash가 동일해 동일 coverage로 관찰됐다. 정상 seed와 비정상 seed를 각각 5회 반복했을 때 map hash가 매회 같았다. 빈 입력은 `XML_ERROR_EMPTY_DOCUMENT(13)`, `<root/>\x00<<<<`는 size 12가 전달됐지만 NUL 뒤가 파싱되지 않아 `XML_SUCCESS(0)`, 1 MiB+32 입력은 앞의 1 MiB만 읽혀 `XML_ERROR_PARSING_TEXT(8)`로 정상 종료했다. CS에서는 `Parse(data, size)`가 `Parse(data)`나 파일 기반 `LoadFile()`보다 현재 fuzz target에 적합한 이유와 target 오류·harness 오류·sanitizer crash의 판정 기준을 구분했다. Day124 commit `1ea328dfc6fcccf9f6044e997edd5338524b9b6b`을 확인했다.
-- Next task: Day125 — Harness 2: persistent mode 검토. 현재 stdin one-shot harness와 AFL++ persistent loop의 입력 전달·객체 수명·iteration 간 상태 초기화 조건을 먼저 비교한다. TinyXML-2를 iteration마다 독립된 `XMLDocument` 상태로 실행할 수 있는지 확인하고, 가능하면 persistent harness를 작성해 one-shot과 실행 속도 및 coverage 안정성을 비교한다. 불가능하거나 현재 환경에서 불안정하면 구체적인 이유와 근거를 기록한다. crash는 단독 재현과 sanitizer/GDB 증거가 있을 때만 인정하며 결과를 `day125_fuzzing.md`에 정리한다. CS에서는 persistent mode가 프로세스 생성·초기화 비용을 줄여 빠른 이유를 오늘 실습과 연결한다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day125
+- Current focus: Day125에서 TinyXML-2 메모리 harness에 AFL++ persistent mode를 적용했다. `__AFL_FUZZ_INIT()`, `__AFL_INIT()`, `__AFL_FUZZ_TESTCASE_BUF`, `__AFL_FUZZ_TESTCASE_LEN`, `__AFL_LOOP(1000)`을 사용하고, 각 iteration마다 독립된 `XMLDocument`를 생성·소멸해 입력 간 상태 잔존 가능성을 줄였다. 1 MiB 입력 상한을 유지했으며 Day123 seed 12개를 모두 처리해 317 tuple, 정상 종료, sanitizer 오류 없음이 확인됐다. Persistent 효과만 분리하기 위해 같은 shared-memory 입력과 빌드 옵션을 사용하는 one-shot 비교 harness를 별도로 작성했다. 각 모드를 60초씩 두 번 실행한 결과 one-shot은 평균 667.09 exec/s, persistent는 평균 7,292.72 exec/s로 약 10.93배 빨랐고 모든 실행의 stability는 100%, saved crash는 0이었다. 이는 이번 단기 실험에서 상태 누수가 관찰되지 않았다는 뜻이며, `__AFL_LOOP(1000)`이 최적값이거나 상태 누수가 절대 없음을 증명하지는 않는다. WSL `core_pattern` 우회를 위해 속도 실험에 `AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1`을 사용했으므로 향후 crash는 반드시 단독 재현과 sanitizer/GDB 증거로 판정한다. CS에서는 일반 forkserver가 입력마다 child를 생성·종료하는 반면 persistent mode는 같은 child를 여러 입력 동안 재사용해 `fork/exit/wait` 비용을 줄이는 원리를 정리했다. Day125 commit `d68ade29c6ab0bedeb6ca18688ec5074c836f582`을 확인했다.
+- Next task: Day126 — Harness 3: CLI wrapper. TinyXML-2의 메모리 target을 유지하면서 file/stdin 입력 wrapper를 안정화하고, CLI wrapper와 stdin/file input 방식의 차이, 실제 길이 전달, 오류 처리, crash 신호 보존 여부를 비교한다. 같은 seed와 경계 입력으로 정상·문법 오류·sanitizer crash 판정이 wrapper 때문에 달라지지 않는지 검증하고 결과를 `day126_fuzzing.md`에 정리한다. crash는 단독 재현과 sanitizer/GDB 증거가 있을 때만 인정한다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 ---
 
@@ -429,6 +429,15 @@ Daily review rule:
 - Files: Day101-160/Day124/day124_harness.cpp, Day101-160/Day124/write_up.txt, Day101-160/Day124/seed_results.txt, Day101-160/Day124/showmap_summary.txt, Day101-160/Day124/stability_summary.txt, Day101-160/Day124/empty_input_result.txt, Day101-160/Day124/nul_boundary_result.txt, Day101-160/Day124/oversize_input_result.txt
 - Problems: `size`를 전달하면 전체 바이트의 복사 경계는 보존되지만 TinyXML-2의 내부 파싱은 첫 NUL을 문자열 끝으로 취급하므로 그 뒤의 변이는 실행 경로에 영향을 주지 않을 수 있다. 한 번의 `read()`는 최대 1 MiB만 처리하므로 더 큰 입력의 나머지는 무시되는 harness 범위 제한이 있다. XML 오류 코드는 정상적인 target 결과이므로 `abort()`로 가짜 crash를 만들면 안 된다. tuple 개수가 같거나 map hash가 같으면 coverage 중복 가능성이 있으므로 `02_text.xml`과 `08_entity.xml`의 유지 여부는 이후 `afl-cmin` 결과로 판단해야 한다.
 - Next: Day125
+
+
+### Day125
+- Topic: Fuzzing — Harness 2: persistent mode 검토
+- Status: done
+- Result: TinyXML-2 memory harness에 AFL++ shared-memory persistent mode를 적용했다. `__AFL_LOOP(1000)` 안에서 입력 pointer와 실제 길이를 받고, 각 iteration마다 새 `XMLDocument`를 생성해 이전 DOM·오류·메모리 상태가 다음 입력에 남을 가능성을 줄였다. Day123 seed 12개는 모두 정상 처리됐고 `afl-showmap`에서 317 tuple, sanitizer 오류 없음이 확인됐다. Persistent 효과를 분리하기 위해 shared-memory one-shot 비교 harness를 같은 CLASSIC+ASan+UBSan, non-PIE 조건으로 빌드했다. 60초 실행을 모드별 두 번 수행해 one-shot 679.21/654.97 exec/s, persistent 7,098.44/7,486.99 exec/s를 기록했고 평균 기준 약 10.93배 향상을 확인했다. 네 실행 모두 stability 100%, saved crash 0이었다.
+- Files: Day101-160/Day125/day125_persistent_harness.cpp, Day101-160/Day125/day125_oneshot_shmem.cpp, Day101-160/Day125/write_up.txt, Day101-160/Day125/comparison_summary.txt, Day101-160/Day125/seed_validation_summary.txt, Day101-160/Day125/source_sha256.txt
+- Problems: one-shot과 persistent의 차이를 격리하려면 Day124 stdin harness가 아니라 동일한 shared-memory one-shot harness를 기준으로 사용해야 한다. 서로 다른 harness 바이너리의 tuple·corpus 수는 직접 비교할 수 없고 persistent의 더 큰 corpus는 같은 시간에 더 많은 변이를 실행한 영향이 크다. stability 100%는 이번 실험에서 상태 누수가 관찰되지 않았다는 뜻이지 누수 부재의 증명은 아니다. 반복값 1000도 최적값으로 확정하지 않았으며, WSL `core_pattern` 우회 환경의 saved crash는 단독 재현 없이 신뢰하지 않는다.
+- Next: Day126
 
 ---
 
