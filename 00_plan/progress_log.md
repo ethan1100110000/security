@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day125
-- Current focus: Day125에서 TinyXML-2 메모리 harness에 AFL++ persistent mode를 적용했다. `__AFL_FUZZ_INIT()`, `__AFL_INIT()`, `__AFL_FUZZ_TESTCASE_BUF`, `__AFL_FUZZ_TESTCASE_LEN`, `__AFL_LOOP(1000)`을 사용하고, 각 iteration마다 독립된 `XMLDocument`를 생성·소멸해 입력 간 상태 잔존 가능성을 줄였다. 1 MiB 입력 상한을 유지했으며 Day123 seed 12개를 모두 처리해 317 tuple, 정상 종료, sanitizer 오류 없음이 확인됐다. Persistent 효과만 분리하기 위해 같은 shared-memory 입력과 빌드 옵션을 사용하는 one-shot 비교 harness를 별도로 작성했다. 각 모드를 60초씩 두 번 실행한 결과 one-shot은 평균 667.09 exec/s, persistent는 평균 7,292.72 exec/s로 약 10.93배 빨랐고 모든 실행의 stability는 100%, saved crash는 0이었다. 이는 이번 단기 실험에서 상태 누수가 관찰되지 않았다는 뜻이며, `__AFL_LOOP(1000)`이 최적값이거나 상태 누수가 절대 없음을 증명하지는 않는다. WSL `core_pattern` 우회를 위해 속도 실험에 `AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1`을 사용했으므로 향후 crash는 반드시 단독 재현과 sanitizer/GDB 증거로 판정한다. CS에서는 일반 forkserver가 입력마다 child를 생성·종료하는 반면 persistent mode는 같은 child를 여러 입력 동안 재사용해 `fork/exit/wait` 비용을 줄이는 원리를 정리했다. Day125 commit `d68ade29c6ab0bedeb6ca18688ec5074c836f582`을 확인했다.
-- Next task: Day126 — Harness 3: CLI wrapper. TinyXML-2의 메모리 target을 유지하면서 file/stdin 입력 wrapper를 안정화하고, CLI wrapper와 stdin/file input 방식의 차이, 실제 길이 전달, 오류 처리, crash 신호 보존 여부를 비교한다. 같은 seed와 경계 입력으로 정상·문법 오류·sanitizer crash 판정이 wrapper 때문에 달라지지 않는지 검증하고 결과를 `day126_fuzzing.md`에 정리한다. crash는 단독 재현과 sanitizer/GDB 증거가 있을 때만 인정한다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day126
+- Current focus: Day126에서 TinyXML-2 CLI wrapper의 stdin/file(`@@`) 입력을 공통 `read_all()`에 연결하고 실제 읽은 길이를 `XMLDocument::Parse`에 전달했다. 짧게 나뉜 pipe 입력을 끝까지 누적하고 `EINTR` 재시도, open/read/close 오류, 1 MiB+1 바이트 버퍼를 통한 초과 입력 판정을 구현했다. Day123 seed 12개는 두 입력 방식에서 파싱 결과와 종료 코드가 모두 일치했다. 정확히 1 MiB는 파서에 전달되어 `XML_ERROR_EMPTY_DOCUMENT(13)`으로 exit 0, 1 MiB+1 바이트는 wrapper에서 exit 1로 거부됐다. 최소 seed의 `afl-showmap -e`는 stdin 292 tuple, file 296 tuple로 wrapper 분기 차이를 포함하며, 각 방식에서 5회 반복한 map hash는 방식별로 동일했다. 이는 해당 입력의 반복 안정성만 확인한 것이고 퍼징이나 취약점 부재의 근거는 아니다. CS에서는 `read()`의 부분 읽기·EOF 0·`EINTR`, parser 오류와 wrapper 오류의 종료 코드, 전체 하네스 coverage와 parser coverage의 차이를 정리했다. Day126 commit `4170d5e2648cd155e7e9e656ecca1b1912ed87ad`를 확인했다.
+- Next task: Day127 — Fuzzing trial run. Day123 seed 12개와 검증한 harness를 사용해 짧은 AFL++ trial fuzz를 실행하고 exec/sec, path/corpus 변화, stability, crash 수를 기록한다. WSL의 PIE+ASan 불안정성과 `core_pattern` 우회 조건을 명시하고, crash는 단독 재현과 sanitizer/GDB 증거로만 인정한다. 결과와 한계를 `day127_fuzzing.md`에 정리하고 CS에서 exec/sec/path/crash 지표를 구분한다. 다음 공부 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 ---
 
@@ -438,6 +438,15 @@ Daily review rule:
 - Files: Day101-160/Day125/day125_persistent_harness.cpp, Day101-160/Day125/day125_oneshot_shmem.cpp, Day101-160/Day125/write_up.txt, Day101-160/Day125/comparison_summary.txt, Day101-160/Day125/seed_validation_summary.txt, Day101-160/Day125/source_sha256.txt
 - Problems: one-shot과 persistent의 차이를 격리하려면 Day124 stdin harness가 아니라 동일한 shared-memory one-shot harness를 기준으로 사용해야 한다. 서로 다른 harness 바이너리의 tuple·corpus 수는 직접 비교할 수 없고 persistent의 더 큰 corpus는 같은 시간에 더 많은 변이를 실행한 영향이 크다. stability 100%는 이번 실험에서 상태 누수가 관찰되지 않았다는 뜻이지 누수 부재의 증명은 아니다. 반복값 1000도 최적값으로 확정하지 않았으며, WSL `core_pattern` 우회 환경의 saved crash는 단독 재현 없이 신뢰하지 않는다.
 - Next: Day126
+
+
+### Day126
+- Topic: Fuzzing — Harness 3: CLI wrapper
+- Status: done
+- Result: TinyXML-2 하네스에 stdin과 파일 경로(`@@`) 입력을 추가하고 공통 `read_all()`에서 부분 읽기와 EOF, `EINTR` 재시도 및 1 MiB 상한을 처리했다. Day123 seed 12개에서 두 입력 방식의 파싱 결과와 종료 코드가 모두 일치했다. 정확히 1 MiB 입력은 파서에 전달되어 exit 0, 1 MiB+1 바이트는 wrapper에서 exit 1로 거부됐으며 부분 pipe 입력 14바이트도 정상 파싱됐다. 최소 XML seed의 `afl-showmap -e`는 stdin 292 tuple, 파일 296 tuple이고, 각 방식 5회 반복 map hash는 방식별로 모두 같았다. CS에서는 `read()`의 반환값과 부분 읽기, 추가 1바이트를 읽는 크기 판정, `EINTR`, parser 오류와 wrapper 오류의 구별, 전체 하네스 coverage의 해석을 정리했다.
+- Files: Day101-160/Day126/day126_cli_wrapper.cpp, Day101-160/Day126/write_up.txt, Day101-160/Day126/seed_equivalence.txt, Day101-160/Day126/boundary_equivalence.txt, Day101-160/Day126/cli_error_results.txt, Day101-160/Day126/partial_read_result.txt, Day101-160/Day126/stdin_repeat_hashes.txt, Day101-160/Day126/file_repeat_hashes.txt
+- Problems: 짧은 `read()`는 EOF가 아니므로 반환 길이를 누적해야 한다. `read()`의 0은 EOF, 음수는 오류이고 `EINTR`은 재시도한다. XML 문법 오류는 target의 정상적인 오류 응답이므로 하네스 exit 0과 구별하지 않는다. stdin과 파일 방식의 coverage 차이는 `argc`, `open`/`close`를 포함한 wrapper 경로의 영향도 받으므로 tuple 수 차이를 parser 내부 분기 수로 해석할 수 없다. 5회 일치와 12개 seed의 결과는 모든 입력의 안정성이나 취약점 부재를 증명하지 않는다.
+- Next: Day127
 
 ---
 
