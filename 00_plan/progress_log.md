@@ -445,7 +445,7 @@ Daily review rule:
 - Status: done
 - Result: TinyXML-2 하네스에 stdin과 파일 경로(`@@`) 입력을 추가하고 공통 `read_all()`에서 부분 읽기와 EOF, `EINTR` 재시도 및 1 MiB 상한을 처리했다. Day123 seed 12개에서 두 입력 방식의 파싱 결과와 종료 코드가 모두 일치했다. 정확히 1 MiB 입력은 파서에 전달되어 exit 0, 1 MiB+1 바이트는 wrapper에서 exit 1로 거부됐으며 부분 pipe 입력 14바이트도 정상 파싱됐다. 최소 XML seed의 `afl-showmap -e`는 stdin 292 tuple, 파일 296 tuple이고, 각 방식 5회 반복 map hash는 방식별로 모두 같았다. CS에서는 `read()`의 반환값과 부분 읽기, 추가 1바이트를 읽는 크기 판정, `EINTR`, parser 오류와 wrapper 오류의 구별, 전체 하네스 coverage의 해석을 정리했다.
 - Files: Day101-160/Day126/day126_cli_wrapper.cpp, Day101-160/Day126/write_up.txt, Day101-160/Day126/seed_equivalence.txt, Day101-160/Day126/boundary_equivalence.txt, Day101-160/Day126/cli_error_results.txt, Day101-160/Day126/partial_read_result.txt, Day101-160/Day126/stdin_repeat_hashes.txt, Day101-160/Day126/file_repeat_hashes.txt
-- Problems: 짧은 `read()`는 EOF가 아니므로 반환 길이를 누적해야 한다. `read()`의 0은 EOF, 음수는 오류이고 `EINTR`은 재시도한다. XML 문법 오류는 target의 정상적인 오류 응답이므로 하네스 exit 0과 구별하지 않는다. stdin과 파일 방식의 coverage 차이는 `argc`, `open`/`close`를 포함한 wrapper 경로의 영향도 받으므로 tuple 수 차이를 parser 내부 분기 수로 해석할 수 없다. 5회 일치와 12개 seed의 결과는 모든 입력의 안정성이나 취약점 부재를 증명하지 않는다.
+- Problems: 짧은 `read()`는 EOF가 아니므로 반환 길이를 누적해야 한다. `read()`의 0은 EOF, 음수는 오류이고 `EINTR`은 재시도한다. XML 문법 오류는 target의 정상적인 오류 응답으로 하네스 exit 0이며, 입력 읽기 실패나 크기 초과로 인한 wrapper exit 1과 구분한다. stdin과 파일 방식의 coverage 차이는 `argc`, `open`/`close`를 포함한 wrapper 경로의 영향도 받으므로 tuple 수 차이를 parser 내부 분기 수로 해석할 수 없다. 5회 일치와 12개 seed의 결과는 모든 입력의 안정성이나 취약점 부재를 증명하지 않는다.
 - Next: Day127
 
 ---
