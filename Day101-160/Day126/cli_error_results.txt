@@ -1,0 +1,11 @@
+[missing file]
+open: No such file or directory
+exit=1
+
+[too many arguments]
+usage: ./day126_cli_debug [input_file]
+exit=2
+
+[empty stdin]
+size=0 error=XML_ERROR_EMPTY_DOCUMENT(13)
+exit=0

@@ -1,0 +1,12 @@
+day126_exact.bin
+stdin_exit=0
+file_exit=0
+result=MATCH
+stdin_output=size=1048576 error=XML_ERROR_EMPTY_DOCUMENT(13)
+file_output=size=1048576 error=XML_ERROR_EMPTY_DOCUMENT(13)
+day126_oversize.bin
+stdin_exit=1
+file_exit=1
+result=MATCH
+stdin_output=input too large: maximum=1048576
+file_output=input too large: maximum=1048576
