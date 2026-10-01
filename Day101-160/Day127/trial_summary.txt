@@ -1,0 +1,12 @@
+run_time          : 60
+execs_done        : 5503
+execs_per_sec     : 91.69
+corpus_count      : 64
+corpus_favored    : 10
+corpus_found      : 52
+stability         : 100.00%
+bitmap_cvg        : 1.13%
+saved_crashes     : 0
+saved_hangs       : 0
+edges_found       : 738
+15fa7a6dc5627c5a51f3e0c68eafcf17ec763ecad8de666ad376a2cd3c761b4c  Day101-160/Day126/day126_cli_afl
