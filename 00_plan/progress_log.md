@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day126
-- Current focus: Day126에서 TinyXML-2 CLI wrapper의 stdin/file(`@@`) 입력을 공통 `read_all()`에 연결하고 실제 읽은 길이를 `XMLDocument::Parse`에 전달했다. 짧게 나뉜 pipe 입력을 끝까지 누적하고 `EINTR` 재시도, open/read/close 오류, 1 MiB+1 바이트 버퍼를 통한 초과 입력 판정을 구현했다. Day123 seed 12개는 두 입력 방식에서 파싱 결과와 종료 코드가 모두 일치했다. 정확히 1 MiB는 파서에 전달되어 `XML_ERROR_EMPTY_DOCUMENT(13)`으로 exit 0, 1 MiB+1 바이트는 wrapper에서 exit 1로 거부됐다. 최소 seed의 `afl-showmap -e`는 stdin 292 tuple, file 296 tuple로 wrapper 분기 차이를 포함하며, 각 방식에서 5회 반복한 map hash는 방식별로 동일했다. 이는 해당 입력의 반복 안정성만 확인한 것이고 퍼징이나 취약점 부재의 근거는 아니다. CS에서는 `read()`의 부분 읽기·EOF 0·`EINTR`, parser 오류와 wrapper 오류의 종료 코드, 전체 하네스 coverage와 parser coverage의 차이를 정리했다. Day126 commit `4170d5e2648cd155e7e9e656ecca1b1912ed87ad`를 확인했다.
-- Next task: Day127 — Fuzzing trial run. Day123 seed 12개와 검증한 harness를 사용해 짧은 AFL++ trial fuzz를 실행하고 exec/sec, path/corpus 변화, stability, crash 수를 기록한다. WSL의 PIE+ASan 불안정성과 `core_pattern` 우회 조건을 명시하고, crash는 단독 재현과 sanitizer/GDB 증거로만 인정한다. 결과와 한계를 `day127_fuzzing.md`에 정리하고 CS에서 exec/sec/path/crash 지표를 구분한다. 다음 공부 시작 전 `git pull`을 실행한다.
+- Last completed: Day127
+- Current focus: Day127에서 Day126 CLI 파일 입력(`@@`) 하네스와 Day123 XML seed 12개로 AFL++ trial fuzz를 60초 실행했다. 대상 바이너리 SHA-256 `15fa7a6dc5627c5a51f3e0c68eafcf17ec763ecad8de666ad376a2cd3c761b4c`를 기록했다. 5,503회 실행(91.69 exec/s)하여 새 corpus 입력 52개를 보관했고, 총 64개 중 favored는 10개였다. 계측 맵에서 738 edge, bitmap_cvg 1.13%, stability 100%, saved crash/hang 0개를 관찰했다. 일부 초기 seed는 새 계측 결과를 추가하지 못한다는 경고가 있었으며 `-V 60`에 따라 정상 종료했다. CS에서는 AFL++·하네스·edge·coverage의 관계, 맵 사용률과 소스 코드 coverage의 차이, 하나의 입력이 여러 새 edge를 지날 수 있어 corpus_found와 edges_found가 1:1이 아님을 정리했다. `AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1`로 WSL core_pattern 검사를 우회했으므로 crash 부재나 취약점 부재를 확정하지 않는다. Day127 commit `8631e258bfa59c5d89e53c8667031adde291f5f6`을 확인했다.
+- Next task: Day128 — Fuzzing crash collection. Day127의 crash queue가 비어 있음을 확인한 뒤, 발견될 crash 후보를 같은 바이너리와 입력 파일로 단독 재현하는 스크립트 및 triage queue 기준을 준비한다. 필요하면 실행 조건을 고정한 추가 수집을 수행하고, 후보가 없으면 0건을 그대로 기록한다. crash는 sanitizer/GDB에서 최초 잘못된 연산과 root cause를 확인하기 전까지 취약점으로 확정하지 않는다. 결과를 `day128_fuzzing.md`에 정리하고 CS에서 crash collection과 triage queue를 구분한다. 시작 전 `git pull`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 ---
 
@@ -447,6 +447,15 @@ Daily review rule:
 - Files: Day101-160/Day126/day126_cli_wrapper.cpp, Day101-160/Day126/write_up.txt, Day101-160/Day126/seed_equivalence.txt, Day101-160/Day126/boundary_equivalence.txt, Day101-160/Day126/cli_error_results.txt, Day101-160/Day126/partial_read_result.txt, Day101-160/Day126/stdin_repeat_hashes.txt, Day101-160/Day126/file_repeat_hashes.txt
 - Problems: 짧은 `read()`는 EOF가 아니므로 반환 길이를 누적해야 한다. `read()`의 0은 EOF, 음수는 오류이고 `EINTR`은 재시도한다. XML 문법 오류는 target의 정상적인 오류 응답으로 하네스 exit 0이며, 입력 읽기 실패나 크기 초과로 인한 wrapper exit 1과 구분한다. stdin과 파일 방식의 coverage 차이는 `argc`, `open`/`close`를 포함한 wrapper 경로의 영향도 받으므로 tuple 수 차이를 parser 내부 분기 수로 해석할 수 없다. 5회 일치와 12개 seed의 결과는 모든 입력의 안정성이나 취약점 부재를 증명하지 않는다.
 - Next: Day127
+
+
+### Day127
+- Topic: Fuzzing — Trial fuzz run
+- Status: done
+- Result: TinyXML-2 Day126 CLI 파일 입력(`@@`) 하네스를 Day123 seed 12개로 60초 AFL++ trial에 사용했다. 바이너리 SHA-256 `15fa7a6dc5627c5a51f3e0c68eafcf17ec763ecad8de666ad376a2cd3c761b4c`를 보존했다. 5,503회 실행(91.69 exec/s)에서 새 corpus 입력 52개, 총 64개, favored 10개, edges_found 738, bitmap_cvg 1.13%, stability 100%, saved_crashes 0, saved_hangs 0을 기록했다. 초기 seed 중 일부는 새 계측 결과가 없다는 경고가 있었고 `-V 60` 제한으로 정상 종료했다. CS에서는 AFL++가 변이 입력을 하네스에 전달하고 하네스가 TinyXML-2를 호출하는 구조, edge와 계측 맵, 입력 파일 수와 새 edge 수의 차이를 예시로 정리했다.
+- Files: Day101-160/Day127/day127_fuzzing.md, Day101-160/Day127/trial_summary.txt, Day101-160/Day127/trial_fuzz.txt
+- Problems: `corpus_found=52`는 새로 보관한 입력 수이지 파서 내부의 서로 다른 경로 수가 아니다. `bitmap_cvg=1.13%`는 계측 맵 사용률이지 TinyXML-2 소스 코드 coverage가 아니다. Day125 persistent shared-memory 성능과 Day127 CLI 파일 입력 성능은 하네스와 I/O 조건이 달라 직접 속도 배수로 비교할 수 없다. WSL의 `AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1` 우회 환경과 짧은 실행에서 saved crash 0은 취약점 부재를 증명하지 않는다. crash 후보는 단독 재현과 sanitizer/GDB 증거로 판정한다.
+- Next: Day128
 
 ---
 
