@@ -23,3 +23,25 @@ Day117의 입력 형식은 `TPAR → Version → Command → Length → Payload`
 
 ```c
 memcpy(payload, input + 7, length);
+```
+
+| PoC | 파일 크기 / Length | 최초 잘못된 연산과 bug class | 일반 빌드 증상 | 확인된 추가 근거 |
+|---|---|---|---|---|
+| `poc_len17.bin` | 24바이트 / 17 | `payload[16]`을 1바이트 넘는 `memcpy`; 스택 OOB write | `exit=0` | ASan이 `stack-buffer-overflow`를 검출하고 `exit=134`로 종료했다. |
+| `poc_len64.bin` | 84바이트 / 64 | 같은 버퍼를 48바이트 넘는 `memcpy`; 같은 스택 OOB write | 3회 모두 SIGSEGV, `exit=139` | GDB에서 복사로 손상된 `input` 포인터를 이후 다시 읽다가 죽는 흐름을 확인했다. 이 입력의 별도 ASan 실행 결과는 위 근거 문서에 기록돼 있지 않다. |
+
+두 PoC는 일반 빌드에서 서로 다른 결과를 보였지만, 목적지 크기 검증 누락과 최초 범위 밖 쓰기 연산이 같다. 따라서 같은 root cause의 서로 다른 증상으로 분류한다. `poc_len64.bin`의 SIGSEGV 발생 위치는 손상된 포인터를 다시 읽은 곳이고, 메모리 손상을 처음 만든 곳은 그보다 앞선 `memcpy`다.
+
+빠졌던 목적지 검사는 `length <= sizeof(payload)`에 해당한다. 이 검사는 위험한 `memcpy` 전에 수행해야 한다.
+
+## TinyXML-2에 적용할 판정 절차
+
+새 crash 파일이 생기면 우선 입력 파일의 크기와 SHA-256, 사용한 바이너리의 SHA-256, 입력 방식과 실행 명령을 기록한다. 같은 파일을 단독 실행해 종료 코드와 signal을 확인하고, sanitizer 보고서 또는 GDB에서 최초 잘못된 접근, 대상 객체, 접근 방향과 크기를 조사한다.
+
+그 증거로 OOB, UAF, assertion failure 등의 분류를 결정한다. 같은 종료 코드나 같은 crash 위치만으로 동일한 root cause라고 확정하지 않는다. 근거가 부족하면 triage queue에서 `원인 미분류`로 유지한다. 외부 입력에 의한 assertion 중단은 정상적인 XML 문법 오류 반환과 구분하고, 재현 조건과 서비스 영향을 확인한다.
+
+## 결론과 한계
+
+이번 Day129 작업은 기존 증거를 이용한 bug class 분류 연습이다. TinyXML-2에서 새 crash 후보를 수집하거나 취약점을 확인한 결과는 아니다. Day117의 두 PoC는 스택 OOB write라는 하나의 원인으로 묶이지만, 일반 빌드의 정상 종료 여부만으로 메모리 안전성을 판단할 수 없음을 보여준다.
+
+CS 정리: crash collection은 후보 입력과 실행 조건을 보존하는 단계다. Crash classification은 단독 재현과 메모리 접근 증거를 바탕으로 오류의 종류를 판단하는 단계다. `exit=134`는 흔히 SIGABRT의 셸 종료값이지만, 그 값만으로 assertion failure라고 분류할 수 없다. Day117의 Length 17은 ASan의 `stack-buffer-overflow` 보고서가 분류 근거다.
