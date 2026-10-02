@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day127
-- Current focus: Day127에서 Day126 CLI 파일 입력(`@@`) 하네스와 Day123 XML seed 12개로 AFL++ trial fuzz를 60초 실행했다. 대상 바이너리 SHA-256 `15fa7a6dc5627c5a51f3e0c68eafcf17ec763ecad8de666ad376a2cd3c761b4c`를 기록했다. 5,503회 실행(91.69 exec/s)하여 새 corpus 입력 52개를 보관했고, 총 64개 중 favored는 10개였다. 계측 맵에서 738 edge, bitmap_cvg 1.13%, stability 100%, saved crash/hang 0개를 관찰했다. 일부 초기 seed는 새 계측 결과를 추가하지 못한다는 경고가 있었으며 `-V 60`에 따라 정상 종료했다. CS에서는 AFL++·하네스·edge·coverage의 관계, 맵 사용률과 소스 코드 coverage의 차이, 하나의 입력이 여러 새 edge를 지날 수 있어 corpus_found와 edges_found가 1:1이 아님을 정리했다. `AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1`로 WSL core_pattern 검사를 우회했으므로 crash 부재나 취약점 부재를 확정하지 않는다. Day127 commit `8631e258bfa59c5d89e53c8667031adde291f5f6`을 확인했다.
-- Next task: Day128 — Fuzzing crash collection. Day127의 crash queue가 비어 있음을 확인한 뒤, 발견될 crash 후보를 같은 바이너리와 입력 파일로 단독 재현하는 스크립트 및 triage queue 기준을 준비한다. 필요하면 실행 조건을 고정한 추가 수집을 수행하고, 후보가 없으면 0건을 그대로 기록한다. crash는 sanitizer/GDB에서 최초 잘못된 연산과 root cause를 확인하기 전까지 취약점으로 확정하지 않는다. 결과를 `day128_fuzzing.md`에 정리하고 CS에서 crash collection과 triage queue를 구분한다. 시작 전 `git pull`을 실행한다.
+- Last completed: Day128
+- Current focus: Day127의 60초 TinyXML-2 CLI trial에서 crashes/와 hangs/ 후보가 각각 0건임을 확인하고 Day128 triage queue에 그대로 기록했다. Day126 파일 입력(@@) AFL 빌드와 Debug 빌드에 같은 입력을 단독 전달하는 replay_candidate.sh를 작성해 입력 크기·해시, 바이너리 해시, 종료 코드, stdout/stderr를 분리 기록했다. 정상 XML과 문법 오류 XML로 시험한 두 빌드는 모두 exit 0이었다. 문법 오류는 parser의 정상 오류 응답이며 crash 후보가 아님을 확인했다. CS에서 crash collection은 후보 입력과 실행 조건의 보존, triage는 단독 재현과 sanitizer/GDB로 최초 잘못된 연산 및 root cause를 확인하는 과정으로 구분했다. Day128 commit `0d7c78938399191dac275ec75c48d8055003edb3`을 확인했다.
+- Next task: Day129 — Crash classification. 계획표의 OOB/UAF/overflow/assert 분류 기준을 학습한다. TinyXML-2의 Day127 crash 후보는 0건이므로 실제 target 취약점으로 꾸미지 않고, 확인된 Day117 toy parser PoC나 별도 통제 예제를 통해 sanitizer 오류 종류·접근 방향·대상 객체·최초 잘못된 연산을 구분한다. 결과를 `day129_fuzzing.md`에 기록하고 CS에서 bug class를 정리한다. 시작 전 `git pull --ff-only`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 ---
 
@@ -456,6 +456,15 @@ Daily review rule:
 - Files: Day101-160/Day127/day127_fuzzing.md, Day101-160/Day127/trial_summary.txt, Day101-160/Day127/trial_fuzz.txt
 - Problems: `corpus_found=52`는 새로 보관한 입력 수이지 파서 내부의 서로 다른 경로 수가 아니다. `bitmap_cvg=1.13%`는 계측 맵 사용률이지 TinyXML-2 소스 코드 coverage가 아니다. Day125 persistent shared-memory 성능과 Day127 CLI 파일 입력 성능은 하네스와 I/O 조건이 달라 직접 속도 배수로 비교할 수 없다. WSL의 `AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1` 우회 환경과 짧은 실행에서 saved crash 0은 취약점 부재를 증명하지 않는다. crash 후보는 단독 재현과 sanitizer/GDB 증거로 판정한다.
 - Next: Day128
+
+
+### Day128
+- Topic: Fuzzing — Crash collection
+- Status: done
+- Result: Day127의 TinyXML-2 CLI trial 결과에서 crash와 hang 입력 파일이 각각 0건임을 확인하고 빈 triage queue를 작성했다. `replay_candidate.sh`는 Day126 AFL·Debug 빌드를 같은 파일 입력으로 실행해 입력 크기·SHA-256, 두 바이너리 SHA-256, 종료 코드, stdout/stderr를 각각 기록한다. 정상 최소 XML과 문법 오류 XML을 대조 입력으로 실행했으며 두 빌드 모두 각 입력에서 exit 0이었다. CS에서는 collection이 수집 후보와 실행 조건을 보존하고 triage가 단독 재현 및 sanitizer/GDB 근거로 crash 원인과 중복 여부를 확인함을 구분했다. Day128 commit `0d7c78938399191dac275ec75c48d8055003edb3`을 확인했다.
+- Files: Day101-160/Day128/replay_candidate.sh, Day101-160/Day128/triage_queue.txt, Day101-160/Day128/day128_fuzzing.md
+- Problems: XML 문법 오류는 parser의 정상 반환이며 exit 0과 함께 crash 후보로 분류하지 않는다. 후보 0건은 60초 trial의 관찰값일 뿐 취약점 부재의 증거가 아니다. WSL의 core_pattern 검사 우회 옵션으로 crash 관찰에도 한계가 있으므로 실제 후보는 동일 입력·빌드로 단독 재현하고 최초 잘못된 연산과 root cause를 확인해야 한다. crash 파일 수나 종료 코드만으로 취약점 수·중복 여부를 확정할 수 없다.
+- Next: Day129
 
 ---
 
