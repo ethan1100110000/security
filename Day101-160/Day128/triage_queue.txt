@@ -1,0 +1,14 @@
+# Day128 triage queue
+
+대상: TinyXML-2, Day126 CLI wrapper (`@@`)
+출처: Day127 60초 trial의 crashes/ 및 hangs/
+
+현재 crash 후보: 0건
+현재 hang 후보: 0건
+
+| 입력 파일 | SHA-256 | 크기 | AFL 빌드 재현 | Debug 빌드 재현 | 근거 | 상태 |
+|---|---|---:|---|---|---|---|
+
+정상 XML과 문법 오류 XML로 replay_candidate.sh를 시험했다.
+두 입력 모두 AFL·Debug 빌드에서 exit=0이었다.
+후보가 생기면 같은 입력을 단독 실행하고 종료 상태와 sanitizer 보고서를 확인한다.
