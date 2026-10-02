@@ -41,9 +41,9 @@ Daily review rule:
 
 ## Current Pointer
 
-- Last completed: Day128
-- Current focus: Day127의 60초 TinyXML-2 CLI trial에서 crashes/와 hangs/ 후보가 각각 0건임을 확인하고 Day128 triage queue에 그대로 기록했다. Day126 파일 입력(@@) AFL 빌드와 Debug 빌드에 같은 입력을 단독 전달하는 replay_candidate.sh를 작성해 입력 크기·해시, 바이너리 해시, 종료 코드, stdout/stderr를 분리 기록했다. 정상 XML과 문법 오류 XML로 시험한 두 빌드는 모두 exit 0이었다. 문법 오류는 parser의 정상 오류 응답이며 crash 후보가 아님을 확인했다. CS에서 crash collection은 후보 입력과 실행 조건의 보존, triage는 단독 재현과 sanitizer/GDB로 최초 잘못된 연산 및 root cause를 확인하는 과정으로 구분했다. Day128 commit `0d7c78938399191dac275ec75c48d8055003edb3`을 확인했다.
-- Next task: Day129 — Crash classification. 계획표의 OOB/UAF/overflow/assert 분류 기준을 학습한다. TinyXML-2의 Day127 crash 후보는 0건이므로 실제 target 취약점으로 꾸미지 않고, 확인된 Day117 toy parser PoC나 별도 통제 예제를 통해 sanitizer 오류 종류·접근 방향·대상 객체·최초 잘못된 연산을 구분한다. 결과를 `day129_fuzzing.md`에 기록하고 CS에서 bug class를 정리한다. 시작 전 `git pull --ff-only`을 실행한다.
+- Last completed: Day129
+- Current focus: TinyXML-2 Day127 trial의 crash/hang 후보가 0건이라 새 target bug class를 단정하지 않고 Day117 toy parser의 두 PoC를 기존 검증 사례로 재분류했다. Length 17의 1바이트 및 Length 64의 48바이트 초과 `memcpy`를 모두 스택 OOB write로 묶고, 일반 빌드의 exit 0과 후속 손상 포인터 SIGSEGV(exit 139)를 최초 메모리 오류와 구분했다. ASan의 `stack-buffer-overflow` 증거는 Length 17에서 확인됐으며 Length 64의 별도 ASan 결과는 근거 문서에 없다고 명시했다. CS에서는 OOB read/write, UAF, assertion failure를 접근 대상·수명·방향·최초 연산으로 구분하고, exit 134만으로 assertion failure를 판정하지 않으며 외부 입력에 의한 assert 중단의 서비스 영향을 살폈다. Day129 사용자 commit `d64556cc635533a792520140ffb355b534f6bdf0`과 문서 보완 commit `6b63b381fa709c835f7a0304ed28d70f8926452d`를 확인했다.
+- Next task: Day130 — Sanitizer backtrace 분석. 계획표에 따라 ASan 로그에서 오류 종류, READ/WRITE와 크기, allocation/free 또는 stack 객체 정보, 최초 잘못된 접근 frame과 후속 crash symptom을 읽는다. TinyXML-2 후보는 여전히 0건이므로 Day117의 검증된 PoC를 통제 사례로 쓰고 새로운 target 취약점으로 표기하지 않는다. 결과를 `day130_fuzzing.md`에 기록하고 CS에서 sanitizer backtrace 읽는 법을 정리한다. 시작 전 `git pull --ff-only`을 실행한다.
 - Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
 ---
 
@@ -465,6 +465,15 @@ Daily review rule:
 - Files: Day101-160/Day128/replay_candidate.sh, Day101-160/Day128/triage_queue.txt, Day101-160/Day128/day128_fuzzing.md
 - Problems: XML 문법 오류는 parser의 정상 반환이며 exit 0과 함께 crash 후보로 분류하지 않는다. 후보 0건은 60초 trial의 관찰값일 뿐 취약점 부재의 증거가 아니다. WSL의 core_pattern 검사 우회 옵션으로 crash 관찰에도 한계가 있으므로 실제 후보는 동일 입력·빌드로 단독 재현하고 최초 잘못된 연산과 root cause를 확인해야 한다. crash 파일 수나 종료 코드만으로 취약점 수·중복 여부를 확정할 수 없다.
 - Next: Day129
+
+
+### Day129
+- Topic: Fuzzing — Crash classification
+- Status: done
+- Result: Day127 TinyXML-2 trial의 crash/hang 후보가 각각 0건임을 재확인해 새 취약점을 분류하지 않았다. 대신 Day117의 `poc_len17.bin`(24바이트 파일, Length 17)과 `poc_len64.bin`(84바이트 파일, Length 64)을 기존 증거로 비교했다. 둘 다 `payload[16]`에 대한 크기 검증 없는 `memcpy`로 스택 OOB write가 발생했지만 일반 빌드의 증상은 각각 exit 0과 손상된 `input` 포인터 재참조에 따른 SIGSEGV(exit 139)였다. Length 17의 ASan `stack-buffer-overflow` 보고는 확인됐고 Length 64의 별도 ASan 결과는 기록되지 않았다고 분리했다. CS에서는 exit 134가 흔히 SIGABRT를 가리키지만 assert인지 sanitizer 중단인지는 메시지·보고서로 판정해야 하며, 외부 입력에 의한 assertion 중단은 정상 XML 오류 반환과 서비스 영향이 다름을 정리했다.
+- Files: Day101-160/Day129/day129_fuzzing.md
+- Problems: Length 필드 값(17/64)과 PoC 파일 크기(24/84)를 혼동하지 않는다. 누락된 `length <= sizeof(payload)`는 bug class가 아니라 root cause의 검증 조건이다. Signal/종료 코드만으로 OOB/UAF/assertion을 분류할 수 없고, 증거가 부족한 후보는 원인 미분류로 남긴다. 이번 분류는 Day117 사례의 문서 기반 복습이며 TinyXML-2 신규 crash의 재현이나 전체 취약점 부재를 뜻하지 않는다.
+- Next: Day130
 
 ---
 
