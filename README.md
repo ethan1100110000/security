@@ -4,6 +4,17 @@
 
 현재 진도는 [`00_plan/progress_log.md`](00_plan/progress_log.md)에서 확인할 수 있다.
 
+## Current Study Plan
+
+2026-10-05부터 한양대 SSLab 준비를 위한 30주 계획을 적용한다.
+평일 메인 2시간, CS 30분, 이전 보안 전반 2회독 30분을 기준으로 하며 자격증 공부는 별도다.
+
+- [30주 계획과 단계별 기준](00_plan/hanyang_research_plan_2027.md)
+- [계획표 엑셀](00_plan/hanyang-research-plan-2027.xlsx)
+- [보안 전반 2회독 규칙](00_plan/review_rules.md)
+
+기존 Day별 기록은 이어서 사용한다. 실제 수행·검증 기록은 progress log, 예정 진도는 계획표에서 관리한다.
+
 ## Reversing Portfolio
 
 | Day    | 주제                                        | 문서                                          |

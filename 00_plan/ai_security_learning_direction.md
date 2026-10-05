@@ -103,12 +103,14 @@ AI가 다음과 같은 결론을 제시해도 즉시 사실로 받아들이지 �
 
 ## 현재 단계에서의 적용
 
-현재 Day115까지 parser harness, ASan, showmap, stdin/file harness 비교를 진행했다.
-Day116 이후 fuzzing/crash triage 구간부터 AI-assisted workflow를 점진적으로 추가한다.
+2026-10-05 기준 마지막 완료 Day는 Day129다. 이후 진도는 `progress_log.md`의 Current Pointer에서 확인한다.
+[한양대 SSLab 준비 계획](hanyang_research_plan_2027.md)에 따라 메인 120분, CS 30분, 보안 전반 2회독 30분을 기준으로 운영한다. 자격증 공부는 별도다.
 
-단, 기존의 직접 분석 루틴을 제거하지 않는다.
+현재 진학 준비에서는 논문의 문제·전제·평가를 이해하고, 자체 코드의 작은 비교 실험을 설계·검증·설명하는 능력을 우선한다.
+기존의 직접 분석 원칙은 유지하되, 아래 장기 workflow의 모든 항목을 매일 수행하거나 exploit 완성을 모든 과제의 완료 조건으로 요구하지 않는다.
+현재 실행 순서와 도달 기준은 새 30주 계획이 우선한다.
 
-### Day116 이후 기본 루틴
+### 현재 계획에서의 기본 루틴
 
 #### Phase A — Human first
 

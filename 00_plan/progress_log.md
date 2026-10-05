@@ -1,10 +1,11 @@
 # Progress Log
 
 이 파일은 새 채팅에서도 바로 이어가기 위한 기준 파일이다.
-매일 공부가 끝나면 아래 포인터와 운영 규칙을 기준으로 갱신한다.
+실제로 수행한 학습과 검증 결과를 기록하고, 향후 계획은 완료 기록과 구분한다.
 
-- Last completed: 마지막으로 완료한 Day
-- Current focus: 방금 완료한 핵심 내용과 검증
+- Last completed: 증거와 함께 확인한 마지막 완료 Day
+- Active plan / Plan position: 적용 계획과 실제 진행 중인 주차
+- Current focus: 현재 진행 내용과 확인된 이해 수준
 - Next task: 다음에 바로 시작할 작업
 
 ---
@@ -12,39 +13,59 @@
 ## Operating Rule
 
 공부 시작 전:
-- GitHub repo와 `00_plan/progress_log.md`를 확인한다.
-- 사용자가 시작을 요청하면 최신 `보안 계획표.xlsx`의 해당 Day도 함께 확인한다.
-- 사용자는 먼저 아래 명령을 실행한다.
+- 최신 저장소의 이 로그, [현재 30주 계획](hanyang_research_plan_2027.md), [2회독 규칙](review_rules.md)을 확인한다.
+- 주간 상세 계획은 [`hanyang-research-plan-2027.xlsx`](hanyang-research-plan-2027.xlsx)를 따른다. 기존 `보안 계획표.xlsx`는 이전 진도 참고용이다.
+- 사용자는 로컬 저장소에서 다음을 실행한다. 충돌이나 미커밋 변경이 있으면 강제 덮어쓰기하지 않고 먼저 확인한다.
 
 ```bash
 cd /mnt/d/security-roadmap
-git pull
+git pull --ff-only
 ```
 
-공부 끝난 후:
-- User: 해당 Day 폴더에 바이너리, 소스, exploit, write-up, 실행 결과를 정리하고 commit/push한다.
-- ChatGPT: 사용자 commit을 확인한 뒤 `00_plan/progress_log.md`를 갱신한다.
-- 다음 공부 시작 전에는 다시 `git pull`부터 한다.
+하루 기준:
+- 평일 메인 120분 + CS 30분 + 이전 보안 전반 2회독 30분. 주 5일, 약 15시간을 기준으로 한다.
+- 자격증 공부와 휴식은 별도다. 실제 내용·컨디션에 따라 시간을 조정하며 주말 학습은 필수가 아니다.
+- 메인에는 논문 영어 읽기, 자체 코드 분석·검증, 비교 실험, 결과 설명과 지원 준비를 포함한다.
+- CS는 정의뿐 아니라 예제·그림·작은 구현·조건 변경 질문으로 확인한다.
+- 2회독은 pwn에 한정하지 않는다. 실제로 학습한 리눅스·어셈블리·메모리·리버싱·보호 기법·퍼징을 순환한다.
+- 사용자가 먼저 예상·분석 계획·근거를 설명하고, ChatGPT는 질문·반례·단계적 힌트로 검토한다.
 
-Default pwn/reversing routine:
-- 입력 지점 확인 → data flow → 검증/제한 → 위험 sink → root cause → 소스 없이 찾는 방법 → exploitability → exploit 작성/검증 순서로 진행한다.
-- 성공 1회로 완료하지 않는다. GDB/raw memory 검증, 실패 케이스, 짧은 write-up까지 확인한다.
-- 사용자가 먼저 분석과 계획을 말하고, ChatGPT는 정답을 미리 전부 주지 않는다.
-
-Daily review rule:
-- 본 학습과 CS 종료 후 10~20분 동안 오래됐거나 적게 다룬 주제를 복습한다.
-- GOT overwrite, shellcode처럼 실습 횟수가 적은 항목을 우선하고 오래된 순서와 랜덤 선정을 섞는다.
-- 질문 3개 또는 짧은 실전 문제 1개로 진행한다.
-- 사용자 답변 뒤 보충은 틀린 핵심과 빠진 핵심만 3~5줄로 설명한다.
+진도와 기록:
+- 기존 Day 번호를 이어간다. Day129 다음 학습은 Day130이며, 새 계획 W01과 함께 기록한다.
+- 계획표 날짜가 지났다고 완료 처리하지 않는다. 계획 전환이나 짧은 개념 문답만으로 전체 Day를 완료하지 않는다.
+- 이전 계획의 Day130 이후 항목은 새 계획의 선후 관계와 약점에 맞춰 배치한다. 기존 다음 작업을 자동 실행하지 않는다.
+- 공부가 끝나면 사용자가 해당 Day의 코드·관찰 자료·설명 문서를 commit/push한다.
+- ChatGPT는 사용자 commit과 실제 수행 내용을 확인한 뒤 이 로그의 포인터와 일일 기록을 갱신한다.
+- 엑셀은 계획만 담는다. 실제 시간·진도·답변·약점·검증 결과는 Git 로그로 관리한다.
+- 논문 요약 수나 실험 성공 여부만으로 완료하지 않는다. 문제·가정·방법·결과·한계를 독립적으로 설명해야 한다.
 
 ---
 
 ## Current Pointer
 
 - Last completed: Day129
-- Current focus: TinyXML-2 Day127 trial의 crash/hang 후보가 0건이라 새 target bug class를 단정하지 않고 Day117 toy parser의 두 PoC를 기존 검증 사례로 재분류했다. Length 17의 1바이트 및 Length 64의 48바이트 초과 `memcpy`를 모두 스택 OOB write로 묶고, 일반 빌드의 exit 0과 후속 손상 포인터 SIGSEGV(exit 139)를 최초 메모리 오류와 구분했다. ASan의 `stack-buffer-overflow` 증거는 Length 17에서 확인됐으며 Length 64의 별도 ASan 결과는 근거 문서에 없다고 명시했다. CS에서는 OOB read/write, UAF, assertion failure를 접근 대상·수명·방향·최초 연산으로 구분하고, exit 134만으로 assertion failure를 판정하지 않으며 외부 입력에 의한 assert 중단의 서비스 영향을 살폈다. Day129 사용자 commit `d64556cc635533a792520140ffb355b534f6bdf0`과 문서 보완 commit `6b63b381fa709c835f7a0304ed28d70f8926452d`를 확인했다.
-- Next task: Day130 — Sanitizer backtrace 분석. 계획표에 따라 ASan 로그에서 오류 종류, READ/WRITE와 크기, allocation/free 또는 stack 객체 정보, 최초 잘못된 접근 frame과 후속 crash symptom을 읽는다. TinyXML-2 후보는 여전히 0건이므로 Day117의 검증된 PoC를 통제 사례로 쓰고 새로운 target 취약점으로 표기하지 않는다. 결과를 `day130_fuzzing.md`에 기록하고 CS에서 sanitizer backtrace 읽는 법을 정리한다. 시작 전 `git pull --ff-only`을 실행한다.
-- Repo rule: 각 Day 폴더 안에 그날의 바이너리, 소스, exploit, write-up, 실행 결과를 넣는다.
+- Last verified commits: Day129 사용자 commit `d64556cc635533a792520140ffb355b534f6bdf0`, 문서 보완 commit `6b63b381fa709c835f7a0304ed28d70f8926452d`.
+- Active plan: [한양대 SSLab 준비 30주 계획](hanyang_research_plan_2027.md), 2026-10-05 적용
+- Plan position: W01 기초 진단 — 정규 학습 미시작
+- Current focus: 3시간 운영과 전공 기초·연구 준비·보안 전반 2회독 계획을 확정했다. 짧은 문답에서 범위 검사와 접근 권한 검사의 차이를 확인했다. 마지막 완료 실습과 검증 결과는 아래 Day129 기록을 기준으로 한다.
+- Next task: Day130 / W01 첫 학습. 메인 120분에는 Day129까지의 결과를 5분 설명하고, 자체 작성 코드의 입력·처리·출력을 그림으로 정리한 뒤 모르는 개념과 대표 과제 후보를 확인한다. CS 30분에는 포인터·배열·값·주소·객체 수명을 작은 예제로 진단한다. 2회독 30분에는 리눅스 파일·프로세스·권한과 컴파일·디버깅 목적을 기존 노트 없이 설명한 뒤 대조한다. 먼저 `git pull --ff-only`을 실행한다.
+- Deferred legacy task: 이전 Day130의 sanitizer backtrace 읽기는 재배치할 미완료 과제다. 새 계획 W04의 메모리 오류·ASAN 복습에 연결하고 필요하면 앞당긴다.
+- Repo rule: Day130 산출물은 `Day101-160/Day130/`에 기록한다. 기존 Day별 산출물과 완료 이력은 유지한다.
+
+---
+
+## Plan Change and Concept Check
+
+### 2026-10-05 — 연구실 준비 계획 전환
+- Status: 계획 확정 및 짧은 개념 확인. Day130 정규 학습·실험은 미완료.
+- Plan: 한양대 SSLab의 공개 연구를 참고해 바이너리 분석·퍼징을 주력으로, 메모리 안전성·시스템 구조를 관련 기초로 준비한다. AIMFuzz와 BASTAG를 핵심 읽기 후보로 두고 실제 모집 주제·여건은 별도로 확인한다.
+- Time: 평일 메인 120분, CS 30분, 보안 전반 2회독 30분. 자격증 공부는 별도.
+- CS: C/C++, 자료구조·알고리즘, 운영체제·컴퓨터구조, 네트워크·DB·이산수학·실험 통계를 면접 및 연구 이해 수준으로 연결한다.
+- Concept check: 사용자는 16바이트 읽기 전용 버퍼의 첫 4바이트 수정이 범위 안이지만 권한상 허용되지 않는다고 답했다. 길이 검사만으로 권한 없는 쓰기를 막을 수 없다는 이유도 설명했다.
+- Limit: 접근 주체를 처음에 입력값으로 혼동했던 부분을 교정했다. 실제 권한 강제 메커니즘의 구현·실험, BASTAG의 상세 방법 이해까지 확인한 것은 아니다.
+- Project decision: 대표 질문은 예비 검토 후 W13에 확정한다. 현재 후보는 자체 코드의 상태 초기화 방식에 따른 반복 테스트의 일관성과 비용 비교다. 범위 검사와 권한 검사를 같은 보장을 제공하는 대체 방법처럼 단순 비교하지 않는다.
+- Next: 위 Current Pointer에 따라 Day130 / W01을 시작한다.
+
 ---
 
 ## Recent Daily Log
@@ -486,10 +507,16 @@ Daily review rule:
 
 ## Update Template
 
-### DayXXX
+### DayXXX — YYYY-MM-DD
+- Plan: WXX / 주간 목표
 - Topic:
-- Status:
+- Status: 진행 중 / 부분 완료 / 완료 (실제 근거로 판단)
+- Main: 실제 수행, 관찰, 가설, 검증 결과와 한계
+- CS: 개념·예제와 사용자 설명, 남은 질문
+- Review: 2회독 주제, 참고한 이전 Day, 회상 결과, 다시 볼 항목
+- Time: 메인 / CS / 2회독 실제 시간. 측정하지 않았으면 미기록.
 - Result:
 - Files:
+- Verified commit: 사용자 commit 확인 후 기입
 - Problems:
-- Next:
+- Next: 다음 Day / 계획 주차 / 첫 작업
