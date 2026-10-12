@@ -44,14 +44,14 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: Day131 — 2026-10-09 학습 문답·코드 추적·복습 종료, 산출물은 write-up 1개.
-- Last verified commits: Day130 write-up `455d12956ee1cf60ef53f5de07055164bd198e44`. Day131 문서와 본 로그는 사용자 요청에 따라 같은 커밋으로 저장하며 커밋 식별자는 Git history로 확인한다.
+- Last completed: Day132 — 2026-10-12 메인·CS·복습 문답 및 경계 테스트 기대값 설계 종료. 산출물은 write-up 1개.
+- Last verified commits: Day131 문서·진도 로그 `6d3e0fb2a328a97b15adb6575d95826123307cf9`. Day132 write-up과 본 로그는 사용자 요청으로 동일 커밋에 저장하며 식별자는 Git history에서 확인한다.
 - Active plan: [한양대 SSLab 준비 30주 계획](hanyang_research_plan_2027.md), 2026-10-05 적용
-- Plan position: W01 주요 진단 정리 종료 → Day132 / 2주차 1/5 예정. 5분 무힌트 발표 수행은 미확인.
-- Current focus: TPAR 입력·하네스·원본/목적지 범위 검사와 검증 이력을 설명했다. TinyXML-2 상태 독립성과 객체 생성/재사용 비용 후보를 정리하고 정확성 우선 조건을 확인했다. CS에서는 포인터 값/대상 값 변경을 코드로 추적했고, 2회독에서는 파일 권한·재빌드·프로세스 격리·persistent 상태 유지 원리를 확인했다.
-- Next task: Day132 / 2주차 1/5 — 자체 프로그램의 입력 계약과 경계 조건 정리. 시작 시 짧은 무힌트 종합 설명으로 남은 독립 설명 기준을 확인한다. 새 채팅은 [Day131 write-up](../Day101-160/Day131/day131_writeup.md)을 먼저 읽는다.
+- Plan position: W02 메모리 기초 / 1/5 종료 → Day133 / 2주차 2/5 예정. W01의 실측 5분 무힌트 발표는 미확인으로 유지한다.
+- Current focus: 원본 실제 길이·목적지 용량·복사 길이의 입력 계약과 원본/목적지 경계값 기대 결과를 정리했다. read 반환값은 ssize_t에서 음수 검사 후 size_t로 변환해야 함을 설명했다. 어셈블리 cmp·ja/jae·라벨·반환값과 복귀 주소를 복습했다. 새 컴파일·실행·퍼징·sanitizer 실험은 없었다.
+- Next task: Day133 / 2주차 2/5 — 범위·접근 권한·객체 수명을 코드 위치와 연결하기. CS는 signed/unsigned·크기 변환 보완, 2회독은 call/ret·스택 프레임을 기존 자료와 대조한다. 새 채팅은 [Day132 write-up](../Day101-160/Day132/day132_writeup.md)을 먼저 읽는다.
 - Deferred legacy task: 이전 Day130의 sanitizer backtrace 읽기는 새 계획 W04의 메모리 오류·ASAN 복습에 연결한다.
-- Repo rule: Day별 write-up을 해당 Day 폴더에 기록한다. 오늘 신규 산출물은 `Day101-160/Day131/day131_writeup.md` 1개이며 이 로그는 기존 파일 갱신이다. 엑셀은 계획 전용으로 유지한다.
+- Repo rule: Day별 write-up을 해당 Day 폴더에 기록한다. 오늘 신규 산출물은 `Day101-160/Day132/day132_writeup.md` 1개이며 이 로그는 기존 파일 갱신이다. 엑셀은 계획 전용으로 유지한다.
 
 ---
 
@@ -529,6 +529,20 @@ git pull --ff-only
 - Commit handling: 사용자 요청으로 위 write-up과 기존 progress_log.md 갱신을 동일 커밋에 저장한다.
 - Problems: XML/C 비교 축, input 주소와 input_size, 성공 반환값과 파싱 정확성, 포인터 재대입과 대상 수정의 차이를 교정했다. 필수 속성 누락은 영향이 작아도 정확성 실패임을 확인했다. 최종 TPAR 설명에는 구조 안내·교정이 있었으므로 완전한 무힌트 발표로 기록하지 않는다.
 - Next: Day132 / 2주차 1/5 — 입력 계약과 경계 조건. 짧은 독립 설명으로 W01 남은 설명 기준 확인.
+
+### Day132 — 2026-10-12
+- Plan: W02 / 메모리 기초 / 2주차 1/5
+- Topic: 입력 계약·경계 테스트 기대값, read signed/unsigned 변환, 레지스터·분기·함수 반환
+- Status: 완료 — 오늘 문답·코드 추적·기대값 설계 종료. W02 전체 완료나 실제 테스트 실행을 뜻하지 않는다.
+- Main: 목적지 검사만 있으면 원본 실제 입력을 초과해 읽을 수 있음을 설명했다. 배열 용량과 실제 입력 길이를 구분하고 src_size를 추가해 length와 비교했다. 호출자가 잘못 전달한 길이는 포인터+숫자만으로 복원할 수 없다고 답했다. 원본 경계 4/5, 목적지 경계 16/17의 허용·거부를 예상했다.
+- CS: read 성공 반환 4를 실제 길이로 전달하고 -1은 오류로 처리한다고 답했다. size_t 변환 후 음수 검사는 실패하므로 ssize_t에서 검사 후 변환해야 함을 설명했다. 0도 변환 가능한 정상 반환값이라는 점을 교정했다. 실제 변환 프로그램은 실행하지 않았다.
+- Review: 설명용 x86-64 Intel 예제의 cmp·ja/jae·reject 라벨을 읽었다. 같은 값에서 ja 비점프, jae 점프를 맞혔다. ret을 rsp 실행으로 표현하고 복귀 주소를 saved rbp로 추측한 부분을 교정했다. call 다음 명령 위치와 int 반환값 eax를 구분했다. 같은 반환값만으로 거부 이유를 구분할 수 없다고 설명했다.
+- Time: 메인/CS/2회독 실측 없음. 대화 경과 시간을 120/30/30분 수행값으로 기록하지 않는다.
+- Result: Day132 write-up 1개. 모든 경계 결과는 예상이며 새 빌드·실행·GDB·퍼징·crash·sanitizer 증거는 없다.
+- Files: Day101-160/Day132/day132_writeup.md
+- Commit handling: 사용자 요청으로 write-up과 기존 progress_log.md 갱신을 동일 커밋에 저장한다.
+- Problems: 원본 용량/실제 길이, read와 memcpy 역할, 0의 처리, 라벨/반환값, rsp/rip·saved rbp/복귀 주소를 교정했다. 예제 레지스터 배치를 실제 함수의 컴파일 결과로 취급하지 않는다. 앞서 답한 범위 조건을 재질문한 것은 중단하고 기존 답을 인정했다.
+- Next: Day133 / 2주차 2/5 — 범위·권한·수명을 코드 위치와 연결. CS 크기 변환 보완, 2회독 call/ret·스택 프레임 대조.
 
 ---
 
