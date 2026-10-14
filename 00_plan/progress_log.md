@@ -44,14 +44,14 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: Day132 — 2026-10-12 메인·CS·복습 문답 및 경계 테스트 기대값 설계 종료. 산출물은 write-up 1개.
-- Last verified commits: Day131 문서·진도 로그 `6d3e0fb2a328a97b15adb6575d95826123307cf9`. Day132 write-up과 본 로그는 사용자 요청으로 동일 커밋에 저장하며 식별자는 Git history에서 확인한다.
+- Last completed: Day133 — 2026-10-14 메인·CS·복습 문답 및 스택 손 추적 종료. 산출물은 write-up 1개.
+- Last verified commits: Day132 문서·로그 `996b0900001fcde13c78c6be912eb6eebe810064`. Day133 write-up과 본 로그는 사용자 요청으로 동일 커밋에 저장하며 식별자는 Git history에서 확인한다.
 - Active plan: [한양대 SSLab 준비 30주 계획](hanyang_research_plan_2027.md), 2026-10-05 적용
-- Plan position: W02 메모리 기초 / 1/5 종료 → Day133 / 2주차 2/5 예정. W01의 실측 5분 무힌트 발표는 미확인으로 유지한다.
-- Current focus: 원본 실제 길이·목적지 용량·복사 길이의 입력 계약과 원본/목적지 경계값 기대 결과를 정리했다. read 반환값은 ssize_t에서 음수 검사 후 size_t로 변환해야 함을 설명했다. 어셈블리 cmp·ja/jae·라벨·반환값과 복귀 주소를 복습했다. 새 컴파일·실행·퍼징·sanitizer 실험은 없었다.
-- Next task: Day133 / 2주차 2/5 — 범위·접근 권한·객체 수명을 코드 위치와 연결하기. CS는 signed/unsigned·크기 변환 보완, 2회독은 call/ret·스택 프레임을 기존 자료와 대조한다. 새 채팅은 [Day132 write-up](../Day101-160/Day132/day132_writeup.md)을 먼저 읽는다.
+- Plan position: W02 메모리 기초 / 2/5 종료 → Day134 / 2주차 3/5 예정. W01의 실측 5분 무힌트 발표는 미확인으로 유지한다.
+- Current focus: free 뒤 쓰기와 읽기 전용 목적지 쓰기를 수명/권한 문제로 구분했다. 캐스트는 메모리 권한을 바꾸지 않음을 설명받았다. uint8_t 변환 260→4와 검사값/복사값 불일치를 해석했다. saved rbp·복귀 주소와 pop/ret을 교정한 뒤 새 주소 예제에서 pop을 독립 추적했다.
+- Next task: Day134 / 2주차 3/5 — 자체 코드의 정상·경계·거부 사례를 예상하고 실제 결과와 비교. 원본 4/5·목적지 16/17의 이전 기대값을 실행 근거와 연결한다. CS는 엔디언, 2회독은 call/ret·프레임을 관찰 자료와 대조한다. 새 채팅은 [Day133 write-up](../Day101-160/Day133/day133_writeup.md)을 먼저 읽는다.
 - Deferred legacy task: 이전 Day130의 sanitizer backtrace 읽기는 새 계획 W04의 메모리 오류·ASAN 복습에 연결한다.
-- Repo rule: Day별 write-up을 해당 Day 폴더에 기록한다. 오늘 신규 산출물은 `Day101-160/Day132/day132_writeup.md` 1개이며 이 로그는 기존 파일 갱신이다. 엑셀은 계획 전용으로 유지한다.
+- Repo rule: Day별 write-up을 해당 Day 폴더에 기록한다. 오늘 신규 산출물은 `Day101-160/Day133/day133_writeup.md` 1개이며 이 로그는 기존 파일 갱신이다. 엑셀은 계획 전용으로 유지한다.
 
 ---
 
@@ -543,6 +543,20 @@ git pull --ff-only
 - Commit handling: 사용자 요청으로 write-up과 기존 progress_log.md 갱신을 동일 커밋에 저장한다.
 - Problems: 원본 용량/실제 길이, read와 memcpy 역할, 0의 처리, 라벨/반환값, rsp/rip·saved rbp/복귀 주소를 교정했다. 예제 레지스터 배치를 실제 함수의 컴파일 결과로 취급하지 않는다. 앞서 답한 범위 조건을 재질문한 것은 중단하고 기존 답을 인정했다.
 - Next: Day133 / 2주차 2/5 — 범위·권한·수명을 코드 위치와 연결. CS 크기 변환 보완, 2회독 call/ret·스택 프레임 대조.
+
+### Day133 — 2026-10-14
+- Plan: W02 / 메모리 기초 / 2주차 2/5
+- Topic: 범위·권한·수명, 작은 unsigned 타입으로의 크기 변환, call/ret·스택 프레임
+- Status: 완료 — 오늘 메인·CS·복습 문답과 코드 손 추적 종료. W02 전체 완료나 실제 실행 검증을 뜻하지 않는다.
+- Main: free(dst) 이후 memcpy가 객체 수명 종료 후 쓰기라는 점을 설명했다. 조기 return 없는 예제에서 free를 if 뒤 정리 지점으로 옮겨 복사/생략 두 경로 모두 해제한다고 답했다. 읽기 전용 dst에 쓰려는 것이 권한 문제라고 힌트 후 설명했다. 캐스트는 실제 메모리 보호 권한을 변경하지 않음을 설명받고 수정 가능한 복사본에는 쓰기 가능한 별도 버퍼가 필요하다고 답했다.
+- CS: size_t 260을 uint8_t로 변환하면 4라고 예측했다. 축소된 4로 검사하면서 memcpy에는 원래 260을 전달하면 목적지 범위를 벗어날 수 있음을 해석했다. 실제 사용할 length로 용량을 검사하고 uint8_t 변환 전 0~255 범위를 확인해야 한다고 답했다. 변환 출력 실험은 없다.
+- Review: push rbp가 복귀 주소를 저장한다는 오답을 call과 saved rbp 구분으로 교정했다. 표에서 [rbp]/[rbp+8] 위치를 확인했다. pop rbp는 [rsp] 값 복원과 rsp+8, ret은 복귀 주소를 rip에 넣는 동작이라고 설명했다. 새 예제에서 pop 직후 rbp=0x3000, rsp=0x2008, [rsp]=0x401050을 독립 추적했다.
+- Time: 메인/CS/2회독 실측 없음. 대화 경과 시간이나 계획 120/30/30분을 실제 수행 시간으로 기록하지 않는다.
+- Result: Day133 write-up 1개. 새 컴파일·실행·GDB·퍼징·crash·sanitizer 증거는 없다. 권한과 프레임 개념의 힌트 후 설명과 독립 추적을 구분했다.
+- Files: Day101-160/Day133/day133_writeup.md
+- Commit handling: 사용자 요청으로 위 write-up과 기존 progress_log.md 갱신을 동일 커밋에 저장한다.
+- Problems: 타입 캐스트/실제 권한, saved rbp/복귀 주소, 메모리 저장값/레지스터 주소의 구분을 보완해야 한다. 특정 rbp 프레임 오프셋을 모든 함수에 일반화하지 않는다. memcpy 260바이트 시도의 실제 종료 증상은 관찰하지 않았다.
+- Next: Day134 / 2주차 3/5 — 자체 코드 정상·경계·거부의 예상과 실제 비교. CS 엔디언, 복습 call/ret·프레임 관찰 대조.
 
 ---
 
