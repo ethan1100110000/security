@@ -1,0 +1,10 @@
+Recorded for Day134 (2026-10-15 Asia/Seoul)
+Executor: teacher container; not user WSL
+Machine: x86_64
+Compiler: cc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0
+GNU objdump (GNU Binutils for Ubuntu) 2.42
+Build flags: -std=c11 -Wall -Wextra -Werror -O0 -g
+Sanitizers: not enabled
+Compile exit codes: 0 for both final builds
+Program exit codes: copy_test=0; endian_probe=0
+Disassembly command exit code: 0

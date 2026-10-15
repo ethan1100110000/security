@@ -1,0 +1,5 @@
+value=0x12345678
+memory low-to-high: 78 56 34 12
+input: 00 10
+big-endian decode: 0x0010 (16)
+little-endian decode: 0x1000 (4096)

@@ -44,14 +44,14 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: Day133 — 2026-10-14 메인·CS·복습 문답 및 스택 손 추적 종료. 산출물은 write-up 1개.
-- Last verified commits: Day132 문서·로그 `996b0900001fcde13c78c6be912eb6eebe810064`. Day133 write-up과 본 로그는 사용자 요청으로 동일 커밋에 저장하며 식별자는 Git history에서 확인한다.
+- Last completed: Day134 — 2026-10-15 메인 경계 테스트 5건 실행·CS 엔디언 출력·복습 실제 역어셈블 확인 종료.
+- Last verified commits: Day133 문서·로그 `08c5bba604d860071da034d4b66cbabb71588ddf`. Day134 소스·증거·write-up과 본 로그는 사용자 요청으로 같은 커밋에 저장하며 식별자는 Git history에서 확인한다.
 - Active plan: [한양대 SSLab 준비 30주 계획](hanyang_research_plan_2027.md), 2026-10-05 적용
-- Plan position: W02 메모리 기초 / 2/5 종료 → Day134 / 2주차 3/5 예정. W01의 실측 5분 무힌트 발표는 미확인으로 유지한다.
-- Current focus: free 뒤 쓰기와 읽기 전용 목적지 쓰기를 수명/권한 문제로 구분했다. 캐스트는 메모리 권한을 바꾸지 않음을 설명받았다. uint8_t 변환 260→4와 검사값/복사값 불일치를 해석했다. saved rbp·복귀 주소와 pop/ret을 교정한 뒤 새 주소 예제에서 pop을 독립 추적했다.
-- Next task: Day134 / 2주차 3/5 — 자체 코드의 정상·경계·거부 사례를 예상하고 실제 결과와 비교. 원본 4/5·목적지 16/17의 이전 기대값을 실행 근거와 연결한다. CS는 엔디언, 2회독은 call/ret·프레임을 관찰 자료와 대조한다. 새 채팅은 [Day133 write-up](../Day101-160/Day133/day133_writeup.md)을 먼저 읽는다.
+- Plan position: W02 메모리 기초 / 3/5 종료 → Day135 / 2주차 4/5 예정. W01의 실측 5분 무힌트 발표는 미확인으로 유지한다.
+- Current focus: 교사 컨테이너의 GCC 일반 C 빌드에서 원본 4/5·목적지 16/17·중간 NUL 복사 테스트 5/5 통과, 프로그램 exit 0. 성공 시 내용/나머지 영역, 거부 시 전체 목적지 무변경을 확인했다. 엔디언 바이트 출력과 두 명시 디코딩을 실행했다. 실제 copy_data의 프레임·인자 저장·cmp/jae·leave/ret을 정적으로 읽었다. sanitizer·퍼징·GDB 동적 관찰은 없다.
+- Next task: Day135 / 2주차 4/5 — 조건 변경과 오류 처리: 중첩 거부 조건·검사 순서·경계/판정 기준 확장. CS 정렬 개념, 2회독 실제 분기·호출과 기존 기록 연결. 새 채팅은 [Day134 write-up](../Day101-160/Day134/day134_writeup.md)과 보존한 소스·결과를 먼저 읽는다.
 - Deferred legacy task: 이전 Day130의 sanitizer backtrace 읽기는 새 계획 W04의 메모리 오류·ASAN 복습에 연결한다.
-- Repo rule: Day별 write-up을 해당 Day 폴더에 기록한다. 오늘 신규 산출물은 `Day101-160/Day133/day133_writeup.md` 1개이며 이 로그는 기존 파일 갱신이다. 엑셀은 계획 전용으로 유지한다.
+- Repo rule: Day134 산출물은 `Day101-160/Day134/`에 소스·원자료·재현법을 함께 보존한다. 바이너리는 재빌드하며 엑셀은 계획만 유지한다. 실제 시간은 미측정으로 기록한다.
 
 ---
 
@@ -557,6 +557,20 @@ git pull --ff-only
 - Commit handling: 사용자 요청으로 위 write-up과 기존 progress_log.md 갱신을 동일 커밋에 저장한다.
 - Problems: 타입 캐스트/실제 권한, saved rbp/복귀 주소, 메모리 저장값/레지스터 주소의 구분을 보완해야 한다. 특정 rbp 프레임 오프셋을 모든 함수에 일반화하지 않는다. memcpy 260바이트 시도의 실제 종료 증상은 관찰하지 않았다.
 - Next: Day134 / 2주차 3/5 — 자체 코드 정상·경계·거부의 예상과 실제 비교. CS 엔디언, 복습 call/ret·프레임 관찰 대조.
+
+### Day134 — 2026-10-15
+- Plan: W02 / 메모리 기초 / 2주차 3/5
+- Topic: 정상·경계·거부 실행 검증, 엔디언 실측, 실제 프레임·분기 역어셈블 읽기
+- Status: 완료 — 오늘 메인·CS·복습 범위 종료. W02 전체 완료나 실측 5분 발표가 아니다.
+- Main: memcmp로 처음 length바이트 내용, 성공 시 나머지 AA 유지, 거부 시 전체 AA 유지를 확인하도록 기준을 세웠다. 교사 컨테이너 GCC 13.3.0 일반 C 빌드에서 원본 동일/초과, 목적지 동일/초과, 중간 NUL 5사례가 각각 함수 반환 0/1/0/2/0으로 기대와 일치했고 테스트 프로그램 exit 0이었다.
+- CS: 리틀 엔디언 78 56 34 12를 예상했다. 빅/리틀 해석 불일치에서 힌트를 받은 뒤 00 10의 리틀 해석 0x1000을 답했다. endian_probe 실행으로 value 메모리와 빅 16/리틀 4096을 확인했다. 형식 해석과 범위 검사가 별개로 필요함을 연결했다.
+- Review: objdump로 실행한 copy_data의 push rbp·mov rbp,rsp·sub rsp,0x30, 인자 저장 위치, src_size>=length에서 계속 경로로 가는 jae, leave/ret을 확인했다. rbp 고정·주소 계산·4/4 점프·4/5 비점프 반환1·ret 복귀 주소를 답했다. jae 의미와 프레임 생성/복귀 역할에는 설명을 받았다.
+- Time: 메인/CS/2회독 미측정. 대화 경과 시간을 실측으로 환산하지 않는다.
+- Result: 두 C 프로그램 최종 빌드/실행 exit 0, 복사 테스트 5/5 통과, 역어셈블 exit 0. sanitizer·퍼징·GDB 단일 단계·새 crash는 없다.
+- Files: Day101-160/Day134/day134_writeup.md, copy_test.c, results.txt, endian_probe.c, endian_results.txt, copy_data_disassembly.txt, environment.txt, sha256.txt (모두 Day134 폴더).
+- Commit handling: 사용자 요청으로 소스·원자료·write-up과 기존 progress_log.md를 동일 커밋에 저장한다. 바이너리는 포함하지 않는다.
+- Problems: 초기 NUL 입력 41 00 43 44를 합의한 41 00 42 43으로 고친 뒤 다시 빌드·실행했으며 최종 기록을 보존했다. 목적지 동일 경계는 나머지 영역 길이 0이며 외부 canary 검사가 아니다. 목적지 최종 무변경은 일시적 쓰기 부재까지 증명하지 않는다. 정적 코드 읽기를 동적 레지스터/분기 관찰로 취급하지 않는다.
+- Next: Day135 / 2주차 4/5 — 조건 변경·오류 처리, CS 정렬, 복습 실제 함수 분기·호출 연결.
 
 ---
 
