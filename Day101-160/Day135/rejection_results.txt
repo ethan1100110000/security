@@ -1,0 +1,4 @@
+original src_size=4 capacity=16 length=17 rc=1 expected_rc=1 return_check=PASS unchanged_check=PASS first_byte=AA contract=PASS expected_behavior=PASS
+reversed src_size=4 capacity=16 length=17 rc=2 expected_rc=2 return_check=PASS unchanged_check=PASS first_byte=AA contract=PASS expected_behavior=PASS
+early_write src_size=4 capacity=16 length=17 rc=1 expected_rc=1 return_check=PASS unchanged_check=FAIL first_byte=41 contract=FAIL expected_behavior=PASS
+summary: 3/3 expected behaviors observed; early_write contract failure is intentional

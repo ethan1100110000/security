@@ -44,14 +44,14 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: Day134 — 2026-10-15 메인 경계 테스트 5건 실행·CS 엔디언 출력·복습 실제 역어셈블 확인 종료.
-- Last verified commits: Day133 문서·로그 `08c5bba604d860071da034d4b66cbabb71588ddf`. Day134 소스·증거·write-up과 본 로그는 사용자 요청으로 같은 커밋에 저장하며 식별자는 Git history에서 확인한다.
+- Last completed: Day135 — 2026-10-15 메인 검사 순서·선행 쓰기 비교 실행, CS 정렬, 복습 호출 인자 문답 종료. Day134에 이어 같은 날 추가 회차를 수행했다.
+- Last verified commits: Day134 소스·증거·문서·로그 `1c9adc59913b96844ef9e64635f9d3b432d67f4f`. Day135 산출물과 본 로그는 사용자 요청으로 동일 커밋에 저장하며 식별자는 Git history에서 확인한다.
 - Active plan: [한양대 SSLab 준비 30주 계획](hanyang_research_plan_2027.md), 2026-10-05 적용
-- Plan position: W02 메모리 기초 / 3/5 종료 → Day135 / 2주차 4/5 예정. W01의 실측 5분 무힌트 발표는 미확인으로 유지한다.
-- Current focus: 교사 컨테이너의 GCC 일반 C 빌드에서 원본 4/5·목적지 16/17·중간 NUL 복사 테스트 5/5 통과, 프로그램 exit 0. 성공 시 내용/나머지 영역, 거부 시 전체 목적지 무변경을 확인했다. 엔디언 바이트 출력과 두 명시 디코딩을 실행했다. 실제 copy_data의 프레임·인자 저장·cmp/jae·leave/ret을 정적으로 읽었다. sanitizer·퍼징·GDB 동적 관찰은 없다.
-- Next task: Day135 / 2주차 4/5 — 조건 변경과 오류 처리: 중첩 거부 조건·검사 순서·경계/판정 기준 확장. CS 정렬 개념, 2회독 실제 분기·호출과 기존 기록 연결. 새 채팅은 [Day134 write-up](../Day101-160/Day134/day134_writeup.md)과 보존한 소스·결과를 먼저 읽는다.
-- Deferred legacy task: 이전 Day130의 sanitizer backtrace 읽기는 새 계획 W04의 메모리 오류·ASAN 복습에 연결한다.
-- Repo rule: Day134 산출물은 `Day101-160/Day134/`에 소스·원자료·재현법을 함께 보존한다. 바이너리는 재빌드하며 엑셀은 계획만 유지한다. 실제 시간은 미측정으로 기록한다.
+- Plan position: W02 메모리 기초 / 4/5 종료 → Day136 / 2주차 5/5 예정. W02 전체 완료와 실측 5분 발표는 아직 확인하지 않았다.
+- Current focus: 동일한 중첩 오류 입력에서 원본 우선 반환1, 목적지 우선 반환2와 목적지 유지, 선행 쓰기 코드의 반환1·무변경 FAIL을 교사 컨테이너에서 확인했다. 프로그램 exit 0은 의도한 잘못을 검출했다는 뜻이다. CS는 타입 정렬 요구·선언 객체 배치·캐스트·memcpy/엔디언을 구분했고, 복습은 기존 copy_data의 rdi=dst/rsi=src/rdx=length와 거부 경로 비도달을 정적으로 해석했다.
+- Next task: Day136 / 2주차 5/5 — 범위·권한·수명을 코드 위치와 연결한 주간 종합 설명. 실제 실행 근거·정확성 판정·한계를 설명하고 부족한 부분만 보완한다. 새 채팅은 [Day135 write-up](../Day101-160/Day135/day135_writeup.md)과 Day134 원자료를 참고한다.
+- Deferred legacy task: 이전 Day130의 sanitizer backtrace 읽기는 새 계획 W04의 메모리 오류·ASAN 복습에 연결한다. W01 실측 5분 무힌트 발표 수행은 미확인으로 유지한다.
+- Repo rule: Day135 산출물은 `Day101-160/Day135/`에 소스·원자료·write-up을 보존한다. 바이너리는 재빌드, 엑셀은 계획 전용이다. 같은 날 두 회차를 실측 6시간으로 환산하지 않는다.
 
 ---
 
@@ -571,6 +571,20 @@ git pull --ff-only
 - Commit handling: 사용자 요청으로 소스·원자료·write-up과 기존 progress_log.md를 동일 커밋에 저장한다. 바이너리는 포함하지 않는다.
 - Problems: 초기 NUL 입력 41 00 43 44를 합의한 41 00 42 43으로 고친 뒤 다시 빌드·실행했으며 최종 기록을 보존했다. 목적지 동일 경계는 나머지 영역 길이 0이며 외부 canary 검사가 아니다. 목적지 최종 무변경은 일시적 쓰기 부재까지 증명하지 않는다. 정적 코드 읽기를 동적 레지스터/분기 관찰로 취급하지 않는다.
 - Next: Day135 / 2주차 4/5 — 조건 변경·오류 처리, CS 정렬, 복습 실제 함수 분기·호출 연결.
+
+### Day135 — 2026-10-15 (Day134 후 추가 회차)
+- Plan: W02 / 메모리 기초 / 2주차 4/5
+- Topic: 검사 순서·거부 무변경, 정렬과 바이트 복사, memcpy 인자와 거부 분기
+- Status: 완료 — 오늘 메인·CS·복습 범위 종료. W02 전체 완료는 아니다.
+- Main: 중첩 오류 src_size=4/capacity=16/length=17에서 원본 우선 반환1, 순서 반전 반환2와 검사 단락을 설명했다. 거부 전에 dst[0]을 쓰면 계약 위반이라는 힌트 후, 목적지 초기 상태 검사에서 잡힐 것이라 예상했다. 비교 실행에서 두 정상 변형 무변경 PASS, early_write 반환 검사 PASS/무변경 FAIL(AA→41)을 관찰했다.
+- CS: 4바이트 정렬 조건에서 0x1000을 선택하고 캐스트는 주소를 자동 정렬하지 않는다고 답했다. 교사의 “정렬이 보장된 타입” 표현을 질문하여 선언 객체를 컴파일러가 타입 요구에 맞게 배치한다는 설명으로 교정했다. memcpy는 별도 변수에 데이터를 복사하며 엔디언을 바꾸지 않아 리틀 환경의 12 34 56 78은 0x78563412라고 답했다. 정렬 프로그램 실행은 없다.
+- Review: Day134 실제 copy_data 역어셈블의 호출 인자를 rdi=dst, rsi=src, rdx=length로 맞혔다. 원본 거부는 반환1 준비 후 leave/ret으로 이동해 memcpy 인자 준비와 호출에 도달하지 않는다고 설명했다. 이는 정적 해석이며 새 GDB 관찰은 아니다.
+- Time: 메인/CS/2회독 미측정. 같은 날 두 회차와 대화 경과 시간을 실측 학습 시간으로 환산하지 않는다.
+- Result: GCC 일반 C 빌드·실행 exit 0. 3/3 예상 동작 관찰은 early_write의 의도된 계약 실패 검출을 포함하며 세 구현 전부 정상이라는 뜻이 아니다. 새 sanitizer·퍼징·crash 실험 없음.
+- Files: Day101-160/Day135/day135_writeup.md, rejection_test.c, rejection_results.txt, environment.txt, sha256.txt (모두 Day135 폴더).
+- Commit handling: 사용자 요청으로 Day135 소스·원자료·write-up과 기존 progress_log.md를 같은 커밋에 저장한다. 바이너리는 포함하지 않는다.
+- Problems: 오류 반환은 함수 반환이며 전체 프로그램 종료와 다르다. 무변경은 이번 API 계약이고 최종 바이트 비교만으로 일시적 쓰기까지 배제하지 않는다. uint32_t 정렬 요구를 모든 환경에서 4로 단정하지 않으며 오늘 _Alignof 출력은 없다.
+- Next: Day136 / 2주차 5/5 — 안전 조건 3개·코드 위치·실행 근거·한계의 주간 종합 설명과 기록 정리.
 
 ---
 
