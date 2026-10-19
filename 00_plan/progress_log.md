@@ -44,14 +44,14 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: Day135 — 2026-10-15 메인 검사 순서·선행 쓰기 비교 실행, CS 정렬, 복습 호출 인자 문답 종료. Day134에 이어 같은 날 추가 회차를 수행했다.
-- Last verified commits: Day134 소스·증거·문서·로그 `1c9adc59913b96844ef9e64635f9d3b432d67f4f`. Day135 산출물과 본 로그는 사용자 요청으로 동일 커밋에 저장하며 식별자는 Git history에서 확인한다.
+- Last completed: Day137 — 2026-10-19. 같은 날 Day136(W02 5/5)과 Day137(W03 1/5)의 메인·CS·복습 범위를 이어서 종료.
+- Last verified commits: Day135 산출물·로그 `9d0f9e75a93388ed2269ff8e8017e0f424c68f44`. Day136·137 문서·실행 근거와 본 로그는 사용자 요청으로 동일 커밋에 저장하며 식별자는 Git history에서 확인한다.
 - Active plan: [한양대 SSLab 준비 30주 계획](hanyang_research_plan_2027.md), 2026-10-05 적용
-- Plan position: W02 메모리 기초 / 4/5 종료 → Day136 / 2주차 5/5 예정. W02 전체 완료와 실측 5분 발표는 아직 확인하지 않았다.
-- Current focus: 동일한 중첩 오류 입력에서 원본 우선 반환1, 목적지 우선 반환2와 목적지 유지, 선행 쓰기 코드의 반환1·무변경 FAIL을 교사 컨테이너에서 확인했다. 프로그램 exit 0은 의도한 잘못을 검출했다는 뜻이다. CS는 타입 정렬 요구·선언 객체 배치·캐스트·memcpy/엔디언을 구분했고, 복습은 기존 copy_data의 rdi=dst/rsi=src/rdx=length와 거부 경로 비도달을 정적으로 해석했다.
-- Next task: Day136 / 2주차 5/5 — 범위·권한·수명을 코드 위치와 연결한 주간 종합 설명. 실제 실행 근거·정확성 판정·한계를 설명하고 부족한 부분만 보완한다. 새 채팅은 [Day135 write-up](../Day101-160/Day135/day135_writeup.md)과 Day134 원자료를 참고한다.
-- Deferred legacy task: 이전 Day130의 sanitizer backtrace 읽기는 새 계획 W04의 메모리 오류·ASAN 복습에 연결한다. W01 실측 5분 무힌트 발표 수행은 미확인으로 유지한다.
-- Repo rule: Day135 산출물은 `Day101-160/Day135/`에 소스·원자료·write-up을 보존한다. 바이너리는 재빌드, 엑셀은 계획 전용이다. 같은 날 두 회차를 실측 6시간으로 환산하지 않는다.
+- Plan position: W02 주요 학습 범위 정리 후 W03 / 1/5 종료 → Day138 / 3주차 2/5 예정. W02 안전 조건은 이전 답변을 함께 근거로 인정했으며 오늘 새 독립 종합 발표를 수행한 것은 아니다.
+- Current focus: Day136에서 유효한 포인터의 length=0 반환0·전체 AA 유지를 실행했다. Day137은 동일 함수/드라이버를 별도 파일로 O0/O2 빌드, 양쪽 5/5 통과와 출력 diff 일치, 실제 rbp 프레임·분기 변화 확인. rsi/src·rdx/length 인자 이동과 caller-saved 원리를 설명했다. 성능 측정·GDB 동적 관찰은 없다.
+- Next task: Day138 / 3주차 2/5 — 소스 조건·반환과 최적화된 분기 대응. CS 호출 규약·레지스터 보존, 복습 기존 디버거 기록의 관찰/추론 구분. [Day136 write-up](../Day101-160/Day136/day136_writeup.md), [Day137 write-up](../Day101-160/Day137/day137_writeup.md)과 원자료로 이어간다.
+- Deferred legacy task: sanitizer backtrace 읽기는 W04 메모리 오류·ASAN 복습에 연결한다. 실측 5분 무힌트 발표 수행은 미확인으로 유지한다. W03 소스/기계어 연결 그림은 주간 미완료 산출물이다.
+- Repo rule: 각 Day 폴더에 소스·원자료·write-up을 보존한다. 바이너리는 재빌드하며 엑셀은 계획 전용이다. 같은 날 두 회차를 실측 6시간으로 환산하지 않는다.
 
 ---
 
@@ -585,6 +585,30 @@ git pull --ff-only
 - Commit handling: 사용자 요청으로 Day135 소스·원자료·write-up과 기존 progress_log.md를 같은 커밋에 저장한다. 바이너리는 포함하지 않는다.
 - Problems: 오류 반환은 함수 반환이며 전체 프로그램 종료와 다르다. 무변경은 이번 API 계약이고 최종 바이트 비교만으로 일시적 쓰기까지 배제하지 않는다. uint32_t 정렬 요구를 모든 환경에서 4로 단정하지 않으며 오늘 _Alignof 출력은 없다.
 - Next: Day136 / 2주차 5/5 — 안전 조건 3개·코드 위치·실행 근거·한계의 주간 종합 설명과 기록 정리.
+
+### Day136 — 2026-10-19
+- Plan: W02 / 2주차 5/5
+- Topic: 테스트 근거와 한계, 0바이트 복사 실행, 길이 축소·정적/동적 구분
+- Status: 완료 — 오늘 회차의 메인·CS·복습 종료. 기존 안전 조건 답변을 인정해 W03으로 진행하며 오늘 새 무힌트 종합 발표 완료로 기록하지 않는다.
+- Main: 사용자가 기존 문제 반복을 지적해 이전 답변을 인정했다. 테스트는 모든 입력의 안전성 증명이 아니라고 답했다. 유효한 src/dst의 length=0에서 목적지 AA 유지 예상 후 교사 컨테이너 일반 C 실행으로 반환0·전체16바이트 AA·프로그램 exit0을 확인했다.
+- CS: 0x0104=260을 uint8_t로 바꾸는 질문에서 표현 범위 원리를 회상했다. modulo256 힌트 후 4를 답했고, 검사4/복사260의 불일치를 설명했다. 범위 밖 쓰기와 반드시 crash는 구분했다.
+- Review: 실행 출력과 objdump 정적 읽기를 구분하고 call 존재가 특정 거부 입력의 실행 증거는 아니며 분기에 따라 달라진다고 설명했다.
+- Time: 메인/CS/복습 미측정.
+- Files: Day101-160/Day136/day136_writeup.md, zero_length_test.c, zero_length_results.txt, environment.txt, sha256.txt (모두 Day136 폴더).
+- Problems: 길이0 시험은 유효한 포인터를 전제하며 NULL 사례를 검증하지 않았다. 새 sanitizer·GDB·crash 없음. W02 안전 조건 3개의 새 독립 설명은 미수행, 이전 설명과 실험을 종합 근거로 인정.
+- Next: 같은 날 Day137 / W03 1/5로 진행.
+
+### Day137 — 2026-10-19 (Day136 후 추가 회차)
+- Plan: W03 / 바이너리 기초 / 3주차 1/5
+- Topic: O0/O2 동작·기계어 비교, 호출 규약·caller-saved, 성능 가설과 관찰
+- Status: 완료 — 메인·CS·복습 범위 종료. W03 전체 완료는 아니다.
+- Main: O0/O2 의미와 프레임 생략 설명을 받은 뒤, 정의된 동작의 결과는 같아야 함을 답했다. Day134 소스에서 함수와 드라이버를 분리해 LTO 없이 빌드했다. 양쪽 빌드/실행 exit0, 5/5 통과, 출력 diff 일치. objdump에서 O0 rbp 프레임·스택 인자 보관과 O2 프레임 생략·레지스터 사용을 확인했다. jb를 if(src_size < length) return1로 대응했다.
+- CS: 호출 준비 뒤 rsi=src/rdx=length를 맞혔다. rsi 보존을 가정하면 안 된다고 예상했고 System V AMD64 caller-saved 설명을 받았다. 호출자 프레임에 주소를 저장해 재사용할 수 있다고 답했다. 실제 호출 뒤 rsi 값은 관찰하지 않았다.
+- Review: 프레임이 없어졌으니 더 빠를 수 있다는 가설을 제시하되 결론은 못 내린다고 설명했다. 실제 근거는 다섯 사례의 동일 출력과 구조 변화이며 속도는 미측정이다.
+- Time: 메인/CS/복습 미측정. 두 회차를 실측6시간으로 환산하지 않는다.
+- Files: Day101-160/Day137/day137_writeup.md, copy_data.c, copy_test_driver.c, results_O0.txt, results_O2.txt, disassembly_O0.txt, disassembly_O2.txt, environment.txt, sha256.txt (모두 Day137 폴더).
+- Problems: 최적화 후 동일 동작 시험은 모든 입력의 동등성 증명이 아니다. rbp 프레임은 필수 구조가 아니다. 성능 시간·sanitizer·GDB 동적 레지스터/분기 관찰·5분 독립 발표는 수행하지 않았다.
+- Next: Day138 / 3주차 2/5 — 소스 조건·반환과 최적화된 분기 대응, 호출 규약·보존 보완, 관찰/추론 복습.
 
 ---
 

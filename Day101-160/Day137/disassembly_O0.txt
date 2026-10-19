@@ -1,0 +1,45 @@
+
+copy_test_O0:     file format elf64-x86-64
+
+
+Disassembly of section .init:
+
+Disassembly of section .plt:
+
+Disassembly of section .plt.got:
+
+Disassembly of section .plt.sec:
+
+Disassembly of section .text:
+
+0000000000001229 <copy_data>:
+    1229:	f3 0f 1e fa          	endbr64
+    122d:	55                   	push   rbp
+    122e:	48 89 e5             	mov    rbp,rsp
+    1231:	48 83 ec 30          	sub    rsp,0x30
+    1235:	48 89 7d f8          	mov    QWORD PTR [rbp-0x8],rdi
+    1239:	48 89 75 f0          	mov    QWORD PTR [rbp-0x10],rsi
+    123d:	48 89 55 e8          	mov    QWORD PTR [rbp-0x18],rdx
+    1241:	48 89 4d e0          	mov    QWORD PTR [rbp-0x20],rcx
+    1245:	4c 89 45 d8          	mov    QWORD PTR [rbp-0x28],r8
+    1249:	48 8b 45 d8          	mov    rax,QWORD PTR [rbp-0x28]
+    124d:	48 39 45 e0          	cmp    QWORD PTR [rbp-0x20],rax
+    1251:	73 07                	jae    125a <copy_data+0x31>
+    1253:	b8 01 00 00 00       	mov    eax,0x1
+    1258:	eb 2d                	jmp    1287 <copy_data+0x5e>
+    125a:	48 8b 45 d8          	mov    rax,QWORD PTR [rbp-0x28]
+    125e:	48 39 45 f0          	cmp    QWORD PTR [rbp-0x10],rax
+    1262:	73 07                	jae    126b <copy_data+0x42>
+    1264:	b8 02 00 00 00       	mov    eax,0x2
+    1269:	eb 1c                	jmp    1287 <copy_data+0x5e>
+    126b:	48 8b 55 d8          	mov    rdx,QWORD PTR [rbp-0x28]
+    126f:	48 8b 4d e8          	mov    rcx,QWORD PTR [rbp-0x18]
+    1273:	48 8b 45 f8          	mov    rax,QWORD PTR [rbp-0x8]
+    1277:	48 89 ce             	mov    rsi,rcx
+    127a:	48 89 c7             	mov    rdi,rax
+    127d:	e8 9e fe ff ff       	call   1120 <memcpy@plt>
+    1282:	b8 00 00 00 00       	mov    eax,0x0
+    1287:	c9                   	leave
+    1288:	c3                   	ret
+
+Disassembly of section .fini:

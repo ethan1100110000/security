@@ -1,0 +1,12 @@
+Study date: 2026-10-19 Asia/Seoul
+Executor: teacher container; not user WSL
+Architecture: x86_64
+cc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0
+GNU objdump (GNU Binutils for Ubuntu) 2.42
+Common flags: -std=c11 -Wall -Wextra -Werror -g
+Optimization: -O0
+Build exit: 0
+Run exit: 0
+Sanitizers: not enabled
+Performance timing: not measured
+GDB dynamic register/branch observation: not performed

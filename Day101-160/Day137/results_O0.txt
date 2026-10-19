@@ -1,0 +1,6 @@
+source_equal src_size=4 capacity=16 length=4 rc=0 expected=0 content=PASS unchanged=PASS result=PASS dst=41 42 43 44 AA AA AA AA AA AA AA AA AA AA AA AA
+source_plus_one src_size=4 capacity=16 length=5 rc=1 expected=1 content=N/A unchanged=PASS result=PASS dst=AA AA AA AA AA AA AA AA AA AA AA AA AA AA AA AA
+destination_equal src_size=32 capacity=16 length=16 rc=0 expected=0 content=PASS unchanged=PASS result=PASS dst=41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 50
+destination_plus_one src_size=32 capacity=16 length=17 rc=2 expected=2 content=N/A unchanged=PASS result=PASS dst=AA AA AA AA AA AA AA AA AA AA AA AA AA AA AA AA
+embedded_nul src_size=4 capacity=16 length=4 rc=0 expected=0 content=PASS unchanged=PASS result=PASS dst=41 00 42 43 AA AA AA AA AA AA AA AA AA AA AA AA
+summary: 5/5 passed
