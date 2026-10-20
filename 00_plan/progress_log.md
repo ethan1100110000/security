@@ -44,14 +44,14 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: Day137 — 2026-10-19. 같은 날 Day136(W02 5/5)과 Day137(W03 1/5)의 메인·CS·복습 범위를 이어서 종료.
-- Last verified commits: Day135 산출물·로그 `9d0f9e75a93388ed2269ff8e8017e0f424c68f44`. Day136·137 문서·실행 근거와 본 로그는 사용자 요청으로 동일 커밋에 저장하며 식별자는 Git history에서 확인한다.
+- Last completed: Day138 — 2026-10-20 메인 공통 반환 경로·CS 부분 레지스터 실행·복습 관찰 범위 문답 종료.
+- Last verified commits: Day136·137 산출물·로그 `eb7756ce432817ccc1230eeb4163090170c70efb`. Day138 소스·원자료·write-up과 본 로그는 사용자 요청에 따른 정리 작업으로 동일 커밋에 저장하며 식별자는 Git history에서 확인한다.
 - Active plan: [한양대 SSLab 준비 30주 계획](hanyang_research_plan_2027.md), 2026-10-05 적용
-- Plan position: W02 주요 학습 범위 정리 후 W03 / 1/5 종료 → Day138 / 3주차 2/5 예정. W02 안전 조건은 이전 답변을 함께 근거로 인정했으며 오늘 새 독립 종합 발표를 수행한 것은 아니다.
-- Current focus: Day136에서 유효한 포인터의 length=0 반환0·전체 AA 유지를 실행했다. Day137은 동일 함수/드라이버를 별도 파일로 O0/O2 빌드, 양쪽 5/5 통과와 출력 diff 일치, 실제 rbp 프레임·분기 변화 확인. rsi/src·rdx/length 인자 이동과 caller-saved 원리를 설명했다. 성능 측정·GDB 동적 관찰은 없다.
-- Next task: Day138 / 3주차 2/5 — 소스 조건·반환과 최적화된 분기 대응. CS 호출 규약·레지스터 보존, 복습 기존 디버거 기록의 관찰/추론 구분. [Day136 write-up](../Day101-160/Day136/day136_writeup.md), [Day137 write-up](../Day101-160/Day137/day137_writeup.md)과 원자료로 이어간다.
-- Deferred legacy task: sanitizer backtrace 읽기는 W04 메모리 오류·ASAN 복습에 연결한다. 실측 5분 무힌트 발표 수행은 미확인으로 유지한다. W03 소스/기계어 연결 그림은 주간 미완료 산출물이다.
-- Repo rule: 각 Day 폴더에 소스·원자료·write-up을 보존한다. 바이너리는 재빌드하며 엑셀은 계획 전용이다. 같은 날 두 회차를 실측 6시간으로 환산하지 않는다.
+- Plan position: W03 바이너리 기초 / 2/5 종료 → Day139 / 3주차 3/5 예정. W02 주요 범위는 이전 답변·실험을 종합해 진입했으며 새 독립 종합 발표 완료를 뜻하지 않는다.
+- Current focus: O2 copy_data의 ecx=1/2 사전 준비와 공통 eax 반환, src_size의 r9 보관을 설명했다. ecx=하위32비트·cx=하위16비트, 32비트 쓰기 상위0/16비트 쓰기 상위유지를 교정하고 실제 별도 어셈블리 두 사례를 실행해 PASS/exit0 확인. 기존 copy_data의 rcx/r9 저장 순간은 정적 해석과 예상이며 GDB로 관찰하지 않았다.
+- Next task: Day139 / 3주차 3/5 — 소스 한 함수와 최적화 분기·반환을 연결한 흐름 그림. CS 호출 맥락·레지스터 보존 보완, 복습 관찰과 정적 추론 구분. [Day138 write-up](../Day101-160/Day138/day138_writeup.md)과 Day137 O2 역어셈블로 이어간다.
+- Deferred legacy task: sanitizer backtrace 읽기는 W04에 연결한다. 실측 5분 무힌트 발표는 미확인. W03 소스/기계어 연결 그림은 미완료 주간 산출물이다. GDB의 실제 가용성을 확인한 뒤 동적 관찰 수행 여부를 기록한다.
+- Repo rule: 각 Day 폴더에 소스·원자료·write-up을 보존하고 바이너리는 재빌드한다. 엑셀은 계획 전용, 실제 시간은 미측정으로 기록한다.
 
 ---
 
@@ -609,6 +609,19 @@ git pull --ff-only
 - Files: Day101-160/Day137/day137_writeup.md, copy_data.c, copy_test_driver.c, results_O0.txt, results_O2.txt, disassembly_O0.txt, disassembly_O2.txt, environment.txt, sha256.txt (모두 Day137 폴더).
 - Problems: 최적화 후 동일 동작 시험은 모든 입력의 동등성 증명이 아니다. rbp 프레임은 필수 구조가 아니다. 성능 시간·sanitizer·GDB 동적 레지스터/분기 관찰·5분 독립 발표는 수행하지 않았다.
 - Next: Day138 / 3주차 2/5 — 소스 조건·반환과 최적화된 분기 대응, 호출 규약·보존 보완, 관찰/추론 복습.
+
+### Day138 — 2026-10-20
+- Plan: W03 / 바이너리 기초 / 3주차 2/5
+- Topic: 공통 거부 경로·레지스터 재사용·부분 쓰기, 정적 해석과 직접 관찰 구분
+- Status: 완료 — 오늘 메인·CS·복습 범위 종료. W03 전체 완료는 아니다.
+- Main: 각 비교 전 ecx=1/2를 준비하고 공통 reject에서 eax로 반환하는 이유를 설명했다. src_size를 r9에 먼저 보관하는 목적을 답했고, src_size32/capacity16/length17이 두 번째 검사에서 반환2가 되는 경로를 추적했다.
+- CS: ecx를 하위4비트라 한 답을 하위32비트=4바이트로 교정했다. ecx 쓰기 상위0, cx 쓰기 나머지 유지 차이와 이진0010/16진0002를 보완했다. 교사 컨테이너 별도 어셈블리/C 실행에서 초기 rcx=0x1122334455667788에 ecx=1 결과 0x1, cx=1 결과 0x1122334455660001을 관찰했고 두 검사 PASS, 빌드/실행 exit0.
+- Review: 폭 실험이 기존 copy_data의 r9 저장을 직접 관찰한 것은 아니라고 구분했다. 전후 rcx/r9 비교 방법을 보완하고, rcx32를 복사한 뒤 ecx=1을 쓰면 rcx1/r9=32라고 맞혔다. 이 값은 손 추적 예상이며 GDB 관찰은 없다.
+- Time: 메인/CS/복습 미측정.
+- Files: Day101-160/Day138/day138_writeup.md, register_width.S, register_width_test.c, register_width_results.txt, environment.txt, sha256.txt (모두 Day138 폴더).
+- Commit handling: 사용자 요청에 따른 정리로 소스·원자료·문서와 기존 로그를 함께 커밋한다. 바이너리는 포함하지 않는다.
+- Problems: 비트/바이트와 2진/16진 표기 혼동 교정. 실행한 사례는 ecx1/cx1이고 cx2는 예상뿐이다. 기존 copy_data의 GDB 동적 레지스터 캡처·성능·sanitizer·퍼징·5분 발표는 수행하지 않았다.
+- Next: Day139 / 3주차 3/5 — 소스와 최적화된 분기·반환 흐름 그림, 호출 맥락 보완, 관찰/추론 구분.
 
 ---
 
