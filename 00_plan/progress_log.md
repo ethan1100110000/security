@@ -44,14 +44,14 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: Day138 — 2026-10-20 메인 공통 반환 경로·CS 부분 레지스터 실행·복습 관찰 범위 문답 종료.
-- Last verified commits: Day136·137 산출물·로그 `eb7756ce432817ccc1230eeb4163090170c70efb`. Day138 소스·원자료·write-up과 본 로그는 사용자 요청에 따른 정리 작업으로 동일 커밋에 저장하며 식별자는 Git history에서 확인한다.
+- Last completed: Day139 — 2026-10-22 메인 흐름 그림 공동 작성·CS callee-saved·복습 push/pop 추가 보완 종료. push/pop 독립 숙달은 아직 미확인.
+- Last verified commits: Day138 문서·실험·로그 `07b112019e09a884de91eb5a4a863008f4565f5e`. Day139 write-up과 본 로그는 사용자 요청으로 같은 커밋에 저장하며 식별자는 Git history에서 확인한다.
 - Active plan: [한양대 SSLab 준비 30주 계획](hanyang_research_plan_2027.md), 2026-10-05 적용
-- Plan position: W03 바이너리 기초 / 2/5 종료 → Day139 / 3주차 3/5 예정. W02 주요 범위는 이전 답변·실험을 종합해 진입했으며 새 독립 종합 발표 완료를 뜻하지 않는다.
-- Current focus: O2 copy_data의 ecx=1/2 사전 준비와 공통 eax 반환, src_size의 r9 보관을 설명했다. ecx=하위32비트·cx=하위16비트, 32비트 쓰기 상위0/16비트 쓰기 상위유지를 교정하고 실제 별도 어셈블리 두 사례를 실행해 PASS/exit0 확인. 기존 copy_data의 rcx/r9 저장 순간은 정적 해석과 예상이며 GDB로 관찰하지 않았다.
-- Next task: Day139 / 3주차 3/5 — 소스 한 함수와 최적화 분기·반환을 연결한 흐름 그림. CS 호출 맥락·레지스터 보존 보완, 복습 관찰과 정적 추론 구분. [Day138 write-up](../Day101-160/Day138/day138_writeup.md)과 Day137 O2 역어셈블로 이어간다.
-- Deferred legacy task: sanitizer backtrace 읽기는 W04에 연결한다. 실측 5분 무힌트 발표는 미확인. W03 소스/기계어 연결 그림은 미완료 주간 산출물이다. GDB의 실제 가용성을 확인한 뒤 동적 관찰 수행 여부를 기록한다.
-- Repo rule: 각 Day 폴더에 소스·원자료·write-up을 보존하고 바이너리는 재빌드한다. 엑셀은 계획 전용, 실제 시간은 미측정으로 기록한다.
+- Plan position: W03 바이너리 기초 / 3/5 문답 종료 → Day140 / 3주차 4/5 예정. W03 소스/기계어 연결 그림 초안은 Day139 write-up에 완성했으며 독립 설명·검토는 남아 있다.
+- Current focus: 원본/목적지 검사와 ecx=1/2를 공유 반환 블록으로 연결한 그림을 만들었다. 코드 수정과 기존 동작 복원을 구분했다. rbx 보존 책임·라벨 순차 실행·저장값/레지스터 구분에서 설명을 받았고, 추가 질문 후 push/pop LIFO 예제 rcx20과 rsp가 복사값 저장 칸을 가리킨다는 원리를 연결했다. 새 실행·GDB 관찰은 없다.
+- Next task: Day140 / 3주차 4/5 — push/pop·공통 복원 경로를 작은 실제 관찰로 확인하고 그림과 대조. 사용자 예상·확인값을 먼저 정한다. CS 스택 변화·호출 시 정렬, 복습 경로/관찰 근거 연결. [Day139 write-up](../Day101-160/Day139/day139_writeup.md)을 먼저 읽고 약한 부분만 보완한다.
+- Deferred legacy task: sanitizer backtrace 읽기는 W04에 연결. 실측 5분 무힌트 발표는 미확인. GDB 가용성을 확인해 실제 관찰 가능 여부를 기록한다. W03 루프 대응과 전체 그림 독립 설명은 주간 남은 항목이다.
+- Repo rule: Day139 산출물은 write-up 1개(그림 포함), progress_log.md는 기존 파일 갱신이다. 과거 실행 자료와 오늘 손 추적을 섞지 않고 엑셀은 계획 전용으로 유지한다.
 
 ---
 
@@ -622,6 +622,20 @@ git pull --ff-only
 - Commit handling: 사용자 요청에 따른 정리로 소스·원자료·문서와 기존 로그를 함께 커밋한다. 바이너리는 포함하지 않는다.
 - Problems: 비트/바이트와 2진/16진 표기 혼동 교정. 실행한 사례는 ecx1/cx1이고 cx2는 예상뿐이다. 기존 copy_data의 GDB 동적 레지스터 캡처·성능·sanitizer·퍼징·5분 발표는 수행하지 않았다.
 - Next: Day139 / 3주차 3/5 — 소스와 최적화된 분기·반환 흐름 그림, 호출 맥락 보완, 관찰/추론 구분.
+
+### Day139 — 2026-10-22
+- Plan: W03 / 바이너리 기초 / 3주차 3/5
+- Topic: 소스/분기 흐름 그림, callee-saved 보존, 순차 실행과 push/pop
+- Status: 완료 — 오늘 문답·그림과 추가 보완 종료. push/pop 독립 숙달이나 W03 전체 완료는 아니다.
+- Main: 원본 길이/목적지 용량 검사 역할을 이름 붙이고 통과·거부·정상 복사 반환을 연결했다. 공통 종료 블록 표시를 코드 수정으로 오해했으나 설명 후 ecx=1/2가 서로 다른 상태로 공유 블록에 도착한다고 답했다. Day137 O2 주소·명령과 소스를 연결한 Mermaid 그림 2개를 write-up에 보존했다.
+- CS: rbx100→우리 함수200→memcpy 후200→반환100 예제로 callee-saved의 상대적 책임을 설명받고 원래 값 저장·복원을 답했다. 기존 copy_data가 rbx를 사용했다는 관찰은 아니다.
+- Review: 정상 jmp/거부 fall-through가 공통 pop rbx에 도달함을 교정했다. pop 생략 시 저장 rbx를 ret 주소로 쓰는 예제에서 막혀 설명받았다. 일차 종료 뒤 사용자가 이해 부족을 알려 추가 설명했다. rsp는 레지스터 자체가 아니라 복사값 저장 메모리 칸을 가리킨다고 구분하고 push rax10/push rbx20/pop rcx의 20을 맞혔다.
+- Time: 메인/CS/복습 실측 없음.
+- Result: 오늘 산출물은 그림 포함 write-up 1개. 새 컴파일·실행·GDB·crash·sanitizer·5분 독립 발표는 없다. 완전 무힌트 그림 작성이 아니라 공동 구성이다.
+- Files: Day101-160/Day139/day139_writeup.md
+- Commit handling: 사용자 요청으로 write-up과 기존 progress_log.md 갱신을 같은 커밋에 저장한다.
+- Problems: 교사의 축약된 “rbx를 가리킴”처럼 들리는 설명을 저장된 값의 칸으로 바로잡았다. push/pop·순차 실행은 도움받아 확인했으며 실제 관찰·독립 재확인이 필요하다. LIFO 발췌에는 저장값 하나가 남으므로 그대로 ret할 수 없음을 문서에 명시했다.
+- Next: Day140 / 3주차 4/5 — 실제 push/pop·복원 경로 관찰과 그림 대조, 스택/호출 정렬, 경로 근거 복습.
 
 ---
 
