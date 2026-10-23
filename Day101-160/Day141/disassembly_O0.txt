@@ -1,0 +1,39 @@
+
+day141_work/sum_bytes_O0:     file format elf64-x86-64
+
+
+Disassembly of section .init:
+
+Disassembly of section .plt:
+
+Disassembly of section .plt.got:
+
+Disassembly of section .plt.sec:
+
+Disassembly of section .text:
+
+0000000000001169 <sum_bytes>:
+    1169:	f3 0f 1e fa          	endbr64
+    116d:	55                   	push   rbp
+    116e:	48 89 e5             	mov    rbp,rsp
+    1171:	48 89 7d e8          	mov    QWORD PTR [rbp-0x18],rdi
+    1175:	48 89 75 e0          	mov    QWORD PTR [rbp-0x20],rsi
+    1179:	c7 45 f4 00 00 00 00 	mov    DWORD PTR [rbp-0xc],0x0
+    1180:	48 c7 45 f8 00 00 00 	mov    QWORD PTR [rbp-0x8],0x0
+    1187:	00 
+    1188:	eb 19                	jmp    11a3 <sum_bytes+0x3a>
+    118a:	48 8b 55 e8          	mov    rdx,QWORD PTR [rbp-0x18]
+    118e:	48 8b 45 f8          	mov    rax,QWORD PTR [rbp-0x8]
+    1192:	48 01 d0             	add    rax,rdx
+    1195:	0f b6 00             	movzx  eax,BYTE PTR [rax]
+    1198:	0f b6 c0             	movzx  eax,al
+    119b:	01 45 f4             	add    DWORD PTR [rbp-0xc],eax
+    119e:	48 83 45 f8 01       	add    QWORD PTR [rbp-0x8],0x1
+    11a3:	48 8b 45 f8          	mov    rax,QWORD PTR [rbp-0x8]
+    11a7:	48 3b 45 e0          	cmp    rax,QWORD PTR [rbp-0x20]
+    11ab:	72 dd                	jb     118a <sum_bytes+0x21>
+    11ad:	8b 45 f4             	mov    eax,DWORD PTR [rbp-0xc]
+    11b0:	5d                   	pop    rbp
+    11b1:	c3                   	ret
+
+Disassembly of section .fini:

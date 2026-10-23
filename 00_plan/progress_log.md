@@ -44,15 +44,14 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: Day139 — 2026-10-22 메인 흐름 그림 공동 작성·CS callee-saved·복습 push/pop 추가 보완 종료. push/pop 독립 숙달은 아직 미확인.
-- Last verified commits: Day138 문서·실험·로그 `07b112019e09a884de91eb5a4a863008f4565f5e`. Day139 write-up과 본 로그는 사용자 요청으로 같은 커밋에 저장하며 식별자는 Git history에서 확인한다.
+- Last completed: Day141 — 2026-10-23. Day140 / W03 4/5와 Day141 / W03 5/5 학습·실험·기록 종료. 독립 숙달이나 무힌트 주간 발표 완료를 뜻하지 않는다.
+- Last verified commits: Day139까지 `256d46cea53f8d5c5c2cbe336b7f61221c84abfa`. Day140·141 산출물과 본 로그는 사용자 요청으로 같은 커밋에 저장하며 식별자는 Git history에서 확인한다.
 - Active plan: [한양대 SSLab 준비 30주 계획](hanyang_research_plan_2027.md), 2026-10-05 적용
-- Plan position: W03 바이너리 기초 / 3/5 문답 종료 → Day140 / 3주차 4/5 예정. W03 소스/기계어 연결 그림 초안은 Day139 write-up에 완성했으며 독립 설명·검토는 남아 있다.
-- Current focus: 원본/목적지 검사와 ecx=1/2를 공유 반환 블록으로 연결한 그림을 만들었다. 코드 수정과 기존 동작 복원을 구분했다. rbx 보존 책임·라벨 순차 실행·저장값/레지스터 구분에서 설명을 받았고, 추가 질문 후 push/pop LIFO 예제 rcx20과 rsp가 복사값 저장 칸을 가리킨다는 원리를 연결했다. 새 실행·GDB 관찰은 없다.
-- Next task: Day140 / 3주차 4/5 — push/pop·공통 복원 경로를 작은 실제 관찰로 확인하고 그림과 대조. 사용자 예상·확인값을 먼저 정한다. CS 스택 변화·호출 시 정렬, 복습 경로/관찰 근거 연결. [Day139 write-up](../Day101-160/Day139/day139_writeup.md)을 먼저 읽고 약한 부분만 보완한다.
-- Deferred legacy task: sanitizer backtrace 읽기는 W04에 연결. 실측 5분 무힌트 발표는 미확인. GDB 가용성을 확인해 실제 관찰 가능 여부를 기록한다. W03 루프 대응과 전체 그림 독립 설명은 주간 남은 항목이다.
-- Repo rule: Day139 산출물은 write-up 1개(그림 포함), progress_log.md는 기존 파일 갱신이다. 과거 실행 자료와 오늘 손 추적을 섞지 않고 엑셀은 계획 전용으로 유지한다.
-
+- Plan position: W03 바이너리 기초 / 5/5 회차 종료 → 다음 Day142 / W04 실행 환경 / 1/5. Day139 소스·분기 그림과 Day141 반복문 그림을 작성했으며 도움받은 부분의 독립 설명은 후속 복습으로 유지한다.
+- Current focus: 별도 어셈블리 계측으로 push/pop의 rsp·rbx·저장값을 확인했다. sum_bytes O2의 n0 사전 분기와 주소 비교 반복을 함께 추적하고 O0/O2 세 입력 반환 0/1/4를 실제 비교했다. 마지막 설명에는 n0 검사 재제시와 합산 단계 보충이 있었다.
+- Next task: Day142 / 4주차 1/5 — 실행 파일·라이브러리·로더의 역할부터 설명하고 ELF 구조로 연결. CS 섹션/세그먼트·심볼·링킹 기초, 복습 기존 메모리 오류와 ASan 보고서의 원인/수정 연결. 시작 시 call/ret 스택 방향과 rbx 복원 시점만 짧게 재확인한다.
+- Deferred legacy task: 실측 5분 무힌트 발표, 여러 분기의 공통 복원 경로 동적 관찰은 미확인. 현재 GDB/LLDB가 없어 Day140은 계측 저장 방식이었다. Day141 반환값 일치는 읽기 횟수나 모든 입력의 동등성 증명이 아니다.
+- Repo rule: Day140·141 각각 write-up·소스·원자료·환경·해시와 기존 progress_log.md를 갱신. 바이너리와 엑셀 변경은 포함하지 않는다. 실제 시간은 미측정.
 ---
 
 ## Plan Change and Concept Check
@@ -636,6 +635,37 @@ git pull --ff-only
 - Commit handling: 사용자 요청으로 write-up과 기존 progress_log.md 갱신을 같은 커밋에 저장한다.
 - Problems: 교사의 축약된 “rbx를 가리킴”처럼 들리는 설명을 저장된 값의 칸으로 바로잡았다. push/pop·순차 실행은 도움받아 확인했으며 실제 관찰·독립 재확인이 필요하다. LIFO 발췌에는 저장값 하나가 남으므로 그대로 ret할 수 없음을 문서에 명시했다.
 - Next: Day140 / 3주차 4/5 — 실제 push/pop·복원 경로 관찰과 그림 대조, 스택/호출 정렬, 경로 근거 복습.
+
+---
+
+
+### Day140 — 2026-10-23
+- Plan: W03 / 바이너리 기초 / 3주차 4/5
+- Topic: push/pop 계측 관찰, 스택 정렬과 call/ret 방향
+- Status: 오늘 범위 종료. call 방향·복원 경로 독립 숙달은 미확인.
+- Main: rbx100을 push하고 rbx200으로 바꾸면 레지스터200/저장값100, pop 후100/rsp+8이라고 예상했다. 별도 어셈블리가 rsp/rbx/[rsp]를 배열에 저장하는 방식으로 실행했다. rsp C320→C318→C320, rbx100→200→100, 저장값100, 세 검사 PASS. 컴파일·실행 exit0.
+- CS: call 직전 정렬을 다뤘다. C318에서 sub8→C310은 맞혔으나 call 후 C318을 선택해 C308로 교정했다. call 직전2000→함수 진입1ff8은 설명을 받았다. call/ret 자체의 동적 측정은 없다.
+- Review: 저장 복사본과 현재 레지스터 구분, push에 대응하는 pop을 확인했다. 직선형 실험이며 여러 분기의 공통 복원 경로 실행은 아니다.
+- Time: 메인/CS/복습 미측정.
+- Result: GDB/LLDB 없어 어셈블리 계측을 사용했다. 기존 copy_data 실행이나 GDB 관찰로 기록하지 않는다. 실제 호출자 rbx 보존은 소스에 구현했으나 별도 출력 검증하지 않았다.
+- Files: Day101-160/Day140/day140_writeup.md, stack_probe.S, stack_probe_test.c, stack_probe_results.txt, environment.txt, sha256.txt (모두 Day140 폴더).
+- Problems: call은 rsp-8, ret은 rsp+8. 정렬 설명은 문답이며 성능·sanitizer·퍼징·5분 발표 없음.
+- Next: 같은 날 Day141 / W03 5/5 — 반복문과 최적화된 주소 비교.
+
+### Day141 — 2026-10-23 (Day140 후 추가 회차)
+- Plan: W03 / 바이너리 기초 / 3주차 5/5
+- Topic: 반복문 소스/기계어 대응, O0/O2 반환값 비교, caller/callee-saved 복원 시점
+- Status: 오늘 회차와 W03 범위 정리 종료. 도움받은 부분의 독립 숙달·5분 발표를 뜻하지 않는다.
+- Main: i<n과 실제 배열 크기 검증을 구분했다. ja/jae 경계와 n0 사전 분기를 힌트 후 연결했다. 실제 O2에서 rsi=data+n, rdi 이동 주소, edx 읽은 값, eax 합 역할을 보완했다. 끝 주소는 마지막 원소 다음이며 읽지 않고 비교함을 추적했다. 원소0은 종료에 영향을 주지 않고 {1,0,3} 합4라고 예상했다.
+- Execution: 별도 함수/드라이버를 LTO 없이 O0/O2로 빌드. 두 실행 exit0. n0/1/3에서 반환0/1/4가 양쪽 모두 PASS. 세 입력 반환값 일치만 확인했으며 읽기 횟수나 전체 입력 동등성은 측정하지 않았다. 최종 두 바이너리의 역어셈블을 보존했다.
+- CS: 초기화하지 않으면 rdi/rsi 원래 값이 남을 것이라는 답을 caller-saved 규약과 실제 값 변경으로 교정했다. 원래 data 주소를 보존되는 레지스터에 저장하겠다고 답했다. pop 직후 rbx0x1000 오답을 저장된100 복원으로 교정하고 본인 말로 설명했다. 호출→주소 사용→복원 순서를 맞혔다. 예제는 손 추적이며 실행하지 않았다.
+- Review: 검사 입력 결과와 모든 유효 입력 보장을 구분했다. 최종 반복문 설명에서 n0 검사 존재를 다시 물어 test/je를 재제시했고 읽기→증가→비교→종료/반복 설명에 합산 단계를 보충했다. 무힌트 종합 설명으로 기록하지 않는다.
+- Time: 메인/CS/복습 미측정. 두 회차를 실측6시간으로 환산하지 않는다.
+- Result: Day139 분기 그림과 Day141 루프 그림으로 주간 소스/기계어 대응 범위를 정리했다. 새 GDB·sanitizer·퍼징·crash·속도 측정 없음. O0 명령별 분석은 자료 추출 단계이며 사용자와 전부 문답하지 않았다.
+- Files: Day101-160/Day141/day141_writeup.md, sum_bytes.c, sum_bytes_test.c, sum_bytes_results.txt, disassembly_O0.txt, disassembly_O2.txt, environment.txt, sha256.txt (모두 Day141 폴더).
+- Commit handling: 사용자 요청으로 Day140·141 소스·원자료·문서와 기존 로그를 함께 커밋한다. 바이너리 제외.
+- Problems: 교사의 사용 명령 없는 주석 때문에 복원 순서 질문이 모호해 실제 movzx 명령을 추가했다. 저장값/레지스터, 인자 진입값/후속 역할, 끝 주소/값 부재를 구분하는 복습이 필요하다.
+- Next: Day142 / W04 실행 환경 / 1/5 — 실행 파일·라이브러리·로더 큰 흐름, ELF 구조와 메모리 오류/ASan 복습.
 
 ---
 

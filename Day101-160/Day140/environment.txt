@@ -1,0 +1,3 @@
+cc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0
+Linux x86_64
+GDB/LLDB unavailable during study; GNU objdump used for static disassembly.

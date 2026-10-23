@@ -1,0 +1,4 @@
+before experiment push: rsp=0x00007FFE9B75C320 rbx=100
+after push and rbx=200: rsp=0x00007FFE9B75C318 rbx=200 [rsp]=100
+after experiment pop: rsp=0x00007FFE9B75C320 rbx=100
+push rsp -8: PASS; pop restores rsp: PASS; values: PASS
