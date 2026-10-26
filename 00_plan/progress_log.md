@@ -44,14 +44,14 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: Day141 — 2026-10-23. Day140 / W03 4/5와 Day141 / W03 5/5 학습·실험·기록 종료. 독립 숙달이나 무힌트 주간 발표 완료를 뜻하지 않는다.
-- Last verified commits: Day139까지 `256d46cea53f8d5c5c2cbe336b7f61221c84abfa`. Day140·141 산출물과 본 로그는 사용자 요청으로 같은 커밋에 저장하며 식별자는 Git history에서 확인한다.
-- Active plan: [한양대 SSLab 준비 30주 계획](hanyang_research_plan_2027.md), 2026-10-05 적용
-- Plan position: W03 바이너리 기초 / 5/5 회차 종료 → 다음 Day142 / W04 실행 환경 / 1/5. Day139 소스·분기 그림과 Day141 반복문 그림을 작성했으며 도움받은 부분의 독립 설명은 후속 복습으로 유지한다.
-- Current focus: 별도 어셈블리 계측으로 push/pop의 rsp·rbx·저장값을 확인했다. sum_bytes O2의 n0 사전 분기와 주소 비교 반복을 함께 추적하고 O0/O2 세 입력 반환 0/1/4를 실제 비교했다. 마지막 설명에는 n0 검사 재제시와 합산 단계 보충이 있었다.
-- Next task: Day142 / 4주차 1/5 — 실행 파일·라이브러리·로더의 역할부터 설명하고 ELF 구조로 연결. CS 섹션/세그먼트·심볼·링킹 기초, 복습 기존 메모리 오류와 ASan 보고서의 원인/수정 연결. 시작 시 call/ret 스택 방향과 rbx 복원 시점만 짧게 재확인한다.
-- Deferred legacy task: 실측 5분 무힌트 발표, 여러 분기의 공통 복원 경로 동적 관찰은 미확인. 현재 GDB/LLDB가 없어 Day140은 계측 저장 방식이었다. Day141 반환값 일치는 읽기 횟수나 모든 입력의 동등성 증명이 아니다.
-- Repo rule: Day140·141 각각 write-up·소스·원자료·환경·해시와 기존 progress_log.md를 갱신. 바이너리와 엑셀 변경은 포함하지 않는다. 실제 시간은 미측정.
+- Last completed: Day141 — 2026-10-23. 과거 완료/실험 로그는 삭제하지 않음.
+- Active plan: [PwnLab 중심 30주 엄격 계획](hanyang_research_plan_2027.md), 2026-10-28부터.
+- Plan position: **다음 Day142 / W04 1/5**, 내일 2026-10-28부터. W04의 5개 Day를 모두 통과할 때까지 W05 진입 금지.
+- Current focus: Day140/141 O0/O2 분기, 레지스터 보존과 stack 방향을 실측했으나 무힌트 설명 부족이 남음. 기존 Pwn·Heap·ROP 경험을 처음부터 반복하는 대신 독립 검증.
+- Next task: **Day142** ELF/로더와 call/ret·saved RBX/RSP 재검증. 메인 `file/readelf -h/-l/-S`, CS 섹션·세그먼트, 복습 Day140/141과 ASan 파서 사례. 환경·명령·예상·실측·반례·5분 설명 기록.
+- **NO-SKIP / HARD PASS:** 메인 120분+CS 30분+복습 30분과 분석 근거/Write-up의 **모든 요구**가 완료되고 Git 경로가 검증돼야 해당 Day 종료. 문제 줄이기·어려운 주제 생략·자동 진행 불가. 미완료는 동일 Day로 다음 학습일 이월. AI 힌트 사용 후 무힌트 재검증.
+- External milestones: 2026-10-28 성적 확인/10-30 신청 기간 검토, 네트워크관리사 자격 시험, 경영정보시각화능력 최종 취득, 2027-01~02 연구실 컨택. 외부 공식 접수는 공부 게이트와 별도로 처리한다.
+
 ---
 
 ## Plan Change and Concept Check
