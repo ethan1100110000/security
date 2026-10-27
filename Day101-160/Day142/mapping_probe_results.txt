@@ -1,0 +1,12 @@
+load_bias=0x55a79eebb000
+marker runtime address=0x55a79eebf010
+marker ELF address=0x4010
+LOAD offset=0x2d78 vaddr=0x3d78
+marker file offset=0x3010
+file bytes:   41 00 42 43 10 20 30 40 
+memory bytes: 41 00 42 43 10 20 30 40 
+initial comparison=PASS
+after write: memory[0]=5a saved file byte[0]=41
+file reread[0]=41 unchanged=PASS
+zero_area initial 16 bytes all zero=PASS
+exit=0

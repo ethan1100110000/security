@@ -6,14 +6,16 @@
 
 ## Current Study Plan
 
-2026-10-05부터 한양대 SSLab 준비를 위한 30주 계획을 적용한다.
-평일 메인 2시간, CS 30분, 이전 보안 전반 2회독 30분을 기준으로 하며 자격증 공부는 별도다.
+2026-10-27 개정한 PwnLab 중심 계획을 따른다. 취약점 분석·리버싱·익스플로잇을 강화하고 AFL++·AIMFuzz·BASTAG도 유지한다.
 
-- [30주 계획과 단계별 기준](00_plan/hanyang_research_plan_2027.md)
-- [계획표 엑셀](00_plan/hanyang-research-plan-2027.xlsx)
-- [보안 전반 2회독 규칙](00_plan/review_rules.md)
+- [현재 진도와 다음 Day](00_plan/progress_log.md): 실제 수행 상태의 기준.
+- [운영 원칙과 주간 계획](00_plan/hanyang_research_plan_2027.md): 완료 판정의 기준.
+- [일일 과제 엑셀](00_plan/hanyang-research-plan-2027.xlsx): Day142~276 과제와 예정일.
+- [복습·교사·증거 확인 규칙](00_plan/review_rules.md).
 
-기존 Day별 기록은 이어서 사용한다. 실제 수행·검증 기록은 progress log, 예정 진도는 계획표에서 관리한다.
+메인·CS·복습·write-up을 모두 수행하고 도움받은 오답은 조건 변경으로 재검증한다. 시간은 권장 배분이며 측정·최소 시간으로 완료를 판정하지 않는다. 미완료 과제는 같은 Day로 이월한다. 계획과 로그를 변경한 것만으로 진도가 완료된 것은 아니다.
+
+폐기된 옛 계획과 중복 안내는 Git history에서만 확인한다. 과거 Day의 실험·분석 기록은 그대로 보존한다.
 
 ## Reversing Portfolio
 

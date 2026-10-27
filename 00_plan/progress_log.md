@@ -14,7 +14,7 @@
 
 공부 시작 전:
 - 최신 저장소의 이 로그, [현재 30주 계획](hanyang_research_plan_2027.md), [2회독 규칙](review_rules.md)을 확인한다.
-- 주간 상세 계획은 [`hanyang-research-plan-2027.xlsx`](hanyang-research-plan-2027.xlsx)를 따른다. 기존 `보안 계획표.xlsx`는 이전 진도 참고용이다.
+- 주간 상세 과제는 [`hanyang-research-plan-2027.xlsx`](hanyang-research-plan-2027.xlsx)를 따른다. 완료·다음 Day는 이 로그, 운영 기준은 현재 Markdown 계획을 따른다. 폐기한 이전 계획은 Git history에만 남긴다.
 - 사용자는 로컬 저장소에서 다음을 실행한다. 충돌이나 미커밋 변경이 있으면 강제 덮어쓰기하지 않고 먼저 확인한다.
 
 ```bash
@@ -23,7 +23,7 @@ git pull --ff-only
 ```
 
 하루 기준:
-- 평일 메인 120분 + CS 30분 + 이전 보안 전반 2회독 30분. 주 5일, 약 15시간을 기준으로 한다.
+- 메인·CS·이전 보안 전반 복습·기록을 모두 수행한다. 120/30/30분은 권장 배분이며, 2026-10-27 사용자 확인에 따라 시간을 측정하거나 최소 시간 충족을 완료 조건으로 요구하지 않는다.
 - 자격증 공부와 휴식은 별도다. 실제 내용·컨디션에 따라 시간을 조정하며 주말 학습은 필수가 아니다.
 - 메인에는 논문 영어 읽기, 자체 코드 분석·검증, 비교 실험, 결과 설명과 지원 준비를 포함한다.
 - CS는 정의뿐 아니라 예제·그림·작은 구현·조건 변경 질문으로 확인한다.
@@ -44,13 +44,16 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: Day141 — 2026-10-23. 과거 완료/실험 로그는 삭제하지 않음.
-- Active plan: [PwnLab 중심 30주 엄격 계획](hanyang_research_plan_2027.md), 2026-10-28부터.
-- Plan position: **다음 Day142 / W04 1/5**, 내일 2026-10-28부터. W04의 5개 Day를 모두 통과할 때까지 W05 진입 금지.
-- Current focus: Day140/141 O0/O2 분기, 레지스터 보존과 stack 방향을 실측했으나 무힌트 설명 부족이 남음. 기존 Pwn·Heap·ROP 경험을 처음부터 반복하는 대신 독립 검증.
-- Next task: **Day142** ELF/로더와 call/ret·saved RBX/RSP 재검증. 메인 `file/readelf -h/-l/-S`, CS 섹션·세그먼트, 복습 Day140/141과 ASan 파서 사례. 환경·명령·예상·실측·반례·5분 설명 기록.
-- **NO-SKIP / HARD PASS:** 메인 120분+CS 30분+복습 30분과 분석 근거/Write-up의 **모든 요구**가 완료되고 Git 경로가 검증돼야 해당 Day 종료. 문제 줄이기·어려운 주제 생략·자동 진행 불가. 미완료는 동일 Day로 다음 학습일 이월. AI 힌트 사용 후 무힌트 재검증.
-- External milestones: 2026-10-28 성적 확인/10-30 신청 기간 검토, 네트워크관리사 자격 시험, 경영정보시각화능력 최종 취득, 2027-01~02 연구실 컨택. 외부 공식 접수는 공부 게이트와 별도로 처리한다.
+- Last completed: **Day142 — 2026-10-27 / W04 1/5**. 오늘 과제·실험·오답 조건 변경 재검증·write-up 종료. 무힌트 최초 전부 정답이나 GDB 관찰을 뜻하지 않는다.
+- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). W04~W30 과제는 현재 엑셀만 참조한다.
+- Plan position: **다음 Day143 / W04 2/5**. W04의 다섯 Day를 모두 마치기 전 W05로 넘어가지 않는다.
+- Current focus: call/ret·saved RBX/RSP 계측, file/readelf의 ELF·PT_LOAD·섹션 대응, 파일 오프셋/ELF 가상주소/실행 주소 구분을 확인했다. 자체 프로그램의 파일/메모리 비교와 재실행을 수행했다. Day114 실제 ASan·소스와 Day119 수정 자료를 대조했다.
+- Next task: **Day143 — 자체 C 함수 O0/O2 빌드·objdump·반환값 대조**. Day137/141과 이번 자료를 먼저 보고 동일 질문 반복 대신 새 조건에서 분석 계획과 차이를 검증한다. CS: ELF 섹션/세그먼트의 작은 코드·그림에서 값/주소 추적. 복습: Day140/141 ABI·파서/ASan의 실제 근거와 반례 연결.
+- Completion rule: 메인·CS·복습·기록 모두 충족, 도움받은 오답은 조건 변경 재검증. 시간 측정·최소 학습시간·정확히 5분 말하기는 통과 조건이 아니다. 이미 재검증한 부분을 같은 종합 발표로 되풀이하지 않는다.
+- Evidence: [Day142 write-up](../Day101-160/Day142/day142_writeup.md)과 같은 폴더의 소스·원자료·environment.txt·sha256.txt. 사용자 요청으로 본 로그와 함께 커밋한다. 직전 확인 main은 `696994bce5e5f90a4870c0cb51f059eee4471f1b`; 이번 커밋 식별자는 Git history에서 확인한다.
+- Limits: 교사 컨테이너 실행이며 GDB/LLDB 없음. 오늘 새 ASan 실행은 없다. 종합 설명은 본인 추정 5분 미만 후 오답별 재검증. 실제 학습시간은 추가로 확인하지 않는다.
+- External milestones: 학점인정·자격증·대학원 접수는 학습 진도와 별도로 공식 일정에 맞춰 점검한다.
+
 
 ---
 
@@ -666,6 +669,23 @@ git pull --ff-only
 - Commit handling: 사용자 요청으로 Day140·141 소스·원자료·문서와 기존 로그를 함께 커밋한다. 바이너리 제외.
 - Problems: 교사의 사용 명령 없는 주석 때문에 복원 순서 질문이 모호해 실제 movzx 명령을 추가했다. 저장값/레지스터, 인자 진입값/후속 역할, 끝 주소/값 부재를 구분하는 복습이 필요하다.
 - Next: Day142 / W04 실행 환경 / 1/5 — 실행 파일·라이브러리·로더 큰 흐름, ELF 구조와 메모리 오류/ASan 복습.
+
+---
+
+
+### Day142 — 2026-10-27
+- Plan: W04 / ELF·로더·기존 약점 재검증 / 1/5. 예정일10/28보다 하루 먼저 실제 수행.
+- Status: 완료 — 메인·CS·복습·추가 실험·오답 재검증·write-up. 사용자와 내용 중심 완료 기준을 확인했다. 시간 측정이나 같은 종합 발표 반복은 요구하지 않는다.
+- Main: push/call에서 rsp가 각각8 감소함을 교정하고 ret/pop 복원과 생략 반례를 추적했다. 지역 공간16바이트 추가 조건에서 기준rsp-32, 복귀주소[rsp+16]을 답했다. 별도 어셈블리 계측의 stack/saved/return-address/alignment 네 검사 PASS, exit0.
+- ELF: file·readelf -hW/-lW/-SW로 ELF64/PIE·PT_LOAD·권한·섹션 대응을 확인했다. .debug_info는 섹션 목록에 있으나 적재 대응표에 없었다. 파일0x2dc0과 ELF주소0x3dc0의16바이트 정적 대조가 일치했다. _start의 lea/call로 main0x1149를 복원했다.
+- CS: PT_LOAD는 파일/메모리 범위·권한을 지정한다. FileSiz/MemSiz 전체와 추가분, 끝 경계 제외, 파일offset/ELF주소/실행주소를 도움받아 구분했다. 새로운 조건의 파일0x60/메모리0x90/0채움0x30와 R의쓰기불가, 주소변환0x1020을 재검증했다.
+- Dynamic: 자체 mapping_probe가 dl_iterate_phdr와 /proc/self/exe로 marker ELF0x4010/파일0x3010/실행주소를 연결했다. 초기8바이트 일치, 메모리41→5a 후 파일재읽기41, 전역16바이트 초기0을 확인했다. 재실행도 초기41, 기준주소만 변경, 두 실행exit0. 같은 파일 main/helper 차이 유지와 main+0x300을 답했다. main/libc puts에 같은 기준주소를 적용한 설명은 교정했다.
+- Review: 예제와 Day114 실제보고서를 구분했다. WRITE20/[32,48) payload와 memcpy 소스를 연결해16바이트목적지/4바이트초과/용량검사누락을 답했고, 출력제한은 복사후라 예방불가라고 설명했다. Day119 수정diff와 기존거부결과도 확인했다. 오늘 ASan 재실행 아님.
+- Recheck: 최초 종합설명에서 push rbx를 [rbx]와 혼동했고 크기 동일 허용·0채움·PT_LOAD 역할이 불완전했다. 후속문답에서 push rax=0x7000/push[rax]=123, 길이0과동일경계 허용, 새FileSiz/MemSiz/권한·반열린범위 예제를 확인했다. 최초 완전무힌트 종합발표 통과로 기록하지 않는다.
+- Time: 중간 본인추정 약2시간 이후 추가학습. 최종시간·영역별시간은 미측정이며 추가측정하지 않는다. 종합설명은 본인추정5분미만. 모두 완료시간 요건으로 사용하지 않는다.
+- Files: Day101-160/Day142/day142_writeup.md 및 같은 폴더의 call_probe.S, call_probe_test.c, mapping_probe.c, 실행·재실행결과, ELF/주소대조자료, environment.txt, sha256.txt. 바이너리 제외.
+- Cleanup: 옛 보안 계획표.xlsx와 중복 ai_security_learning_direction.md를 제거하고 유효한 교사/증거 원칙을 review_rules.md에 통합했다. README·현재계획·엑셀·현재포인터의 상충 안내를 정리했다. 이전 Day 코드·write-up·보고서는 보존.
+- Next: Day143 / W04 2/5 — 새 조건의 자체 C 함수 O0/O2 비교, ELF 값/주소추적, 실제 이전근거복습.
 
 ---
 

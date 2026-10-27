@@ -1,0 +1,8 @@
+baseline rsp=0x7fffaed3f7c8 rbx=55
+after push rsp=0x7fffaed3f7c0
+helper entry rsp=0x7fffaed3f7b8 [rsp]=0x55f4cf7593e7 [rsp+8]=55
+after sub16 rsp=0x7fffaed3f7a8 [rsp+16]=0x55f4cf7593e7
+after helper ret rsp=0x7fffaed3f7c0 rbx=88
+after pop rsp=0x7fffaed3f7c8 rbx=55
+stack=PASS saved=PASS return-address=PASS alignment=PASS
+exit=0

@@ -1,0 +1,22 @@
+cc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0
+GNU readelf (GNU Binutils for Ubuntu) 2.42
+GNU objdump (GNU Binutils for Ubuntu) 2.42
+Linux x86_64
+GDB/LLDB unavailable during study.
+Execution: teacher Linux x86_64 container; not user local WSL.
+Day114 ASan report/source and Day119 patch/results were read from GitHub; no new ASan run.
+Reproduction from this folder:
+cc -std=c11 -Wall -Wextra -Werror -O0 -g call_probe_test.c call_probe.S -o call_probe
+./call_probe
+cc -std=c11 -Wall -Wextra -Werror -O0 -g -fPIE -pie mapping_probe.c -o mapping_probe
+./mapping_probe
+./mapping_probe
+file call_probe
+readelf -hW call_probe
+readelf -lW call_probe
+readelf -SW call_probe
+objdump -d -Mintel --disassemble=_start call_probe
+nm -n call_probe
+readelf -x .dynamic call_probe
+Original binary build paths were day142_work/call_probe and day142_work/mapping_probe.
+Runtime addresses vary; fixed offsets refer to the captured build, not arbitrary rebuilds.
