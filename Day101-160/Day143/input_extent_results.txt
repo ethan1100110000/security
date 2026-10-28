@@ -1,0 +1,5 @@
+==15==Can't open /proc/14/task for reading.
+==14==LeakSanitizer has encountered a fatal error.
+==14==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==14==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+exit=1

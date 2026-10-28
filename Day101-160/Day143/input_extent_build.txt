@@ -1,0 +1,2 @@
+cc -std=c11 -Wall -Wextra -Werror -O0 -g -fsanitize=address -fno-omit-frame-pointer -fno-pie -no-pie day143_work/contains_zero.c day143_work/input_extent_test.c -o day143_work/input_extent_asan
+exit=0

@@ -44,15 +44,15 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: **Day142 — 2026-10-27 / W04 1/5**. 오늘 과제·실험·오답 조건 변경 재검증·write-up 종료. 무힌트 최초 전부 정답이나 GDB 관찰을 뜻하지 않는다.
-- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). W04~W30 과제는 현재 엑셀만 참조한다.
-- Plan position: **다음 Day143 / W04 2/5**. W04의 다섯 Day를 모두 마치기 전 W05로 넘어가지 않는다.
-- Current focus: call/ret·saved RBX/RSP 계측, file/readelf의 ELF·PT_LOAD·섹션 대응, 파일 오프셋/ELF 가상주소/실행 주소 구분을 확인했다. 자체 프로그램의 파일/메모리 비교와 재실행을 수행했다. Day114 실제 ASan·소스와 Day119 수정 자료를 대조했다.
-- Next task: **Day143 — 자체 C 함수 O0/O2 빌드·objdump·반환값 대조**. Day137/141과 이번 자료를 먼저 보고 동일 질문 반복 대신 새 조건에서 분석 계획과 차이를 검증한다. CS: ELF 섹션/세그먼트의 작은 코드·그림에서 값/주소 추적. 복습: Day140/141 ABI·파서/ASan의 실제 근거와 반례 연결.
-- Completion rule: 메인·CS·복습·기록 모두 충족, 도움받은 오답은 조건 변경 재검증. 시간 측정·최소 학습시간·정확히 5분 말하기는 통과 조건이 아니다. 이미 재검증한 부분을 같은 종합 발표로 되풀이하지 않는다.
-- Evidence: [Day142 write-up](../Day101-160/Day142/day142_writeup.md)과 같은 폴더의 소스·원자료·environment.txt·sha256.txt. 사용자 요청으로 본 로그와 함께 커밋한다. 직전 확인 main은 `696994bce5e5f90a4870c0cb51f059eee4471f1b`; 이번 커밋 식별자는 Git history에서 확인한다.
-- Limits: 교사 컨테이너 실행이며 GDB/LLDB 없음. 오늘 새 ASan 실행은 없다. 종합 설명은 본인 추정 5분 미만 후 오답별 재검증. 실제 학습시간은 추가로 확인하지 않는다.
-- External milestones: 학점인정·자격증·대학원 접수는 학습 진도와 별도로 공식 일정에 맞춰 점검한다.
+- Last completed: **Day143 — 2026-10-28 / W04 2/5**. O0/O2 비교·CS 주소 추적·입력 길이/ASan 복습과 조건 변경 재검증·기록 종료.
+- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 과제는 현재 엑셀, 실제 진도는 본 로그를 따른다.
+- Plan position: **다음 Day144 / W04 3/5**. Day143 뒤 같은 날 이어서 시작한다. W04 다섯 Day 완료 전 W05 진입 금지.
+- Current focus: contains_zero의 두 반환 경로와 O0 인덱스/스택·O2 주소/레지스터 흐름을 대조했다. 두 버전 6입력 결과가 일치했다. rbp 보존·성능 추측·빌드와 ASLR·검사 개수/인덱스·용량/입력길이 오답을 교정하고 조건 변경으로 확인했다.
+- Next task: **Day144 — 로더·interpreter·동적 심볼·GOT/PLT 구조 실측**. 같은 바이너리에서 file/readelf의 PT_INTERP·NEEDED·동적 심볼과 objdump의 호출 경로를 먼저 연결한다. CS: ELF 섹션/세그먼트의 실행 관찰과 예상 대조. 복습: Day140/141 ABI·파서/ASan 실제 근거와 반례.
+- Completion rule: 메인·CS·복습·기록 모두 충족, 도움받은 오답은 조건 변경 재검증. 시간 측정·최소 시간·반복 종합 발표는 요구하지 않는다.
+- Evidence: [Day143 write-up](../Day101-160/Day143/day143_writeup.md) 및 같은 폴더의 소스·원자료·환경·해시. 직전 main은 `6b0972e49833a373d985b460326e8bb7558e2775`; 이번 커밋은 Git history에서 확인한다.
+- Limits: 교사 컨테이너 실행. 정적 어셈블리 해석과 반환값 실행을 구분한다. GDB·성능 측정 없음. 첫 sanitizer 실행의 LeakSanitizer 환경 실패와 detect_leaks=0 재실행을 함께 기록했다.
+- External milestones: 학점인정·자격증·대학원 접수 일정은 학습 진도와 별도로 점검한다.
 
 
 ---
@@ -686,6 +686,21 @@ git pull --ff-only
 - Files: Day101-160/Day142/day142_writeup.md 및 같은 폴더의 call_probe.S, call_probe_test.c, mapping_probe.c, 실행·재실행결과, ELF/주소대조자료, environment.txt, sha256.txt. 바이너리 제외.
 - Cleanup: 옛 보안 계획표.xlsx와 중복 ai_security_learning_direction.md를 제거하고 유효한 교사/증거 원칙을 review_rules.md에 통합했다. README·현재계획·엑셀·현재포인터의 상충 안내를 정리했다. 이전 Day 코드·write-up·보고서는 보존.
 - Next: Day143 / W04 2/5 — 새 조건의 자체 C 함수 O0/O2 비교, ELF 값/주소추적, 실제 이전근거복습.
+
+---
+
+
+### Day143 — 2026-10-28
+- Plan: W04 / 2/5 / O0·O2 빌드·objdump·반환값 대조. 엑셀 예정10/29보다 하루 먼저 수행.
+- Status: 완료 — 메인·CS·복습·오답 조건 변경 재검증·write-up. 같은 날 Day144로 이어간다.
+- Main: contains_zero에서 {41,00,42}의 n0/1/3→0/0/1과 조기반환을 예상했다. nozero3→0, 0이index3에있는배열의 n3/4→0/1도 답했고 양쪽 최적화에서 총6사례가 모두일치, 각 드라이버exit0. O0의 i<n unsigned jb와 공통pop rbp, O2의 현재/끝주소 및 바이트0 비교를 읽었다. 읽기 횟수 계측은 아님.
+- CS: ELF주소0x2180, LOAD Offset1000/VirtAddr2000의 파일1180을 맞혔다. 실제 최종주드라이버 O0함수1169/O2함수12d0의 파일위치·8바이트를 확인했다. 정적배치차이를 ASLR로 혼동했으나 재빌드/미실행반례에서 구분했다. O0rbp저장복원과 O2미사용보존을 설명받고 rbx미복원 위반으로 재검증했다.
+- Review: n을 요청한 검사바이트수로 연결하고 실제배열크기 및 received와의 계약을 보완했다. 배열6에서 요청7을 통과라 한 오답과 5바이트의 마지막index를5라 한 답을 교정했다. 새 경계배열 n3/4→0/1, 입력7의 n7/반환0으로 확인했다. ASan무오류와 논리적 입력길이정확성은 별개라고 연결했다.
+- Execution: stdin ABCD4를 초기0버퍼16에 읽고 n4→0/n8→1, 요청8>입력4 거부를 실제확인했다. 최초ASan 실행은 LeakSanitizer /proc 접근실패 exit1; 누수검사만 detect_leaks=0으로 끈 재실행exit0, 접근검사오류없음. 두 경우 모두 배열내 접근이며 입력뒤 초기0을 읽는 논리차이를 관찰했다.
+- Limits: O2명령감소로 더빠르다고 예상했으나 성능미측정이라 확정불가를 교정했다. 여섯 입력은 전체동등성증명아님. 교사코드/실행이며 도움받은점은 write-up에남겼다. GDB 실행없음.
+- Time: 측정하지 않음. 시간으로 완료판정하지 않는다.
+- Files: Day101-160/Day143/day143_writeup.md 및 같은 폴더의 contains_zero.c, contains_zero_test.c, boundary_test.c, input_extent_test.c, O0/O2 결과·역어셈블·ELF자료, sanitizer 최초실패/재실행로그, environment.txt, sha256.txt. 바이너리 제외.
+- Next: Day144 / W04 3/5 — 로더·interpreter·동적심볼·GOT/PLT 구조 관찰.
 
 ---
 

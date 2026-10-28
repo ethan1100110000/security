@@ -1,0 +1,33 @@
+
+day143_work/contains_zero_O2:     file format elf64-x86-64
+
+
+Disassembly of section .init:
+
+Disassembly of section .plt:
+
+Disassembly of section .plt.got:
+
+Disassembly of section .plt.sec:
+
+Disassembly of section .text:
+
+00000000000012d0 <contains_zero>:
+    12d0:	f3 0f 1e fa          	endbr64
+    12d4:	48 85 f6             	test   rsi,rsi
+    12d7:	74 1f                	je     12f8 <contains_zero+0x28>
+    12d9:	48 01 fe             	add    rsi,rdi
+    12dc:	eb 0b                	jmp    12e9 <contains_zero+0x19>
+    12de:	66 90                	xchg   ax,ax
+    12e0:	48 83 c7 01          	add    rdi,0x1
+    12e4:	48 39 f7             	cmp    rdi,rsi
+    12e7:	74 0f                	je     12f8 <contains_zero+0x28>
+    12e9:	80 3f 00             	cmp    BYTE PTR [rdi],0x0
+    12ec:	75 f2                	jne    12e0 <contains_zero+0x10>
+    12ee:	b8 01 00 00 00       	mov    eax,0x1
+    12f3:	c3                   	ret
+    12f4:	0f 1f 40 00          	nop    DWORD PTR [rax+0x0]
+    12f8:	31 c0                	xor    eax,eax
+    12fa:	c3                   	ret
+
+Disassembly of section .fini:

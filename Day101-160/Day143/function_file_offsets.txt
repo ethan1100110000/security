@@ -1,0 +1,2 @@
+O0: function ELF VA=0x1169; LOAD Offset=0x1000, VirtAddr=0x1000, FileSiz=0x321, flags=0x5; file offset=0x1169; first 8 bytes=f3 0f 1e fa 55 48 89 e5
+O2: function ELF VA=0x12d0; LOAD Offset=0x1000, VirtAddr=0x1000, FileSiz=0x309, flags=0x5; file offset=0x12d0; first 8 bytes=f3 0f 1e fa 48 85 f6 74

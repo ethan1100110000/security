@@ -1,0 +1,7 @@
+ASAN_OPTIONS=detect_leaks=0
+stdin hex=41 42 43 44
+capacity=16 received=4
+n=received result=0 expected=0
+n=8 result=1 expected=1 (zero beyond input)
+caller requested=8 rejected=YES
+exit=0

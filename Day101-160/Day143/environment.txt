@@ -1,0 +1,11 @@
+cc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0
+GNU objdump (GNU Binutils for Ubuntu) 2.42
+GNU readelf (GNU Binutils for Ubuntu) 2.42
+Linux x86_64
+Execution: teacher Linux container, not user WSL.
+Main and boundary: cc -std=c11 -Wall -Wextra -Werror -O0/-O2 -g contains_zero.c <driver.c> -o <binary>; no LTO.
+Main driver: contains_zero_test.c; boundary driver: boundary_test.c.
+Sanitizer exact build command is in input_extent_build.txt.
+Sanitizer initial run failed in LeakSanitizer; rerun ASAN_OPTIONS=detect_leaks=0, stdin hex 41 42 43 44, exit0.
+Leak check disabled; ASan memory access checks retained. No benchmark or GDB single stepping.
+Captured code offsets refer to final main-driver binaries, not boundary/sanitizer binaries.
