@@ -44,16 +44,15 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: **Day144 — 2026-11-04 / W04 3/5**. 시험 준비 중단 후 재개. 로더·동적 심볼·GOT/PLT 실제 자료, CS 메모리 권한, ASan 호출 경로 복습과 조건 변경 확인·기록 종료.
-- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 실제 진도는 본 로그, 일일 과제는 현재 엑셀을 따른다.
-- Plan position: **다음 Day145 / W04 4/5**. 사용자는 오늘 Day144·145 두 회차 진행을 요청했다. Day145는 아직 완료하지 않았다.
-- Current focus: 기존 Day143 O0의 INTERP/NEEDED/UND printf·JUMP_SLOT·PLT 간접 점프를 대조했다. LD_DEBUG 실행과 자체 NOW/lazy 성공·실패 실험 및 GOT 전후 값·실제 권한을 확인했다.
-- Next task: **Day145 — GDB break/step/register/memory/map으로 ABI 검증**. Day140/141 및 Day144 자료를 바탕으로 호출 전후 RSP·복귀 주소·인자·레지스터 보존과 ELF 매핑을 실제 관찰한다. 현재 컨테이너에는 처음에 GDB가 없었으며 설치 준비 중이다. 가용성·실제 디버깅 성공 여부를 확인하고 도구가 막히면 동적 관찰을 수행한 것으로 기록하지 않는다.
-- Completion rule: 메인·CS·복습·기록 모두 충족, 힌트 후 조건 변경 재검증. 시간 측정·최소 시간·반복 종합 발표는 요구하지 않는다.
-- Evidence: [Day144 write-up](../Day101-160/Day144/day144_writeup.md) 및 같은 폴더의 기존 대상 정적 자료·로더 로그, binding_demo 자체 소스·빌드 명령·실패/성공 결과·GOT 계측 자료·환경·해시. 직전 main은 `ec0b72ac459fdb85f39cda663bb215d8db71891d`; 이번 커밋은 Git history에서 확인한다.
-- Limits: 교사 컨테이너. Day144의 GOT 직접읽기는 별도 probe이며 기존 printf 대상의 직접 GDB 관찰이 아니다. 오늘 Day144에 새 ASan 실행은 없고 Day114 보고서를 읽었다. 최초 독립 숙달과 도움받은 교정을 구분한다.
+- Last completed: **Day145 — 2026-11-04 / W04 4/5**. 오늘 Day144·145 두 회차 학습과 기록 완료.
+- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 과제는 현재 엑셀, 실제 진도는 본 로그를 따른다.
+- Plan position: **다음 Day146 / W04 5/5**. 날짜 경과로 진도를 자동 전진시키지 않는다.
+- Current focus: 사용자 로컬 WSL GDB/pwndbg로 Day143 O0의 인자·원소 주소·조기반환/전체탐색·n=0 분기·rbp 복원/ret·런타임 코드/스택 권한을 확인했다.
+- Next task: **Day146 — 기존 7바이트 파서 OOB·용량검사·ASan 원인 재검증**. 사용자가 직접 소스·보고서·필요한 GDB 실행을 다루고 교사는 예상과 해석을 검토한다. ELF 섹션/세그먼트의 조건 변경 및 Day140/141 근거 대조를 연결한다. test/jne 독립 회상도 실제 분석 중 재확인한다.
+- Completion rule: 메인·CS·복습·기록, 도움 및 재검증을 구분한다. 시간 측정·최소 발표 시간·반복 종합 발표는 요구하지 않는다.
+- Evidence: [Day145 write-up](../Day101-160/Day145/day145_writeup.md), [사용자 제출 GDB 발췌](../Day101-160/Day145/gdb_observations.txt). 대상 소스·드라이버는 Day143. 직전 main은 `060652541664ec50094e4129d3974d590929ba61`; 이번 커밋은 Git history에서 확인한다.
+- Limits: 사용자 직접 실행/교사 명령 안내. 전체 세션·버전·해시·call 직전·모든 보존 레지스터·새 ASan·성능 검증은 이번 근거에 없다. CS는 실제 매핑 권한과 프레임 해석이며 새 섹션/세그먼트 실험은 아니다. test와 cmp 혼동을 교정했으나 test의 추가 독립 회상은 다음 분석에 남긴다.
 - External milestones: 학점인정·자격증·대학원 접수는 별도로 공식 일정에 맞춰 확인한다.
-
 
 ---
 
@@ -716,6 +715,21 @@ git pull --ff-only
 - Limits: 교사소스·실행이며 최초무힌트도구조작으로기록하지않는다. Day144 GDB·새ASan·성능측정없음. 호출경로는정적분석, GOT전후는별도probe직접읽기, 로더바인딩은LD_DEBUG실행으로구분.
 - Time: 측정하지 않음.
 - Next: 같은 날 Day145 / W04 4/5 — GDB 실제 관찰. 설치·실행 가용성을 먼저 확인한다.
+
+---
+
+### Day145 — 2026-11-04
+- Plan: W04 / 4/5 — GDB break/step/register/memory/map으로 ABI 검증. 오늘 요청한 두 번째 회차.
+- Status: 완료 — 사용자 직접 GDB 실행·CS 매핑 권한·ABI/경계 복습·조건 변경 확인·write-up/발췌 기록.
+- Main: rdi=data/rsi=3, 스택 data/n/i를 연결했다. i=1에서 rax-rdi=1/[rax]=00, jne 미분기와 mov eax,1 도달을 확인했다. {41,00,42} 반환 직전 eax1, {41,42,43} 반환 직전 및 main 복귀 후 eax0. n0 확인에서는 +66 mov eax,0 도달을 관찰했다. 입력별 호출을 구분했다.
+- ABI: rsp=df20에서 저장 rbp=df90/복귀주소=55555555522d를 읽고 pop 후 rbp=df90/rsp=df28을 예상했다. ret 뒤 실제 rip=55555555522d/rsp=df30/eax1. main의 rbp 복원으로 지역변수 기준이 바뀜을 설명했다.
+- CS: 실제 코드매핑555555555000~555555556000 r-xp와 스택7ffffffde000~7ffffffff000 rw-p를 찾았다. 스택에서 주소값을 읽는 것과 목적지 코드를 실행하는 권한을 구분하고 스택 자체 실행불가를 답했다. 새 섹션/세그먼트 대조 실험은 없으며 Day146에서 연결한다.
+- Review: Day140/141 ABI/범위 원리를 적용. 배열3/비영바이트/n4에서 data[3] OOB를 스스로 설명했다. 새 ASan 실행 아님. test al,al을 값동일 비교로 혼동해 AND/ZF를 설명받았고 cmp al,al로 바꾼 경우 jne 미분기를 맞혔다. test의 추가 독립 회상은 다음 분석에서 확인.
+- Correction: 교사가 실습을 대신하려던 흐름을 사용자 요청으로 바로잡았다. 앞으로 사용자 로컬 GDB를 우선하고 교사는 명령/해석을 안내한다. 입구 eax=-8315는 반환값이 아님. 중간 finish 전체 출력이 없어 이동 원인을 단정하지 않았고 다음 입력을 메모리로 검증했다.
+- Limits: 사용자 실행이지만 명령은 안내받았다. 제출 출력 발췌이며 전체 세션·도구버전·해시 없음. n0 변수 출력과 pop 직후 출력은 미제출. 성능·모든 레지스터 보존·새 ASan 관찰을 주장하지 않는다.
+- Time: 측정하지 않음.
+- Files: Day101-160/Day145/day145_writeup.md, gdb_observations.txt.
+- Next: Day146 / W04 5/5 — 7바이트 파서·ASan·ELF 조건 변경 재검증. 시간 요건 없음.
 
 ---
 

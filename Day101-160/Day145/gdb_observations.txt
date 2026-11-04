@@ -1,0 +1,67 @@
+# Day145 사용자 제출 GDB/pwndbg 출력 발췌
+# 채팅에 제출된 부분만 보존. 전체 세션 재구성/교사 재실행 아님.
+# 실제 수행일 2026-11-04, 대상 Day143/contains_zero_O0
+
+# 두 번째 원소 읽기 직전
+pwndbg> p/d $rax - $rdi
+$4 = 1
+pwndbg> x/bx $rax
+0x7fffffffdf83: 0x00
+
+# test/jne 실행 후
+=> 0x555555555195 <contains_zero+44>: mov eax, 1
+
+# 이후 함수 입구에 멈춘 별도 출력: 반환값으로 해석 불가
+pwndbg> p/d $eax
+$7 = -8315
+pwndbg> x/i $pc
+=> 0x555555555169 <contains_zero>: endbr64
+#0 contains_zero (data=0x7fffffffdf82 "A", n=0x3) at contains_zero.c:3
+#1 0x00005555555552b7 in main () at contains_zero_test.c:17
+# 중단점 1: contains_zero 입구, 조건 $rsi == 3, hit 2 times
+# 입구 prologue 전 debug 인자 표시는 이전 프레임 저장값일 수 있으므로 이후 메모리와 대조.
+
+# 0이 없는 입력의 반환 직전
+pwndbg> p/d $eax
+$8 = 0
+pwndbg> x/i $pc
+=> 0x5555555551b0 <contains_zero+71>: pop rbp
+pwndbg> p/d *(unsigned long *)($rbp-0x20)
+$9 = 3
+pwndbg> x/3bx *(unsigned char **)($rbp-0x18)
+0x7fffffffdf85: 0x41 0x42 0x43
+# pop/ret 실행 후
+pwndbg> x/i $pc
+=> 0x5555555552b7 <main+261>: mov DWORD PTR [rbp-0x50],eax
+pwndbg> p/d $eax
+$10 = 0
+
+# 재실행: 첫 n=3 호출 입력 확인, 반환 직전
+0x7fffffffdf82: 0x41 0x00 0x42
+pwndbg> tbreak *contains_zero+71
+Temporary breakpoint 5 at 0x5555555551b0: file contains_zero.c, line 9.
+pwndbg> continue
+Temporary breakpoint 5, contains_zero (data=0x7fffffffdf82 "A", n=0x3) at contains_zero.c:9
+RAX 1
+RBP 0x7fffffffdf20
+RSP 0x7fffffffdf20
+RIP 0x5555555551b0 (contains_zero+71)
+# STACK 발췌
+0x7fffffffdf20: 0x7fffffffdf90
+0x7fffffffdf28: 0x55555555522d (main+123)
+pwndbg> p/d $eax
+$11 = 1
+
+# pop/ret 후
+pwndbg> info registers rip rsp eax
+rip 0x55555555522d 0x55555555522d <main+123>
+rsp 0x7fffffffdf30 0x7fffffffdf30
+eax 0x1 0x1
+
+# info proc mappings 사용자 발췌
+0x555555555000 0x555555556000 0x1000 0x1000 r-xp /mnt/d/security-roadmap/Day101-160/Day143/contains_zero_O0
+0x7ffffffde000 0x7ffffffff000 0x21000 0x0 rw-p [stack]
+
+# n=0 조건 재실행에서 제출된 PC 출력
+pwndbg> x/i $pc
+=> 0x5555555551ab <contains_zero+66>: mov eax,0x0
