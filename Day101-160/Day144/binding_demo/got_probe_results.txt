@@ -1,0 +1,17 @@
+lazy
+load_bias=0x561fce27d000 slot ELF VA=0x4048 runtime slot=0x561fce281048
+slot mapping: 561fce281000-561fce282000 rw-p 00003000 00:1b 263486                     /workspace/scratch/adc486b72acb/day144_work/binding_demo/probe_lazy
+before target=0x561fce27e0c0 owner=day144_work/binding_demo/probe_lazy
+after first target=0x7f4ba97140f9 owner=/workspace/scratch/adc486b72acb/day144_work/binding_demo/good/liblesson_helper.so
+after second target=0x7f4ba97140f9 owner=/workspace/scratch/adc486b72acb/day144_work/binding_demo/good/liblesson_helper.so
+results=7,7 changed_on_first=YES stable_on_second=YES
+exit=0
+
+now
+load_bias=0x56315fef1000 slot ELF VA=0x3fc0 runtime slot=0x56315fef4fc0
+slot mapping: 56315fef4000-56315fef5000 r--p 00002000 00:1b 263528                     /workspace/scratch/adc486b72acb/day144_work/binding_demo/probe_now
+before target=0x7fc57f0be0f9 owner=/workspace/scratch/adc486b72acb/day144_work/binding_demo/good/liblesson_helper.so
+after first target=0x7fc57f0be0f9 owner=/workspace/scratch/adc486b72acb/day144_work/binding_demo/good/liblesson_helper.so
+after second target=0x7fc57f0be0f9 owner=/workspace/scratch/adc486b72acb/day144_work/binding_demo/good/liblesson_helper.so
+results=7,7 changed_on_first=NO stable_on_second=YES
+exit=0

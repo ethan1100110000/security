@@ -1,0 +1,2 @@
+LD_DEBUG=libs,bindings day143_work/contains_zero_O0
+exit=0

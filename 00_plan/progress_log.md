@@ -44,15 +44,15 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: **Day143 — 2026-10-28 / W04 2/5**. O0/O2 비교·CS 주소 추적·입력 길이/ASan 복습과 조건 변경 재검증·기록 종료.
-- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 과제는 현재 엑셀, 실제 진도는 본 로그를 따른다.
-- Plan position: **다음 Day144 / W04 3/5**. Day143 뒤 같은 날 이어서 시작한다. W04 다섯 Day 완료 전 W05 진입 금지.
-- Current focus: contains_zero의 두 반환 경로와 O0 인덱스/스택·O2 주소/레지스터 흐름을 대조했다. 두 버전 6입력 결과가 일치했다. rbp 보존·성능 추측·빌드와 ASLR·검사 개수/인덱스·용량/입력길이 오답을 교정하고 조건 변경으로 확인했다.
-- Next task: **Day144 — 로더·interpreter·동적 심볼·GOT/PLT 구조 실측**. 같은 바이너리에서 file/readelf의 PT_INTERP·NEEDED·동적 심볼과 objdump의 호출 경로를 먼저 연결한다. CS: ELF 섹션/세그먼트의 실행 관찰과 예상 대조. 복습: Day140/141 ABI·파서/ASan 실제 근거와 반례.
-- Completion rule: 메인·CS·복습·기록 모두 충족, 도움받은 오답은 조건 변경 재검증. 시간 측정·최소 시간·반복 종합 발표는 요구하지 않는다.
-- Evidence: [Day143 write-up](../Day101-160/Day143/day143_writeup.md) 및 같은 폴더의 소스·원자료·환경·해시. 직전 main은 `6b0972e49833a373d985b460326e8bb7558e2775`; 이번 커밋은 Git history에서 확인한다.
-- Limits: 교사 컨테이너 실행. 정적 어셈블리 해석과 반환값 실행을 구분한다. GDB·성능 측정 없음. 첫 sanitizer 실행의 LeakSanitizer 환경 실패와 detect_leaks=0 재실행을 함께 기록했다.
-- External milestones: 학점인정·자격증·대학원 접수 일정은 학습 진도와 별도로 점검한다.
+- Last completed: **Day144 — 2026-11-04 / W04 3/5**. 시험 준비 중단 후 재개. 로더·동적 심볼·GOT/PLT 실제 자료, CS 메모리 권한, ASan 호출 경로 복습과 조건 변경 확인·기록 종료.
+- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 실제 진도는 본 로그, 일일 과제는 현재 엑셀을 따른다.
+- Plan position: **다음 Day145 / W04 4/5**. 사용자는 오늘 Day144·145 두 회차 진행을 요청했다. Day145는 아직 완료하지 않았다.
+- Current focus: 기존 Day143 O0의 INTERP/NEEDED/UND printf·JUMP_SLOT·PLT 간접 점프를 대조했다. LD_DEBUG 실행과 자체 NOW/lazy 성공·실패 실험 및 GOT 전후 값·실제 권한을 확인했다.
+- Next task: **Day145 — GDB break/step/register/memory/map으로 ABI 검증**. Day140/141 및 Day144 자료를 바탕으로 호출 전후 RSP·복귀 주소·인자·레지스터 보존과 ELF 매핑을 실제 관찰한다. 현재 컨테이너에는 처음에 GDB가 없었으며 설치 준비 중이다. 가용성·실제 디버깅 성공 여부를 확인하고 도구가 막히면 동적 관찰을 수행한 것으로 기록하지 않는다.
+- Completion rule: 메인·CS·복습·기록 모두 충족, 힌트 후 조건 변경 재검증. 시간 측정·최소 시간·반복 종합 발표는 요구하지 않는다.
+- Evidence: [Day144 write-up](../Day101-160/Day144/day144_writeup.md) 및 같은 폴더의 기존 대상 정적 자료·로더 로그, binding_demo 자체 소스·빌드 명령·실패/성공 결과·GOT 계측 자료·환경·해시. 직전 main은 `ec0b72ac459fdb85f39cda663bb215d8db71891d`; 이번 커밋은 Git history에서 확인한다.
+- Limits: 교사 컨테이너. Day144의 GOT 직접읽기는 별도 probe이며 기존 printf 대상의 직접 GDB 관찰이 아니다. 오늘 Day144에 새 ASan 실행은 없고 Day114 보고서를 읽었다. 최초 독립 숙달과 도움받은 교정을 구분한다.
+- External milestones: 학점인정·자격증·대학원 접수는 별도로 공식 일정에 맞춰 확인한다.
 
 
 ---
@@ -701,6 +701,21 @@ git pull --ff-only
 - Time: 측정하지 않음. 시간으로 완료판정하지 않는다.
 - Files: Day101-160/Day143/day143_writeup.md 및 같은 폴더의 contains_zero.c, contains_zero_test.c, boundary_test.c, input_extent_test.c, O0/O2 결과·역어셈블·ELF자료, sanitizer 최초실패/재실행로그, environment.txt, sha256.txt. 바이너리 제외.
 - Next: Day144 / W04 3/5 — 로더·interpreter·동적심볼·GOT/PLT 구조 관찰.
+
+---
+
+
+### Day144 — 2026-11-04
+- Plan: W04 / 3/5 — 로더·interpreter·동적 심볼·GOT/PLT. 자격증 시험 준비로 멈춘 Day144부터 재개. 같은 날 Day145까지 요청.
+- Status: 완료 — 메인·CS·복습·조건 변경 확인·write-up·실험 근거 기록. Day145 완료를 뜻하지 않는다.
+- Main: libc오프셋만이 아니라 이번로드기준+함수오프셋이 필요함을 보완했다. GOT주소표/PLT코드, 슬롯주소/저장된함수주소를 구분했다. 실제 printf@plt1070→[GOT3fd0], JUMP_SLOT printf3fd0, BIND_NOW를 확인했다. jmp는복귀주소를추가하지않아원래call다음으로반환한다고 답했다. LD_DEBUG에서 libc탐색과printf연결이 제어전달전에 실행됨을 관찰했다.
+- Symbols: UND를 런타임실패로 해석하지 않고 파일내정의부재와외부연결가능성을 설명받아구분했다. 필요한helper정의가없으면연결불가와NOW의main전실패를 맞혔다. 자체실험 NOW정상exit0/반환7, NOW누락exit127/main미진입, lazy누락호출생략exit0, lazy누락실제호출exit127/main진입을 확인했다.
+- CS: 별도probe가 자기JUMP_SLOT값을 읽었다. lazy는첫호출전실행파일내주소→호출후공유라이브러리주소→두번째유지, NOW는처음부터라이브러리주소유지, 양쪽반환7/7·exit0. /proc/self/maps의lazy슬롯rw-p/NOW슬롯r--p를 확인했다. FullRELRO 이름을 회상하고 읽기/정상호출은가능·덮어쓰기방지·정보노출자체방지는아님을 설명했다. NOW만으로RELRO전체를단정하지 않는다.
+- Review: 연결된libc함수값과실행파일슬롯주소를분리하고 lazy첫호출전내부코드주소를libc함수로계산하면안된다고 답했다. Day114 실제ASan의#0 __asan_memcpy/#1 parse_record62/#2 main100을대조했다. 백트레이스순서를몰라설명받고 신규read_packet/handle_client/main에서handle_client호출자를맞혔다. memcpy목적지payload/바이트수length를답했다. 설명용copy_message프레임과과거실제보고서는구분했다.
+- Evidence: Day101-160/Day144/day144_writeup.md 및 같은 폴더의 readelf/objdump·LD_DEBUG자료, binding_demo 소스·빌드명령·결과, environment.txt, sha256.txt. 바이너리·공유라이브러리실물은제외하고소스로재현.
+- Limits: 교사소스·실행이며 최초무힌트도구조작으로기록하지않는다. Day144 GDB·새ASan·성능측정없음. 호출경로는정적분석, GOT전후는별도probe직접읽기, 로더바인딩은LD_DEBUG실행으로구분.
+- Time: 측정하지 않음.
+- Next: 같은 날 Day145 / W04 4/5 — GDB 실제 관찰. 설치·실행 가용성을 먼저 확인한다.
 
 ---
 

@@ -1,0 +1,9 @@
+cc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0
+GNU readelf (GNU Binutils for Ubuntu) 2.42
+GNU objdump (GNU Binutils for Ubuntu) 2.42
+Linux x86_64
+Teacher Linux container; static interpretation, LD_DEBUG execution and self-inspection are distinct evidence.
+Target Day143 contains_zero_O0 SHA256=3a2c2025db13b4c77fa26cdede92ad00c3bdb0ffe5a98174a0d73221ec18e911
+No GDB or new ASan execution in Day144. Runtime addresses vary.
+Build binding demo first using binding_demo/build_commands.txt, then probes using got_probe_build.txt.
+Recorded relative build paths were from workspace root; adjust paths to repository Day144 folder when reproducing.

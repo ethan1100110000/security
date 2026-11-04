@@ -1,0 +1,4 @@
+         6:	find library=libc.so.6 [0]; searching
+         6:	  trying file=/lib/x86_64-linux-gnu/libc.so.6
+         6:	binding file day143_work/contains_zero_O0 [0] to /lib/x86_64-linux-gnu/libc.so.6 [0]: normal symbol `printf' [GLIBC_2.2.5]
+         6:	transferring control: day143_work/contains_zero_O0

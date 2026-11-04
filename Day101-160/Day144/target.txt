@@ -1,0 +1,1 @@
+Target: Day143 contains_zero_O0, exact local artifact day143_work/contains_zero_O0

@@ -1,0 +1,11 @@
+cc -shared -fPIC -Wall -Wextra -Werror day144_work/binding_demo/helper.c -Wl,-soname,liblesson_helper.so -o day144_work/binding_demo/good/liblesson_helper.so
+exit=0
+
+cc -shared -fPIC -Wall -Wextra -Werror day144_work/binding_demo/missing.c -Wl,-soname,liblesson_helper.so -o day144_work/binding_demo/missing/liblesson_helper.so
+exit=0
+
+cc -std=c11 -O0 -g -Wall -Wextra -Werror -fplt day144_work/binding_demo/main.c -Lday144_work/binding_demo/good -llesson_helper -Wl,-rpath,$ORIGIN/good -Wl,-z,now -o day144_work/binding_demo/app_now
+exit=0
+
+cc -std=c11 -O0 -g -Wall -Wextra -Werror -fplt day144_work/binding_demo/main.c -Lday144_work/binding_demo/good -llesson_helper -Wl,-rpath,$ORIGIN/good -Wl,-z,lazy -o day144_work/binding_demo/app_lazy
+exit=0

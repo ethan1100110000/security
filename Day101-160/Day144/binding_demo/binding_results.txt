@@ -1,0 +1,26 @@
+mode=now library=good call=True
+stdout:
+main entered
+helper result=7
+stderr:
+exit=0
+
+mode=now library=missing call=False
+stdout:
+stderr:
+day144_work/binding_demo/app_now: symbol lookup error: day144_work/binding_demo/app_now: undefined symbol: lesson_helper
+exit=127
+
+mode=lazy library=missing call=False
+stdout:
+main entered
+helper call skipped
+stderr:
+exit=0
+
+mode=lazy library=missing call=True
+stdout:
+main entered
+stderr:
+day144_work/binding_demo/app_lazy: symbol lookup error: day144_work/binding_demo/app_lazy: undefined symbol: lesson_helper
+exit=127
