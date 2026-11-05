@@ -1,0 +1,26 @@
+Day146 / 2026-11-05 사용자 채팅 제출 발췌
+전체 원본 로그가 아닌 제출 내용 보존. 교사 재실행 아님.
+
+[원본 ASan 사용자 요약]
+write of size = 17
+stack-buffer-overflow
+[32, 48) 'payload' (line 59) <== Memory access at offset 48 overflows this variable
+
+[수정 전 소스를 컴파일했던 실행]
+사용자: 코드 수정을 안했다. 16은 정상종료, 17은 전과 같음.
+수정본 검증 성공으로 처리하지 않음.
+
+[소스 수정 및 재컴파일 후 사용자 제출 출력]
+length=16, exit=0
+AAAAAAAAAAAAAAAA
+state=6
+length=17, exit=1
+reject at state 5: payload too large
+
+[조건 변경 문답]
+length16/실제본문15 → truncated payload (실제 재실행 아님)
+ELF5090 → 0채움
+ELF5050 → 파일2050 (힌트 후)
+파일2060 → ELF5060 (조건 변경)
+PT_LOAD 외 debug_info → 실행 로딩 불필요
+test의 비트AND: 2 & 2 → 2 (설명 후 새 값)

@@ -44,15 +44,15 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: **Day145 — 2026-11-04 / W04 4/5**. 오늘 Day144·145 두 회차 학습과 기록 완료.
-- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 과제는 현재 엑셀, 실제 진도는 본 로그를 따른다.
-- Plan position: **다음 Day146 / W04 5/5**. 날짜 경과로 진도를 자동 전진시키지 않는다.
-- Current focus: 사용자 로컬 WSL GDB/pwndbg로 Day143 O0의 인자·원소 주소·조기반환/전체탐색·n=0 분기·rbp 복원/ret·런타임 코드/스택 권한을 확인했다.
-- Next task: **Day146 — 기존 7바이트 파서 OOB·용량검사·ASan 원인 재검증**. 사용자가 직접 소스·보고서·필요한 GDB 실행을 다루고 교사는 예상과 해석을 검토한다. ELF 섹션/세그먼트의 조건 변경 및 Day140/141 근거 대조를 연결한다. test/jne 독립 회상도 실제 분석 중 재확인한다.
-- Completion rule: 메인·CS·복습·기록, 도움 및 재검증을 구분한다. 시간 측정·최소 발표 시간·반복 종합 발표는 요구하지 않는다.
-- Evidence: [Day145 write-up](../Day101-160/Day145/day145_writeup.md), [사용자 제출 GDB 발췌](../Day101-160/Day145/gdb_observations.txt). 대상 소스·드라이버는 Day143. 직전 main은 `060652541664ec50094e4129d3974d590929ba61`; 이번 커밋은 Git history에서 확인한다.
-- Limits: 사용자 직접 실행/교사 명령 안내. 전체 세션·버전·해시·call 직전·모든 보존 레지스터·새 ASan·성능 검증은 이번 근거에 없다. CS는 실제 매핑 권한과 프레임 해석이며 새 섹션/세그먼트 실험은 아니다. test와 cmp 혼동을 교정했으나 test의 추가 독립 회상은 다음 분석에 남긴다.
-- External milestones: 학점인정·자격증·대학원 접수는 별도로 공식 일정에 맞춰 확인한다.
+- Last completed: **Day146 — 2026-11-05 / W04 5/5**. 기존 파서 ASan 재현·용량 검사 수정/경계 실행·CS/복습과 기록 완료.
+- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 실제 진도는 본 로그, 일일 과제는 엑셀을 따른다.
+- Plan position: **Day147 / W05 1/5 — 시작 준비**. 오늘 Day146·147 두 회차 요청. Day147 분석은 아직 미완료.
+- Current focus: 사용자 로컬에서 Day114 WRITE17/[32,48) payload를 확인하고, 수정본 length16 정상/17 payload too large 거부를 실행했다. 본문부족/ELF 주소변환/test 비트AND를 조건 변경으로 확인했다.
+- Next task: **Day147 — 처음 보는 로컬 CTF 입력 경로·보호기법 관찰**. Day147/build.sh로 archive_desk를 만들고 사용자 스스로 file/checksec·정상 메뉴 입력을 관찰한다. 소스·해설은 최초 분석 전 열지 않는다. 이어 정수변환/배열 CS와 이전 Pwn 힌트 의존성 복습.
+- Evidence: [Day146 write-up](../Day101-160/Day146/day146_writeup.md), [사용자 제출 발췌](../Day101-160/Day146/day146_user_observations.txt).
+- Limits: Day146 전체 사용자 로그·수정 소스는 아직 원격 미확인. 발췌와 문답을 구분했다. Day147은 교사가 준비한 자체 과제이며 독립 분석 성공을 아직 기록하지 않는다.
+- Teaching: 이미 확인한 원리의 종합설명을 다시 요구하지 않는다. 사용자 실행·예상 우선, 필요한 단계만 안내하고 오답은 다른 조건으로 확인한다. 시간 측정·최소 발표시간 없음.
+- External milestones: 학점인정·자격증·대학원 접수는 별도로 확인한다.
 
 ---
 
@@ -730,6 +730,20 @@ git pull --ff-only
 - Time: 측정하지 않음.
 - Files: Day101-160/Day145/day145_writeup.md, gdb_observations.txt.
 - Next: Day146 / W04 5/5 — 7바이트 파서·ASan·ELF 조건 변경 재검증. 시간 요건 없음.
+
+---
+
+### Day146 — 2026-11-05
+- Plan: W04 / 5/5 — 7바이트 파서 OOB·용량검사·ASan 재검증, ELF 구술·이전 약점 복습.
+- Status: 완료. 같은 날 두 번째 요청 회차 Day147은 별도로 진행한다.
+- Main: input24/length17 검사를 거부라고 한 답을 대입 후 교정했다. 사용자 ASan은 WRITE17/stack-buffer-overflow/[32,48)payload/offset48. 목적지16 중 1바이트초과를 연결했다. 사용자가 length>sizeof(payload) 검사를 제안했다. 미수정 컴파일을 바로잡아 저장·재컴파일 후 length16 exit0/state6, length17 exit1/state5 payload too large를 제출했다.
+- Recheck: length16/본문15에서 truncated payload를 답했다. 문답이며 새 실행은 아님.
+- CS: LOAD Offset2000/Virt5000/File80/MemA0에서 ELF5090의0채움 확인. ELF5050을파일50이라한 답을 상대거리/파일시작 구분 후2050으로 교정. 파일2060→ELF5060 조건변경 정답. PT_LOAD외 debug_info 실행로딩불필요 확인. 새 readelf실험아님.
+- Review: ABI·ASan/파서의 근거와 경계를 적용하고 어제 test/jne 약점을 재확인했다. -1반환은점프 정답이었으나 AND를같으면1로설명해교정. 새2&2는2로맞혔다. 설명용명령이며 실제파서어셈블출력아님.
+- Correction: 이미 확인한 원리를 다시 종합 설명시키는 반복은 사용자 지적으로 중단. 기존 답·실행·조건 변경을 근거로 기록한다.
+- Files: Day101-160/Day146/day146_writeup.md, day146_user_observations.txt. 로컬 수정 소스·전체 로그는 원격 확인 전이며 이번 커밋의 첨부로 가장하지 않는다.
+- Time: 미측정.
+- Next: Day147 / W05 1/5 — 새 로컬 CTF 입력 경로·보호기법, 정수변환/배열, 이전 Pwn 도움 의존성 확인.
 
 ---
 
