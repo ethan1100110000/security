@@ -44,14 +44,14 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: **Day146 — 2026-11-05 / W04 5/5**. 기존 파서 ASan 재현·용량 검사 수정/경계 실행·CS/복습과 기록 완료.
+- Last completed: **Day147 — 2026-11-06 / W05 1/5** (분석은 2026-11-05~06에 걸쳐 수행). 메뉴·보호기법·입력 경로·Format String·Submit BOF 실측 증거와 CS/복습/기록 완료. Exploit 완성은 이번 회차의 완료 조건 아님.
 - Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 실제 진도는 본 로그, 일일 과제는 엑셀을 따른다.
-- Plan position: **Day147 / W05 1/5 — 시작 준비**. 오늘 Day146·147 두 회차 요청. Day147 분석은 아직 미완료.
-- Current focus: 사용자 로컬에서 Day114 WRITE17/[32,48) payload를 확인하고, 수정본 length16 정상/17 payload too large 거부를 실행했다. 본문부족/ELF 주소변환/test 비트AND를 조건 변경으로 확인했다.
-- Next task: **Day147 — 처음 보는 로컬 CTF 입력 경로·보호기법 관찰**. Day147/build.sh로 archive_desk를 만들고 사용자 스스로 file/checksec·정상 메뉴 입력을 관찰한다. 소스·해설은 최초 분석 전 열지 않는다. 이어 정수변환/배열 CS와 이전 Pwn 힌트 의존성 복습.
-- Evidence: [Day146 write-up](../Day101-160/Day146/day146_writeup.md), [사용자 제출 발췌](../Day101-160/Day146/day146_user_observations.txt).
-- Limits: Day146 전체 사용자 로그·수정 소스는 아직 원격 미확인. 발췌와 문답을 구분했다. Day147은 교사가 준비한 자체 과제이며 독립 분석 성공을 아직 기록하지 않는다.
-- Teaching: 이미 확인한 원리의 종합설명을 다시 요구하지 않는다. 사용자 실행·예상 우선, 필요한 단계만 안내하고 오답은 다른 조건으로 확인한다. 시간 측정·최소 발표시간 없음.
+- Plan position: **다음 Day148 / W05 2/5 — 착수 전**. 실제 과제 상세는 [현재 엑셀](hanyang-research-plan-2027.xlsx)의 Day148행을 먼저 확인한다. 예정 날짜 경과만으로 완료 처리하지 않는다.
+- Current focus: Day147 `archive_desk` Preview `printf(buf)`의 `%1$p`~`%5$p`가 GDB RSI/RDX/RCX/R8/R9와 일치함을 직접 확인. PIE leak `0x555555556031`(`"preview: "`)에서 PIE base `0x555555554000`; libc leak `0x7ffff7d148c7`(`__libc_write+23`)에서 offset `0x1148c7`. Submit의 `read(0, rbp-0x40, 0x70)`, Canary offset `0x38`, `__stack_chk_fail`을 사용자 로컬 역어셈블/GDB로 확인.
+- Next task: **Day148 / W05 2/5 — 독립 Pwn 진단 다음 회차**. 우선 당일 계획표의 구체 항목을 확인하고, 사용자 예상·근거를 먼저 받아 분석을 이어간다. Day147의 Canary leak/ROP를 끝내지 않았다는 이유로 다음 회차를 별도 exploit 과제로 바꾸지 않는다.
+- Evidence: [Day147 write-up](../Day101-160/Day147/day147_writeup.md), [사용자 제출 발췌](../Day101-160/Day147/day147_user_observations.txt), [Day147 README](../Day101-160/Day147/README.md). write-up 커밋 `c1264574fb300990dbd9a4fd810c503feb60e1a4`, 관찰 발췌 `2c3c6f231736d677a9f2b710ce36b15517e15503`.
+- Limits: 형식 문자열 이용 Canary 자체 누출, ROP, 쉘·실행 제어 성공은 **검증하지 않음**. 전체 원본 디버깅 로그/바이너리 해시/최초 소스 선언 크기 및 정확한 read 반환 바이트 수 미확인. 사용자가 직접 실행했지만 GDB 명령·개념 정리 및 일부 CS/tcache 반례는 교사 힌트 포함, 완전 무힌트 독립 숙달로 표기하지 않는다.
+- Teaching: 이전에 확인한 원리의 반복 설명보다 새 조건·동적 근거·해석의 분리를 우선한다. 시간 측정·최소 발표시간 요건 없음.
 - External milestones: 학점인정·자격증·대학원 접수는 별도로 확인한다.
 
 ---
@@ -744,6 +744,21 @@ git pull --ff-only
 - Files: Day101-160/Day146/day146_writeup.md, day146_user_observations.txt. 로컬 수정 소스·전체 로그는 원격 확인 전이며 이번 커밋의 첨부로 가장하지 않는다.
 - Time: 미측정.
 - Next: Day147 / W05 1/5 — 새 로컬 CTF 입력 경로·보호기법, 정수변환/배열, 이전 Pwn 도움 의존성 확인.
+
+---
+
+### Day147 — 2026-11-05~06
+- Plan: W05 / 1/5 — 새 로컬 CTF `archive_desk`의 정상 메뉴·입력경로·보호기법·취약점 근거 독립 진단. CS 정수 변환·배열 반례, 과거 Pwn 도움 의존성 복습.
+- Status: **완료 (2026-11-06 기록·커밋)**. 메인 GDB/역어셈블 관찰, CS 문답·조건 반례, Day085 복습과 write-up/증거 발췌. Exploit 완성은 과제 아님.
+- Main / Preview: 사용자 보고 stripped/FullRELRO/Canary/NX/PIE; 메뉴1 Preview,2 Submit,3 Quit. 메뉴 fgets(size0x10)→strtol, Preview fgets(size0x30)→printf(buf). %p의 비정상 레지스터/스택 값 노출을 확인. %15p는 필드너비임을 힌트로 교정. 별도 GDB 실행에서 %1$p~%5$p 출력이 RSI/RDX/RCX/R8/R9와 일치. 매핑/x/s/x/5i에서 PIE 문자열 `preview: ` 및 libc `__libc_write+23`; PIE base555555554000, libc leak offset1148c7. 47개 A+3 입력의 잔류처리 정확 경로는 미확정.
+- Main / Submit: read 헬퍼 0x28a 호출부 `lea rax,[rbp-0x40]; esi=0x70`과 헬퍼의 `read(0,buf,0x70)` 직접 역어셈블 확인. 변수 `[rbp-0x48]`는 read 반환값 저장이며 버퍼가 아님을 교정. Submit Canary `[rbp-0x8]`까지 0x38, saved RBP 0x40, saved RIP 0x48. 긴 a에서 `__stack_chk_fail`과 0x6161... 백트레이스 관찰; 정상 ret/RIP 제어 성공은 아니다. 헬퍼 자체의 Canary와 호출자 Canary를 구분했다.
+- CS: 설명용 `int32_t len` 코드에서 -1→size_t 큰 unsigned→잘못된 memcpy 길이를 답했다. input_size20/len20에서 header4 제외 16만 유효해 4바이트 OOB Read임을 최초 놓쳤으나 조건 재질문 후 교정. 사용자 제안 `len<0 || len>32`, `len>input_size-4`; 먼저 input_size<4 검사, 정수형 비교 정리 후 완료. 새 C 프로그램 직접 컴파일/실행 아님.
+- Review: [Day085](../Day040-100/Day085/write_up.txt) tcache poisoning의 count1에서 첫 malloc→count0, 다음 malloc은 TARGET을 tcache에서 회수하지 않는 원리를 회상. 최초 기억나지 않았으나 count 힌트 후 답했고 재실행/무힌트 재풀이 아님.
+- Assistance: 사용자 GDB 실측과 교사의 단계별 질문·명령 안내가 섞였음. Format String positional syntax, PIE/libc mapping 해석, 버퍼 오프셋 재검토, CS input_size 반례, tcache count 힌트는 도움받음. 원래 Day147의 메인 범위를 넘어선 Canary leak 및 ROP는 진행하지 않음.
+- Files: Day101-160/Day147/README.md, day147_writeup.md, day147_user_observations.txt. 이전 `build.sh`·`challenge.c` 보존, 새 바이너리나 전체 사용자 로컬 로그는 추가하지 않았음. 위 상세 보고서는 사용자 채팅 발췌 기반.
+- Time: 미측정. 시간 충족 조건으로 완료판정하지 않음.
+- Problems: 여러 GDB 세션 ASLR 주소 혼합 주의, `%15p` vs `%15$p`, `[rbp-0x48]` 반환값 vs `[rbp-0x40]` buffer, 백트레이스 #1 복귀 위치 vs call 위치, 원본 읽기 범위와 목적지 용량 모두 검사. Canary Leak/ROP 및 원본 전체 로그는 미검증.
+- Next: Day148 / W05 2/5 — 먼저 현재 엑셀 Day148 상세과제 확인 후 독립 Pwn 진단 진행. Day147 실습 반복이나 예정일 기준 진도 자동 전진 없음.
 
 ---
 
