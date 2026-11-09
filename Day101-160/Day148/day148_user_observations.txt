@@ -1,0 +1,86 @@
+Day148 / 2026-11-09 / W05 2/5 — 사용자 채팅 제출 발췌
+원본 GDB transcript 전부가 아닌 사용자 제공 명령/출력 발췌.
+바이너리와 테스트 환경: Day147/archive_desk / Linux x86-64 WSL / GDB(pwndbg).
+
+[메뉴 입력 및 분기 — 사용자 직접 역어셈블]
+0x5555555554ac: lea rax,[rbp-0x20]
+0x5555555554b0: mov esi,0x10
+0x5555555554b5: mov rdi,rax
+0x5555555554b8: call fgets@plt
+0x5555555554bd: test rax,rax
+0x5555555554c0: je 0x55555555551c
+0x5555555554c2: lea rax,[rbp-0x20]
+0x5555555554c6: mov edx,0xa
+0x5555555554cb: mov esi,0x0
+0x5555555554d0: mov rdi,rax
+0x5555555554d3: call strtol@plt
+0x5555555554d8: cmp rax,0x3
+0x5555555554dc: je 0x555555555500
+0x5555555554de: cmp rax,0x3
+0x5555555554e2: jg 0x555555555507
+0x5555555554e4: cmp rax,0x1
+0x5555555554e8: je 0x5555555554f2
+0x5555555554ea: cmp rax,0x2
+0x5555555554ee: je 0x5555555554f9
+0x5555555554f0: jmp 0x555555555507
+
+[다른 분기 블록 — 사용자 직접 역어셈블]
+0x5555555554f2: call 0x5555555552d8
+0x5555555554f7: jmp 0x555555555517
+0x5555555554f9: call 0x555555555380
+0x5555555554fe: jmp 0x555555555517
+0x555555555500: mov eax,0x0
+0x555555555505: jmp 0x555555555522
+0x555555555507: lea rax,[rip+0xb8b] # 0x555555556099
+0x55555555550e: mov rdi,rax
+0x555555555511: call puts@plt
+0x555555555516: nop
+0x555555555517: jmp 0x555555555482
+
+[실제 strtol 사용자 GDB 관찰]
+메뉴 입력 "2abc": strtol 직후 RAX 2 (사용자 확인).
+메뉴 입력 "abc2": strtol 직후 RAX 0 (사용자 확인).
+출력된 unknown choice 분기는 사용자 추론과 일치. endptr는 NULL이므로 입력 완전성 검사는 없음.
+
+[키보드 입력 관찰]
+9AAAAAAAAAAAAAA 입력 후 Enter, unknown choice가 한 번 출력되고 새 메뉴가 등장.
+새 입력 없이 Ctrl+C -> bt:
+#0 0x00007ffff7d14822 in __GI___libc_read(fd=0, ..., nbytes=1)
+#1 _IO_new_file_underflow(...)
+#2 __GI__IO_default_uflow(...)
+#3 __GI__IO_getline_info(..., n=0xf, delim=0xa, ...)
+#4 __GI__IO_getline(...)
+#5 _IO_fgets(buf=0x7fffffffdf70 "9", 'A' <repeats 14 times>, n=0x10, ...)
+#6 0x00005555555554bd in ?? ()
+=> 함수 진입/반환 주소를 구분. #0 read에서 새 바이트 기다림만 확인; 개행이 없었다는 증명 아님.
+
+[파일 입력 조건 변경]
+printf '9AAAAAAAAAAAAAA\n3\n' > /tmp/day148_input.txt
+run < /tmp/day148_input.txt
+break *0x5555555554bd (fgets 반환 후)
+pwndbg> x/16bx $rbp-0x20
+0x7fffffffdf70: 0x39 0x41 0x41 0x41 0x41 0x41 0x41 0x41
+0x7fffffffdf78: 0x41 0x41 0x41 0x41 0x41 0x41 0x41 0x00
+
+continue -> 두 번째 fgets 반환 후
+pwndbg> x/16bx $rbp-0x20
+0x7fffffffdf70: 0x0a 0x00 0x41 0x41 0x41 0x41 0x41 0x41
+0x7fffffffdf78: 0x41 0x41 0x41 0x41 0x41 0x41 0x41 0x00
+=> 첫 함수는 문자 15바이트+NUL; 뒤에 남은 개행을 두 번째 fgets가 소비. 마지막 버퍼 뒤쪽은 초기화되지 않아 기존 'A' 일부 잔존.
+=> 첫 키보드 실행에서 unknown choice 1회만 들은 사유까지 단독으로 특정하지는 못함; 파일 입력으로 개행 잔류를 확인.
+
+[CS / 문답, 실제 코드 실행 아님]
+uint8_t buf[8]={0x10,0x20,0x30,0x40,0x50,0x60,0x70,0x80}; buf=0x1000; p=buf+3.
+n=6에서 p[n-1]=p[5]=buf[8], 접근 주소 0x1008 (범위 밖 읽기). 사용자는 OOB 판단은 맞았으나 처음 0x1002 주소 혼동; 설명 후 교정.
+조건 변경 n=5에서 p[4]=buf[7], 접근 주소 0x1007, 값 0x80 (사용자 독립 정답).
+
+[보안 복습 / Day083 write-up 대조, 실제 힙 재실행 아님]
+원래 add→delete→show→edit→trigger의 show는 UAF로 callback의 원래 puts 주소 누출.
+edit→show로 바꿔 callback까지 덮어쓰면 원래 puts leak 정보 소실.
+조건 변경: edit 가능 범위를 data[0x20]로 제한하면 callback에 직접 쓰지 못함. 재할당/다른 쓰기가 없고 show가 callback 값을 노출한다는 전제에서 원래 puts leak 가능; callback overwrite는 불가능.
+사용자 마지막 답: "음 leak은 되지만 덮어쓰기는 안된다".
+※ freed chunk 시작부는 allocator metadata로 재사용 가능; data edit가 allocator 상태를 망가뜨릴 수도 있으므로 이후 malloc의 정상 동작은 보장하지 않음.
+
+[미수행]
+Day148 로컬 신규 소스/하네스/힙 실험 실행 없음. 입력 파일의 최종 3 메뉴 종료 출력은 미제출.
+전체 tool versions/바이너리 sha256/원본 GDB 전체 로그/완전 무힌트 수행시간은 미확인.
