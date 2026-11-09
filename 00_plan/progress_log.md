@@ -44,15 +44,15 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: **Day147 — 2026-11-06 / W05 1/5** (분석은 2026-11-05~06에 걸쳐 수행). 메뉴·보호기법·입력 경로·Format String·Submit BOF 실측 증거와 CS/복습/기록 완료. Exploit 완성은 이번 회차의 완료 조건 아님.
-- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 실제 진도는 본 로그, 일일 과제는 엑셀을 따른다.
-- Plan position: **다음 Day148 / W05 2/5 — 착수 전**. 실제 과제 상세는 [현재 엑셀](hanyang-research-plan-2027.xlsx)의 Day148행을 먼저 확인한다. 예정 날짜 경과만으로 완료 처리하지 않는다.
-- Current focus: Day147 `archive_desk` Preview `printf(buf)`의 `%1$p`~`%5$p`가 GDB RSI/RDX/RCX/R8/R9와 일치함을 직접 확인. PIE leak `0x555555556031`(`"preview: "`)에서 PIE base `0x555555554000`; libc leak `0x7ffff7d148c7`(`__libc_write+23`)에서 offset `0x1148c7`. Submit의 `read(0, rbp-0x40, 0x70)`, Canary offset `0x38`, `__stack_chk_fail`을 사용자 로컬 역어셈블/GDB로 확인.
-- Next task: **Day148 / W05 2/5 — 독립 Pwn 진단 다음 회차**. 우선 당일 계획표의 구체 항목을 확인하고, 사용자 예상·근거를 먼저 받아 분석을 이어간다. Day147의 Canary leak/ROP를 끝내지 않았다는 이유로 다음 회차를 별도 exploit 과제로 바꾸지 않는다.
-- Evidence: [Day147 write-up](../Day101-160/Day147/day147_writeup.md), [사용자 제출 발췌](../Day101-160/Day147/day147_user_observations.txt), [Day147 README](../Day101-160/Day147/README.md). write-up 커밋 `c1264574fb300990dbd9a4fd810c503feb60e1a4`, 관찰 발췌 `2c3c6f231736d677a9f2b710ce36b15517e15503`.
-- Limits: 형식 문자열 이용 Canary 자체 누출, ROP, 쉘·실행 제어 성공은 **검증하지 않음**. 전체 원본 디버깅 로그/바이너리 해시/최초 소스 선언 크기 및 정확한 read 반환 바이트 수 미확인. 사용자가 직접 실행했지만 GDB 명령·개념 정리 및 일부 CS/tcache 반례는 교사 힌트 포함, 완전 무힌트 독립 숙달로 표기하지 않는다.
-- Teaching: 이전에 확인한 원리의 반복 설명보다 새 조건·동적 근거·해석의 분리를 우선한다. 시간 측정·최소 발표시간 요건 없음.
-- External milestones: 학점인정·자격증·대학원 접수는 별도로 확인한다.
+- Last completed: **Day148 — 2026-11-09 / W05 2/5**. Day147 `archive_desk` 기반의 **새 입력 경계·분기 추적**과 CS·보안 복습·Write-up/Git 증거를 완료했다. 메인 직접 관찰, CS·복습은 문답이며 힌트 구간을 구분한다.
+- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 완료일·포인터는 이 로그, Day별 세부 과제는 [엑셀](hanyang-research-plan-2027.xlsx)을 따른다.
+- Plan position: **다음 Day149 / W05 3/5 — 아직 미시작**. 엑셀 Day149행을 확인하고 독립 진단을 이어간다. 계획상 예정일과 실제 학습일을 구분한다.
+- Current focus: Day148에서 사용자가 `fgets([rbp-0x20],0x10)` → `strtol(...,NULL,10)` → `cmp/je/jg`를 직접 복원했다. GDB에서 `2abc`의 RAX=2 및 `abc2`의 RAX=0. 입력파일 `9AAAAAAAAAAAAAA\n3\n`으로 첫 `fgets`가 15문자+NUL, 둘째가 개행 `0x0a 0x00`을 읽고 뒤에 기존 A가 남는 것을 확인했다. 키보드 실험의 두 번째 breakpoint 미관찰은 `bt`의 libc read 대기와 분리 기록.
+- CS/review: `buf[8]`, `p=buf+3`에서 `n=6` OOB 판정 후 위치 오답 교정, `n=5`에서 `buf[7]=0x80` 무힌트 조건 변경 정답. Day083 UAF `show`→원래 puts 누출 후 edit overwrite와 순서 반례, data만 edit하면 callback 누출 가능/직접 callback overwrite 불가를 설명했다(전제 제한).
+- Next task: **Day149 / W05 3/5**. 당일 엑셀 과제를 먼저 확인해 메인·CS·보안 복습·Git 기록을 진행한다. 같은 개념 반복보다 새로운 조건의 직접 관찰과 힌트 의존성 감소에 중점.
+- Evidence: [Day148 write-up](../Day101-160/Day148/day148_writeup.md), [사용자 관찰 발췌](../Day101-160/Day148/day148_user_observations.txt), [README](../Day101-160/Day148/README.md). 각각의 Git 커밋은 history 참조.
+- Limits: 유효 입력 전체에 대한 보장 아님. 사용자 전체 GDB 원본·바이너리 해시·C/힙 추가 실행·정확한 사용자 시간은 미확인. GDB 사용자는 직접 수행했지만 명령 안내·기존 원리 설명을 받았다. CS/복습은 손 추적·대화이며 무힌트 전체 풀이 또는 새 exploitation 성공으로 기록하지 않는다.
+- Teaching: 먼저 사용자 예상 → 관찰 → 교정 → 조건 변경. 이미 검증한 개념의 불필요한 반복과 시간 측정 조건 없음. 외부 학점/자격증/대학원 일정은 별도 점검.
 
 ---
 
@@ -759,6 +759,20 @@ git pull --ff-only
 - Time: 미측정. 시간 충족 조건으로 완료판정하지 않음.
 - Problems: 여러 GDB 세션 ASLR 주소 혼합 주의, `%15p` vs `%15$p`, `[rbp-0x48]` 반환값 vs `[rbp-0x40]` buffer, 백트레이스 #1 복귀 위치 vs call 위치, 원본 읽기 범위와 목적지 용량 모두 검사. Canary Leak/ROP 및 원본 전체 로그는 미검증.
 - Next: Day148 / W05 2/5 — 먼저 현재 엑셀 Day148 상세과제 확인 후 독립 Pwn 진단 진행. Day147 실습 반복이나 예정일 기준 진도 자동 전진 없음.
+
+---
+
+### Day148 — 2026-11-09
+- Plan: W05 2/5 / 독립 Pwn 실력 진단 — 분기·버퍼 크기·입력 바이트 길이 GDB 추적, CS 정수변환/배열, 과거 Pwn 힌트 의존성 검토.
+- Status: **완료 — 메인 GDB 관찰·CS 조건 변경·보안 2회독·Write-up/증거 정리**. 완료일은 실제 11/9이며 엑셀 예정일과 구분.
+- Main: 사용자가 새로 메인 `fgets([rbp-0x20],0x10)`과 `strtol(...,NULL,10)`, 반환값 1/2/3 및 default 경로를 찾았다. GDB에서 `2abc`→RAX2, `abc2`→RAX0을 직접 확인했다. unknown choice/puts 이후 메뉴 루프 점프를 복원했다.
+- Boundary: `9`+A14+개행을 넣은 인터랙티브 관찰에서는 unknown choice 한 번, 새 메뉴에서 입력 대기. `bt`의 #0 libc_read/#5 fgets/#6 main 반환주소를 읽고 현재 `read` 대기를 확인했다. 통제용 파일 입력 `printf '9AAAAAAAAAAAAAA\\n3\\n'` 후 `run < /tmp/day148_input.txt`: 첫 `x/16bx`는 `39 41×14 00`, 두 번째는 `0a 00 41×13 00` 관찰. 개행 잔류와 fgets 뒤 기존 바이트 잔존을 증거로 검증했다. 파일 마지막의 3 처리/종료 출력은 미제출.
+- CS: `uint8_t buf[8]`, `p=buf+3`, `n=6`에서 OOB Read는 맞혔으나 대상 주소를 처음 0x1002로 오판. `p[5]=buf[8]` 주소0x1008로 교정한 뒤 조건 변경 `n=5`에 대해 `buf[7]` 주소0x1007·출력0x80을 정확히 답했다. 새 C 코드 실행 아님.
+- Review: [Day083 write-up](../Day040-100/Day083/write_up.txt)에서 해제 후 show의 원래 puts 주소 누출→edit callback 변경→trigger 순서를 회상했다. edit를 먼저 하면 원래 주소가 소실됨을 설명했다. edit 허용범위를 data[0x20]로 제한한 반례에서는 'leak은 되지만 덮어쓰기는 안 된다'고 스스로 답했다. 다른 재할당/쓰기가 없고 show가 callback까지 읽는 조건이다. 해제 chunk의 첫 부분은 allocator metadata가 될 수 있음. 실제 Day083 재실행 없음.
+- Help/limits: 교사가 GDB 명령, `strtol` 변환 규칙, fgets 개행 및 `bt` 읽기, UAF show 역할 설명을 제공. 사용자는 근거를 직접 GDB로 출력했고 마지막 CS·복습 조건변경을 스스로 맞혔다. 전체 원본 GDB·바이너리 해시·환경 버전·학습 시간은 원격 미확인. 무힌트 종합 수행, exploit 새 성공, 성능·sanitizer 검증은 주장하지 않는다.
+- Evidence: [day148_writeup.md](../Day101-160/Day148/day148_writeup.md), [day148_user_observations.txt](../Day101-160/Day148/day148_user_observations.txt), [Day148 README](../Day101-160/Day148/README.md).
+- Time: 미측정.
+- Next: **Day149 / W05 3/5** — 시작 전 엑셀의 해당 행을 읽고 메인·CS·복습·기록 모두 진행.
 
 ---
 
