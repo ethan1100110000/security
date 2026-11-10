@@ -44,15 +44,15 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: **Day148 — 2026-11-09 / W05 2/5**. Day147 `archive_desk` 기반의 **새 입력 경계·분기 추적**과 CS·보안 복습·Write-up/Git 증거를 완료했다. 메인 직접 관찰, CS·복습은 문답이며 힌트 구간을 구분한다.
-- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 완료일·포인터는 이 로그, Day별 세부 과제는 [엑셀](hanyang-research-plan-2027.xlsx)을 따른다.
-- Plan position: **다음 Day149 / W05 3/5 — 아직 미시작**. 엑셀 Day149행을 확인하고 독립 진단을 이어간다. 계획상 예정일과 실제 학습일을 구분한다.
-- Current focus: Day148에서 사용자가 `fgets([rbp-0x20],0x10)` → `strtol(...,NULL,10)` → `cmp/je/jg`를 직접 복원했다. GDB에서 `2abc`의 RAX=2 및 `abc2`의 RAX=0. 입력파일 `9AAAAAAAAAAAAAA\n3\n`으로 첫 `fgets`가 15문자+NUL, 둘째가 개행 `0x0a 0x00`을 읽고 뒤에 기존 A가 남는 것을 확인했다. 키보드 실험의 두 번째 breakpoint 미관찰은 `bt`의 libc read 대기와 분리 기록.
-- CS/review: `buf[8]`, `p=buf+3`에서 `n=6` OOB 판정 후 위치 오답 교정, `n=5`에서 `buf[7]=0x80` 무힌트 조건 변경 정답. Day083 UAF `show`→원래 puts 누출 후 edit overwrite와 순서 반례, data만 edit하면 callback 누출 가능/직접 callback overwrite 불가를 설명했다(전제 제한).
-- Next task: **Day149 / W05 3/5**. 당일 엑셀 과제를 먼저 확인해 메인·CS·보안 복습·Git 기록을 진행한다. 같은 개념 반복보다 새로운 조건의 직접 관찰과 힌트 의존성 감소에 중점.
-- Evidence: [Day148 write-up](../Day101-160/Day148/day148_writeup.md), [사용자 관찰 발췌](../Day101-160/Day148/day148_user_observations.txt), [README](../Day101-160/Day148/README.md). 각각의 Git 커밋은 history 참조.
-- Limits: 유효 입력 전체에 대한 보장 아님. 사용자 전체 GDB 원본·바이너리 해시·C/힙 추가 실행·정확한 사용자 시간은 미확인. GDB 사용자는 직접 수행했지만 명령 안내·기존 원리 설명을 받았다. CS/복습은 손 추적·대화이며 무힌트 전체 풀이 또는 새 exploitation 성공으로 기록하지 않는다.
-- Teaching: 먼저 사용자 예상 → 관찰 → 교정 → 조건 변경. 이미 검증한 개념의 불필요한 반복과 시간 측정 조건 없음. 외부 학점/자격증/대학원 일정은 별도 점검.
+- Last completed: **Day149 — 2026-11-10 / W05 3/5** (세션에서 진행한 메인·CS 조건변경·보안복습·Git 기록 기준). Day147 로컬 `archive_desk`의 새로운 Submit 입력 길이·Canary 바이트 조건을 사용자 GDB에서 검증하고 Day081 복습을 수행. 실제 수행과 도움받은 부분을 구분한다. 최신 엑셀 Day149행은 이번 세션에서 binary decoding 실패로 직접 대조하지 못함.
+- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 세부 과제는 [엑셀](hanyang-research-plan-2027.xlsx), 진도와 실제 완료일은 이 로그에 기록한다.
+- Plan position: **다음 Day150 / W05 4/5 — 미시작**. 시작 시 **최신 엑셀 Day149의 필수과제 대조가 누락되지 않았는지 먼저 확인**하고 Day150의 상세 과제를 읽는다. 확인 결과 Day149의 필수 항목이 빠졌다면 바로 Day149로 복귀하여 보완하고, 자동 건너뛰지 않는다.
+- Current focus: `record[48]` 시작 rbp-0x40, Canary rbp-0x8 사이 8B padding. 로컬 `2\\n + A×N` 입력에서 N48→received48 정상, N56→received56 정상, N57→stack smashing detected. `x/8bx $rbp-0x8`의 첫 바이트 0x41과 `x/8bx $fs_base+0x28`의 0x00이 달라진 것을 직접 확인(뒤 7B 동일). N57의 마지막 바이트를 0x00으로 바꾸니 사용자 보고 received57/정상 종료 — 버퍼 오버런은 그대로임.
+- CS/review: 데이터 경계와 Canary 비교·탐지 분리. Day081 glibc 2.35 `__free_hook`은 호환성 심볼이 남아 writable해도 `free` 호출 경로에서 미사용. 실제 Callback target은 쓰기 가능·주소 파악·실제 trigger·인자/ABI 타입 호환성이 필요. `void (*action)(int)` 주소를 `system`으로 바꿔도 보장되지 않음을 사용자 답변으로 확인.
+- Next task: **Day150 / W05 4/5** — 시작 시 먼저 최신 엑셀 Day149/150 필수과제 대조, 빠진 필수 항목이 있다면 이전 Day 보완. 반복 대신 새로운 조건의 독립 관찰 수행.
+- Evidence: [Day149 write-up](../Day101-160/Day149/day149_writeup.md), [사용자 제출 GDB 발췌](../Day101-160/Day149/day149_user_observations.txt), [Day149 README](../Day101-160/Day149/README.md), Day081 과거 Git 기록. 세션 증거 및 교사 도움은 파일별로 구분.
+- Limits: 최초 메모리 배치 질문의 답은 교사 도움으로 교정했다. 입력 생성·GDB 중단 명령은 안내받았고, 실제 결과는 사용자가 로컬에서 제출. 전체 원본 로그/도구 버전/바이너리 해시/소요시간 없음. CS와 함수 포인터 반례는 조건 변경 문답·실측 일부이며 glibc 재실행과 익스플로잇 새 성공 아님. 최신 XLSX Day149행 교차검증은 미완료이며 추후 검증 필수.
+- Teaching: 독립 추측→GDB 관찰→오답 교정→조건 변경→Write-up. 최소 시간 측정 요구 없음. 실제 코드가 없었던 새 검증을 수행했다고 적지 않는다.
 
 ---
 
@@ -773,6 +773,18 @@ git pull --ff-only
 - Evidence: [day148_writeup.md](../Day101-160/Day148/day148_writeup.md), [day148_user_observations.txt](../Day101-160/Day148/day148_user_observations.txt), [Day148 README](../Day101-160/Day148/README.md).
 - Time: 미측정.
 - Next: **Day149 / W05 3/5** — 시작 전 엑셀의 해당 행을 읽고 메인·CS·복습·기록 모두 진행.
+
+---
+
+### Day149 — 2026-11-10
+- Plan: W05 3/5 독립 Pwn 실력 진단의 실습 세션. 주제는 사용자와 진행한 Submit BOF 길이·Canary 검사값 검증, CS 조건 변경, Day081 보호 기법 복습. **현재 GitHub XLSX 바이너리는 UTF-8 디코딩 오류로 당일 원래 셀을 직접 열람하지 못함** — 차후 계획 행을 대조해 빠진 필수항목이 확인되면 Day149 보완.
+- Status: **수업에서 할당한 영역·증거·write-up/Git 완료**. 계획표의 모든 원래 셀과 독립 교차검증을 완료했다고는 주장하지 않음.
+- Main: `record[48]`, 시작 rbp-0x40과 Canary rbp-0x8의 거리56B, 그 사이 8B padding. 사용자 최초 '48은 Canary 직전/56 Canary 도달' 오답을 교사 설명 후 수정. N48은 received48 정상, N56은 received56 정상, N57 A는 stack smashing detected. GDB 스택 Canary bytes `41 94 df 1b bf ad ff 9b`, TLS `00 94 df 1b bf ad ff 9b` 직접 제출. 첫 1B 변경, 뒤 7B 동일.
+- CS / recheck: `A*56 + b'\\x00'` 총 57B를 사용자가 예측하고 실행 후 정상 종료됐다고 보고(교사의 질문 `received:57?` 확인에 '예상대로'). 같은 길이에서도 손상 값이 원본과 같으면 Canary 검사는 통과할 수 있음. 버퍼 범위 위반은 유지. Exploit 완성/제어 흐름 변경 실험 아님.
+- Review: [Day081 write-up](../Day040-100/Day081/write_up.txt)의 glibc2.35 __free_hook 호환성 심볼 존재, 쓰기 가능하나 호출 경로 미사용을 사용자 독립 회상→Git 대조. Callback target은 writable/addressable/triggerable/argument-compatible의 조건을 확인. 교사 설명의 함수 포인터 반환형/const 타입 예시를 수정했고, `void (*)(int)`를 `system(const char*)`로 교체해도 정상 동작 보장 불가를 답했다. C에서는 타입 불일치 경유 호출 UB; ABI의 인자가 유효한 문자열 주소라고 보장 불가. 실제 보안 실습 재실행 아님.
+- Evidence: [day149_writeup.md](../Day101-160/Day149/day149_writeup.md), [day149_user_observations.txt](../Day101-160/Day149/day149_user_observations.txt), [README](../Day101-160/Day149/README.md). 사용자의 로컬 원본 입력 파일/전체 로그 대신 채팅 제출 발췌를 저장했다.
+- Assistance/limits: 교사가 입력 파일 생성법, GDB 명령, 정확한 padding 배치, CS와 복습 반례 안내. 사용자 직접 로컬 GDB 출력·조건변경 해석. 전체 원시 로그/해시/버전/시간 미확인. 이 날 학습은 완전 무힌트 1인 재현으로 기록하지 않음. 최신 엑셀의 Day149 세부 과제 대조가 불가해 다음 시작 시 확인해야 함.
+- Next: **Day150 / W05 4/5**; Day149 계획 항목 누락 발견 시 완료 포인터를 재평가하여 해당 Day를 보완.
 
 ---
 
