@@ -44,15 +44,15 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last completed: **Day149 — 2026-11-10 / W05 3/5** (세션에서 진행한 메인·CS 조건변경·보안복습·Git 기록 기준). Day147 로컬 `archive_desk`의 새로운 Submit 입력 길이·Canary 바이트 조건을 사용자 GDB에서 검증하고 Day081 복습을 수행. 실제 수행과 도움받은 부분을 구분한다. 최신 엑셀 Day149행은 이번 세션에서 binary decoding 실패로 직접 대조하지 못함.
-- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 세부 과제는 [엑셀](hanyang-research-plan-2027.xlsx), 진도와 실제 완료일은 이 로그에 기록한다.
-- Plan position: **다음 Day150 / W05 4/5 — 미시작**. 시작 시 **최신 엑셀 Day149의 필수과제 대조가 누락되지 않았는지 먼저 확인**하고 Day150의 상세 과제를 읽는다. 확인 결과 Day149의 필수 항목이 빠졌다면 바로 Day149로 복귀하여 보완하고, 자동 건너뛰지 않는다.
-- Current focus: `record[48]` 시작 rbp-0x40, Canary rbp-0x8 사이 8B padding. 로컬 `2\\n + A×N` 입력에서 N48→received48 정상, N56→received56 정상, N57→stack smashing detected. `x/8bx $rbp-0x8`의 첫 바이트 0x41과 `x/8bx $fs_base+0x28`의 0x00이 달라진 것을 직접 확인(뒤 7B 동일). N57의 마지막 바이트를 0x00으로 바꾸니 사용자 보고 received57/정상 종료 — 버퍼 오버런은 그대로임.
-- CS/review: 데이터 경계와 Canary 비교·탐지 분리. Day081 glibc 2.35 `__free_hook`은 호환성 심볼이 남아 writable해도 `free` 호출 경로에서 미사용. 실제 Callback target은 쓰기 가능·주소 파악·실제 trigger·인자/ABI 타입 호환성이 필요. `void (*action)(int)` 주소를 `system`으로 바꿔도 보장되지 않음을 사용자 답변으로 확인.
-- Next task: **Day150 / W05 4/5** — 시작 시 먼저 최신 엑셀 Day149/150 필수과제 대조, 빠진 필수 항목이 있다면 이전 Day 보완. 반복 대신 새로운 조건의 독립 관찰 수행.
-- Evidence: [Day149 write-up](../Day101-160/Day149/day149_writeup.md), [사용자 제출 GDB 발췌](../Day101-160/Day149/day149_user_observations.txt), [Day149 README](../Day101-160/Day149/README.md), Day081 과거 Git 기록. 세션 증거 및 교사 도움은 파일별로 구분.
-- Limits: 최초 메모리 배치 질문의 답은 교사 도움으로 교정했다. 입력 생성·GDB 중단 명령은 안내받았고, 실제 결과는 사용자가 로컬에서 제출. 전체 원본 로그/도구 버전/바이너리 해시/소요시간 없음. CS와 함수 포인터 반례는 조건 변경 문답·실측 일부이며 glibc 재실행과 익스플로잇 새 성공 아님. 최신 XLSX Day149행 교차검증은 미완료이며 추후 검증 필수.
-- Teaching: 독립 추측→GDB 관찰→오답 교정→조건 변경→Write-up. 최소 시간 측정 요구 없음. 실제 코드가 없었던 새 검증을 수행했다고 적지 않는다.
+- Last completed: **Day150 — 2026-11-11 / W05 4/5** (**수업에서 진행한 메인·CS·보안 복습·증거 Git 기준**). 사용자 로컬 Day150 `archive_desk` 버퍼 64B 조건 변경, 스택 배치·Canary 경계 검증, 구조체 정렬 코드 검증, Day118 퍼징 Crash Dedup 원인 분류를 완료. 단, 최신 엑셀 Day149·Day150 필수행은 바이너리 조회 오류로 **아직 대조하지 못했으므로 추가 필수사항 발견 시 보완**.
+- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 세부 과제 [엑셀](hanyang-research-plan-2027.xlsx), 실제 진행과 도움받은 부분은 이 로그를 따른다.
+- Plan position: **다음 Day151 / W05 5/5 — 미시작 (계획표 검증 조건부)**. 다음 시작 전 최신 엑셀 Day149/150/151 세부행을 직접 대조한다. 누락한 필수 항목이 있다면 해당 Day부터 보완하고 넘어가지 않는다.
+- Current focus: `record[48]→record[64]`로 수정한 Day150 새 로컬 바이너리에서 57B 입력 정상. 사용자 어셈블 분석: record 시작 `rbp-0x50`, Canary `rbp-0x8`, 사이 72B(버퍼 64B+padding 8B) → 73번째 입력 바이트가 Canary 시작. `A×72+00` 73B는 `received:73`/정상, `A×73` 73B는 `received:73`/`stack smashing detected`를 사용자 직접 제출.
+- CS/review: `struct Packet{uint8_t type;uint32_t length;uint8_t flags;}`에서 GCC `sizeof=12, offsetof=0/4/8`를 사용자 로컬 실행 확인. Day118 퍼징 Crash Dedup 복습에서 같은 memcpy/PC라도 A·C는 목적지 16B 초과 WRITE, B는 원본 input_size 4B 초과 READ로 **두 개의 원인**으로 분류함(문답, 새 ASan 실행 아님).
+- Next task: **Day151 / W05 5/5** (검증 조건부). 시작 전에 최신 엑셀 Day149~151의 상세 과제를 열어 누락 필수 항목 확인. 그 뒤 독립 분석·CS·복습·Git 증거로 진행한다.
+- Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
+- Limits: 최초 `b read`는 fgets 내부 libc read였고 교사의 조건 설정 안내로 Submit용 `read(...,0x70)`를 찾았다. 실제 사용자 GDB 실행은 있으나 메인 어셈블 전체 원문/Canary 실측 덤프·로컬 원시 코드·컴파일 로그·환경 버전/해시·학습 시간은 미제출. CS alignment 규칙과 fuzzing 반례는 교사 제공. 파일 작성과 설명을 받은 후 독립 예측·실측을 구분한다. 완전 무힌트 모든 조건 해결·새 익스플로잇 성공은 아님.
+- Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
 
 ---
 
@@ -785,6 +785,20 @@ git pull --ff-only
 - Evidence: [day149_writeup.md](../Day101-160/Day149/day149_writeup.md), [day149_user_observations.txt](../Day101-160/Day149/day149_user_observations.txt), [README](../Day101-160/Day149/README.md). 사용자의 로컬 원본 입력 파일/전체 로그 대신 채팅 제출 발췌를 저장했다.
 - Assistance/limits: 교사가 입력 파일 생성법, GDB 명령, 정확한 padding 배치, CS와 복습 반례 안내. 사용자 직접 로컬 GDB 출력·조건변경 해석. 전체 원시 로그/해시/버전/시간 미확인. 이 날 학습은 완전 무힌트 1인 재현으로 기록하지 않음. 최신 엑셀의 Day149 세부 과제 대조가 불가해 다음 시작 시 확인해야 함.
 - Next: **Day150 / W05 4/5**; Day149 계획 항목 누락 발견 시 완료 포인터를 재평가하여 해당 Day를 보완.
+
+---
+
+### Day150 — 2026-11-11
+- Plan: W05 4/5 독립 Pwn 진단 중 실제 수행된 64B 버퍼 조건 변경, 입력 길이·바이트 반례, 구조체 레이아웃 CS, Day118 crash dedup 보안 복습. 최신 XLSX Day149/150 셀의 직접 대조는 **binary UTF-8 decode 오류로 미수행**, 누락된 필수 항목이 있으면 복귀해 보완.
+- Status: **대화에서 할당한 메인·CS·보안 복습·Write-up/참고 소스/Git 기록 완료**. 원래 최신 엑셀의 모든 셀 항목 충족으로 단정하지 않는다.
+- Main: 사용자 별도 Day150 로컬 복사본의 `record[48]`을 `record[64]`로 수정하고 gcc 빌드. 이전 57B 입력은 `received:57` 정상. `b read`는 처음 libc fgets read(1B)에 걸린 뒤 `$rdx==0x70` 조건으로 Submit read(buf=0x7fffffffdf10,count=112)를 확인. 사용자가 직접 함수 역어셈블에서 버퍼 시작 rbp-0x50, Canary rbp-0x8 추정, 거리0x48=72B 산출. 사용자 지적에 따라 불필요한 라이브러리 read 스텝을 줄이는 정적 분석법 우선.
+- Recheck: 파일 `2\\n + A×72 + 00`(Submit73B)은 `received:73` 정상. `2\\n + A×73`(Submit73B)은 `received:73` 후 `stack smashing detected`/abort. 동일 길이이지만 Canary 위치로 들어가는 바이트가 00 또는 41인지가 탐지 결과에 영향을 준다는 가설과 일치. 두 경우 모두 선언 record[64] 범위 밖에 씀.
+- CS: `struct Packet{uint8_t type;uint32_t length;uint8_t flags;}`. 처음 모름→교사 설명 후 사용자 `flags` offset8, sizeof12, trailing padding3으로 계산. 로컬 gcc의 `packet_layout` 출력 `sizeof:12/type:0/length:4/flags:8` 직접 제출. 정확한 사용자 소스 파일은 미커밋이며 Git의 `packet_layout_reference.c`는 제공 코드 재구성.
+- Review: [Day118 AFL++ Crash Dedup](../Day101-160/Day118/write_up.txt)을 Git 근거로 재확인. 같은 memcpy/PC에서 크래시 3개도 하나로 단정 불가. 예제 A(len20,input32), C(len24,input32)는 목적지 payload16B 초과 WRITE, B(len8,input4)는 원본 초과 READ로 두 원인의 검사 누락. 사용자가 최종 "ac는 payload 이상의 크기로 write... b는 input보다 len이 커서 범위 밖 읽기"라 스스로 설명. 새 ASan/실제 AFL++ 재실행 아님.
+- Correction/assistance: `./challenge.c` 소스 실행 및 Shell에서 `run` 사용 혼동을 바로잡음. 교사가 `b read` 조건·재현 파일 생성법·Alignment 개념·문답 반례 제공. 사용자 실제 실측·정적 분석 방향 제안 및 최종 반례 설명은 구분.
+- Files: [write-up](../Day101-160/Day150/day150_writeup.md), [대화 관찰 발췌](../Day101-160/Day150/day150_user_observations.md), [README](../Day101-160/Day150/README.md), [변경 참고 C 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 참고 소스](../Day101-160/Day150/packet_layout_reference.c), [재현 스크립트](../Day101-160/Day150/build_reproduction.sh). 사용자 로컬 폴더의 동명 `challenge.c`, `build.sh`, `packet_layout.c`는 Git에서 덮어쓰지 않았다.
+- Limits: 시간/전체 원본 GDB/로컬 바이너리 해시·컴파일 로그 미측정, 교사 재구성 소스와 사용자 원본 파일 동일성 미검증, 새 Canary byte 덤프 없음. 세션에서 진행한 범위와 최신 XLSX의 세부 과제 전수 검증은 다름.
+- Next: Day151 / W05 5/5 시작 전 Excel Day149~151 대조 후 필요시 Day149/150 보완.
 
 ---
 
