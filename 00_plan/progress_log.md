@@ -44,12 +44,12 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last recorded study session: **Day150 — 2026-11-11 / W05 4/5**. 당시 실시한 메인·CS·복습·Git 결과는 유효한 학습 성과로 보존. **2026-11-12 엄격 엑셀 대조 결과 8개 필수 보완 항목 발견, 그중 Day145 CS·Day146 메인·Day147 CS/복습·Day149 CS·Day150 메인 6개 완료(2개 남음)**, 따라서 모든 Day의 정규 완료 판정은 잠정 보류한다. 마지막으로 Day 전체 필수 충족이 새 감사에서 확인된 Day는 **Day149** (Day149 CS 11/12 로컬 실행 보완). 원장은 [누락 감사표](day142-150_gap_audit_2026-11-12.md).
+- Last recorded study session: **Day150 — 2026-11-11 / W05 4/5**. 당시 실시한 메인·CS·복습·Git 결과는 유효한 학습 성과로 보존. **2026-11-12 엄격 엑셀 대조 결과 8개 필수 보완 항목 발견, 그중 Day145 CS·Day146 메인·Day147 CS/복습·Day149 CS·Day150 메인/CS 7개 완료(1개 남음)**, 따라서 모든 Day의 정규 완료 판정은 잠정 보류한다. 마지막으로 Day 전체 필수 충족이 새 감사에서 확인된 Day는 **Day149** (Day149 CS 11/12 로컬 실행 보완). 원장은 [누락 감사표](day142-150_gap_audit_2026-11-12.md).
 - Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 세부 과제 [엑셀](hanyang-research-plan-2027.xlsx), 실제 진행과 도움받은 부분은 이 로그를 따른다.
-- Plan position: **보완 진행 — Day145~149 및 Day150 메인 보완 완료, 다음 Day150 CS 정수 변환·배열 조건 변경 실행, Day151 시작 보류**. Day145/146/147/149/150에서 기존 실습을 인정하되 지정된 미충족 항목만 진행. Day151 정규 진행은 보완 항목 8개와 Git 증빙 점검 후.
+- Plan position: **보완 진행 — Day145~149 및 Day150 메인/CS 보완 완료, 다음 Day150 Pwn 복습, Day151 시작 보류**. Day145/146/147/149/150에서 기존 실습을 인정하되 지정된 미충족 항목만 진행. Day151 정규 진행은 보완 항목 8개와 Git 증빙 점검 후.
 - Current focus: `record[48]→record[64]`로 수정한 Day150 새 로컬 바이너리에서 57B 입력 정상. 사용자 어셈블 분석: record 시작 `rbp-0x50`, Canary `rbp-0x8`, 사이 72B(버퍼 64B+padding 8B) → 73번째 입력 바이트가 Canary 시작. `A×72+00` 73B는 `received:73`/정상, `A×73` 73B는 `received:73`/`stack smashing detected`를 사용자 직접 제출.
 - CS/review: `struct Packet{uint8_t type;uint32_t length;uint8_t flags;}`에서 GCC `sizeof=12, offsetof=0/4/8`를 사용자 로컬 실행 확인. Day118 퍼징 Crash Dedup 복습에서 같은 memcpy/PC라도 A·C는 목적지 16B 초과 WRITE, B는 원본 input_size 4B 초과 READ로 **두 개의 원인**으로 분류함(문답, 새 ASan 실행 아님).
-- Next task: **Day150 CS: 정수 변환·배열의 기존 Day149와 다른 조건 변경 실험, 예상→로컬 GCC 실측→반론**, 이후 Day150 이전 Pwn 풀이 힌트 의존성 복습. 2항목 남음. [감사표](day142-150_gap_audit_2026-11-12.md) 참조.
+- Next task: **Day150 이전 Pwn 풀이의 힌트 의존성 복습**. Day082의 Fake Stack Pivot 실패 원인을 Git 원본과 대조해 회상→조건 변경 반례 재설명, 교사 도움과 독립 재현 구분. 1항목 남음. [감사표](day142-150_gap_audit_2026-11-12.md) 참조.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
 - Limits: 기존 Day150에서 사용자 로컬 실행 증거는 유효하지만 **원래 엑셀의 Day150 메인/CS/보안복습을 전부 채운 건 아니었다**. 또한 Day145 CS, Day146 발표, Day147 도움 후 무힌트 재검증, Day149 CS 누락. 옛 기록을 지우거나 과거 학습을 무효화하지 않고 **필수 부족분만 보완**한다. 누락 세부 항목은 [감사표](day142-150_gap_audit_2026-11-12.md).
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
@@ -859,6 +859,16 @@ git pull --ff-only
 - 사용자는 입력 바이트/길이 제어, 임의 목적지 지정 불가, 원본 Canary/PIE/libc Base 및 주소 누출 가능성, 적절한 목표주소와 보호기법 우회 필요성을 구분했다. 전체 Canary를 정확히 알지 못하므로 지금 단계의 결과는 exploit 성공이 아니라고 답함.
 - [Day150 보완 write-up](../Day101-160/Day150/day150_writeup.md)에 직접 제어/직접 제어 불가/성공 미검증 전제, 추가 검사할 지점을 기록했다. 교사의 개념 보완과 사용자의 독립 오프셋 답을 구분.
 - 남은 2/8: Day150 CS 정수 변환·배열 조건 변경의 실제 실행, Day150 과거 Pwn 풀이의 힌트 의존성 복습. Day151 시작 보류.
+
+---
+
+### 2026-11-12 — Day150 CS 정수형 축소 실험 보완 완료 (7/8)
+- 기존 Day150 구조체 정렬 공부는 성과로 인정하되 원래 필수 과제인 정수 변환·배열 조건 변경 실행은 별도 보완함.
+- 사용자 예상: `(uint8_t)256==0`이므로 축소 후 `n`으로 검사하는 wrong_check에서 범위 외 `len=256`을 잘못 허용할 수 있다.
+- 사용자 로컬 실행: `A wrong=0/right=0`, `B wrong=0/right=-3`, `C wrong=-4/right=-3` 세 결과가 예측과 일치했다고 보고. A 경계 허용, B 축소로 검사 우회, C 둘 다 거부하되 검사 순서 차이.
+- 코드에는 실제 메모리 복사가 없으므로 이번 결과는 **길이 검사 판정 오류**를 증명하며 실행 시 OOB/ASan 결과가 아니다.
+- [Day150 CS 보완 write-up](../Day101-160/Day150/day150_writeup.md) 및 [참고 코드](../Day101-160/Day150/narrowing_lab_reference.c), [감사표](day142-150_gap_audit_2026-11-12.md) 반영. 사용자 로컬 원본 narrow_lab 파일 미첨부, 교사 복원 참고 코드 명시.
+- 남은 1항목: Day150 이전 Pwn 풀이 힌트 의존성 복습(계획 대조 후 Day151). 기존 Day082/084 자료 중 Day082 Fake Stack Pivot을 회상·새 반례로 검토 예정.
 
 ---
 
