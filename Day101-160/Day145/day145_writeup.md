@@ -30,3 +30,52 @@ ret은 스택의 주소값을 읽은 뒤 그 주소의 코드에서 실행을 �
 ## 한계와 다음
 사용자가 직접 도구를 조작했지만 명령은 교사 안내를 받았으며 독립 도구 숙달 판정은 아니다. 성능·새 ASan·전체 레지스터 보존·call 직전 상태까지 새로 측정한 것으로 기록하지 않는다. 시간은 측정하지 않았다.
 다음 Day146 / W04 5/5: 기존 7바이트 파서의 경계·용량 검사와 실제 ASan 근거 재검증, ELF 섹션/세그먼트 조건 변경 정리. test/jne 회상은 해당 분석에 연결한다. 최소 발표 시간은 완료 요건으로 삼지 않는다.
+
+
+## 2026-11-12 추가 보완 — ELF `.bss`/ `.data` 조건 변경 실측 및 반론 검증
+**대상:** Day145 CS의 누락된 섹션·세그먼트 조건 변경 실험. 이 보완은 2026-11-04 원래 실습 이후에 추가된 별도 증거다.
+
+두 빌드는 동일 소스를 사용하고 `INIT` 매크로만 전환했다. 사용자가 로컬에서 `gcc -O0 -g -fno-common -DINIT=0 elf_layout_probe.c -o elf_bss`, `-DINIT=1 ... -o elf_data`로 컴파일하고 `readelf -sW/-SW/-lW` 결과를 채팅에 제출했다. 사용자 로컬 `elf_layout_probe.c`의 원본 파일은 아직 Git에 업로드되지 않았으므로 아래는 교사가 제시했던 실험 설계의 참고 코드이며 사용자 파일의 완전한 바이트 동일성을 보장하지 않는다:
+
+```c
+#include <stdio.h>
+#if INIT
+unsigned char probe[16] = {0x41};
+#else
+unsigned char probe[16];
+#endif
+int main(void) { printf("%02x\n", probe[0]); return 0; }
+```
+
+**예상:** 사용자는 `INIT=0`이 `.bss`, `INIT=1`이 `.data`라고 예측했다. 초기에는 `.bss`가 런타임 메모리를 차지하는지 몰랐지만, `FileSiz=0x200, MemSiz=0x210` 설명용 사례에서 추가 `0x10`B가 실행 중 존재하고 0으로 초기화된다고 답했다.
+
+**사용자 제출 심볼 및 섹션 출력:**
+```text
+$ readelf -sW elf_bss | grep probe
+11: ... FILE LOCAL DEFAULT ABS elf_layout_probe.c
+21: 0000000000004020 16 OBJECT GLOBAL DEFAULT 26 probe
+$ readelf -sW elf_data | grep probe
+11: ... FILE LOCAL DEFAULT ABS elf_layout_probe.c
+21: 0000000000004010 16 OBJECT GLOBAL DEFAULT 25 probe
+
+$ readelf -SW elf_bss | grep -E '\.(data|bss)'
+[25] .data PROGBITS 0000000000004000 003000 000010 00 WA 0 0 8
+[26] .bss  NOBITS   0000000000004010 003010 000020 00 WA 0 0 16
+$ readelf -SW elf_data | grep -E '\.(data|bss)'
+[25] .data PROGBITS 0000000000004000 003000 000020 00 WA 0 0 16
+[26] .bss  NOBITS   0000000000004020 003020 000008 00 WA 0 0 1
+```
+
+사용자 제출 마지막 RW `LOAD`:
+```text
+elf_bss:  LOAD 0x002db8 0x0000000000003db8 0x0000000000003db8 0x000258 0x000278 RW 0x1000
+elf_data: LOAD 0x002db8 0x0000000000003db8 0x0000000000003db8 0x000268 0x000270 RW 0x1000
+```
+
+- `elf_bss`: `MemSiz-FileSiz=0x278-0x258=0x20`(32B).
+- `elf_data`: `MemSiz-FileSiz=0x270-0x268=0x08`(8B).
+- 사용자가 먼저 `elf_bss`의 차이가 더 크다고 판단했다. 두 바이너리에서 `probe`는 16B로 동일하나 다른 섹션에 들어감이 심볼 `Ndx` 26/25로 확인된다.
+- 마지막 반론: "NOBITS이므로 .bss는 실행 중 메모리에도 존재하지 않는다"라는 주장에 대해 사용자가 **"파일에는 저장되지 않지만 실행 중 메모리에는 존재함"**이라고 반박했다. 예상→실측→반론의 필수 순서를 충족.
+- 제한: `probe`를 직접 출력한 `./elf_bss`/`./elf_data` 결과는 이번 발췌에 없음. `Section to Segment mapping` 전체 행도 미제출이나, 마지막 RW `LOAD`의 파일/메모리 증가 차이를 실제 출력으로 확인했다. 이 결과는 파일/메모리 크기 및 ELF 섹션 배치 근거이며, 실시간 매핑을 별도로 재확인했다고 주장하지 않는다. 소스·실행파일 로컬 생성은 사용자 보고, Git 첨부는 현재 작성한 설명 텍스트다.
+
+**판정:** Day145 CS 보완 **완료**. 해당 누락 항목을 닫고 Day146 독립 설명 보완으로 이동. 기존 2026-11-04 Day145 자료와 역사적 한계는 유지한다.
