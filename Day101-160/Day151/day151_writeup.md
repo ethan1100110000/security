@@ -32,8 +32,38 @@ SUMMARY: AddressSanitizer: heap-use-after-free .../snapshot_queue.c:60 in show_l
 - ASan의 `fd` shadow bytes는 해제된 영역임을 나타냄. 할당→해제→접근 시점을 세 개의 스택트레이스로 구분할 수 있음.
 - **검증 범위:** 실제 힙 UAF 읽기 오류 ASan 탐지·프로그램 중단 입증. 임의쓰기·코드 실행·악용 성공은 이 기록으로 주장하지 않음.
 
+## 메인 수정·동일 입력 ASan 재검증 (2026-11-12)
+- 사용자 최초 수정 제안: `close_snapshot()`에서 `free(active)`뿐 아니라 `free(last_preview)`도 수행한 후 NULL 대입. 교사는 **두 포인터가 같은 heap 객체를 가리키므로 double-free가 발생**할 수 있다고 지적.
+- 사용자 스스로 수정: `last_preview = NULL;`만 추가(대문자 `NULL`은 교사 교정). 기존 `free(active); active=NULL;`를 유지하므로 할당 객체는 **한 번만 해제**, 해제된 주소에 대한 `last_preview`의 dangling reference를 제거함.
+- **사용자 로컬에서 수정 후 ASan 재빌드·실행 결과** (사용자 실제 출력):
+```text
+1) New  2) Close  3) Recent  4) Exit
+> 1
+title> asdf
+detail> asdfasdf
+created #1
+
+1) New  2) Close  3) Recent  4) Exit
+> 2
+closed
+
+1) New  2) Close  3) Recent  4) Exit
+> 3
+no recent snapshot
+```
+- 사용자: "이번엔 uaf가 안뜨고 정상적으로 실행댐"이라고 명확히 보고. **동일 메뉴 경로에서 ASan UAF가 사라지고 분기 메시지가 바뀐 것은 검증**, 다른 메뉴 경로나 전체 프로그램 무결성을 보장하는 것은 아님.
+- [원본 취약 소스](snapshot_queue.c)는 재현을 위해 보존. [수정 참고 소스](snapshot_queue_fixed_reference.c)는 사용자 변경 내용을 **교사가 원본에서 재구성한 별도 파일**이며 사용자 로컬 파일의 byte-identical 업로드를 주장하지 않음. 로컬 수정 원본은 여전히 사용자의 환경에 있음.
+
+## Root Cause 정리 및 결과
+- **원인:** `create_snapshot()`이 `active`와 `last_preview`를 같은 동적 할당 객체로 향하게 함. `close_snapshot()`은 `free(active)` 후 `active = NULL`만 실행하여 `last_preview`를 dangling pointer로 남김. `show_latest()`는 NULL만 확인하고 `last_preview->id`를 읽어 **해제된 힙 객체를 접근**.
+- **재현 경로:** `1(New) → 2(Close) → 3(Recent)`. ASan `heap-use-after-free READ4`, `show_latest:60`에서 보고; `create_snapshot:24` 할당, `close_snapshot:50` 해제라는 추적 정보로 입증.
+- **수정:** `close_snapshot`이 객체를 해제한 뒤 `last_preview = NULL`을 추가함(이 프로그램의 단일-활성-Snapshot 상태 모델에서 유효). 같은 객체에 대한 `free`를 두 번 호출하지 않음.
+- **비교 검증:** 수정 전 `==131==ABORTING`; 수정 후 메뉴 3에서 `no recent snapshot` 정상 출력, 해당 시나리오의 ASan UAF 미검출.
+- **학습 독립성:** 사용자는 정상 메뉴·alias·Close→Recent 문제를 스스로 확인했으며, ASan 실행도 사용자 수행. `create_snapshot` 자유 포인터 문제로 처음 오해한 점과 double-free를 유발할 수 있는 최초 수정안은 교사의 지적 후 보완. 이력 감추지 않음.
+- **한계:** 이 메인 과제의 재현/수정은 완료했으나 Day151의 CS 3문항·과거 Pwn 복습과 전날/오늘 Git 증빙 확인은 아직 남아 Day 전체는 완료 아님.
+
 ## 남은 Day151 필수 과제
-- 메인: 사용자가 자기 말로 root cause 및 수정 방향을 요약한 후 수정 코드의 **정상 동작/같은 재현 입력 시 UAF 미탐지**를 비교할 것. 수정 코드를 아직 적용/실행한 증거 없음.
-- CS: 계획표 정수 변환·배열 관련 **3문항 구술**, 틀린 항목 무힌트 재검증, 오답 근거 기록.
-- 보안 2회독: **과거 Pwn 풀이** 회상→Git 원문 대조→변경 조건 반례 재설명.
-- Git: 실제로 수행한 결과, 사용자 설명과 교사 도움, 제한 사항을 확정하여 Day151 커밋/로그 갱신. 현재 완료 판정 **보류**.
+- 메인: **완료** (원인·ASan 재현·수정·동일 경로 비교; 사용자 최초 오답·교사 도움 구분 기록).
+- CS: 계획표 정수 변환·배열 **3문항 독립 구술**, 틀린 항목 무힌트 재시험 및 근거 기록.
+- 보안 2회독: 이전 Pwn 풀이 회상→Git 원문 대조→변경 조건 반례 재설명.
+- Git: 각 보완 항목과 실제 사용자 산출물을 기록. 원본/수정 참고본과 Write-up은 저장소에 커밋 중이며 사용자 로컬 수정 원본 commit 여부는 확인되지 않음. **Day151 전체 미완료**.
