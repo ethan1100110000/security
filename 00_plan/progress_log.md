@@ -44,14 +44,14 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last recorded study session: **Day150 — 2026-11-11 / W05 4/5**. 당시 실시한 메인·CS·복습·Git 결과는 유효한 학습 성과로 보존. **2026-11-12 엄격 엑셀 대조 결과 8개 필수 보완 항목 발견, 그중 Day145 CS·Day146 메인·Day147 CS/복습·Day149 CS·Day150 메인/CS 7개 완료(1개 남음)**, 따라서 모든 Day의 정규 완료 판정은 잠정 보류한다. 마지막으로 Day 전체 필수 충족이 새 감사에서 확인된 Day는 **Day149** (Day149 CS 11/12 로컬 실행 보완). 원장은 [누락 감사표](day142-150_gap_audit_2026-11-12.md).
+- Last recorded study session: **2026-11-12 — Day142~150 필수 누락 8/8 보완 완료**. Day150 기존 로컬 실측과 이날 보완 기록을 합쳐 **마지막으로 확인된 전체 완료 Day: Day150 (W05 4/5)**. 기존 날짜별 실측·교사 도움은 보존하고 완료 판정은 누락 감사표에 근거. [감사표](day142-150_gap_audit_2026-11-12.md).
 - Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 세부 과제 [엑셀](hanyang-research-plan-2027.xlsx), 실제 진행과 도움받은 부분은 이 로그를 따른다.
-- Plan position: **보완 진행 — Day145~149 및 Day150 메인/CS 보완 완료, 다음 Day150 Pwn 복습, Day151 시작 보류**. Day145/146/147/149/150에서 기존 실습을 인정하되 지정된 미충족 항목만 진행. Day151 정규 진행은 보완 항목 8개와 Git 증빙 점검 후.
+- Plan position: **Day151 / W05 5/5 시작 가능·미완료**. 최신 2026-11-12 첨부 Excel `Day142-276 필수과제` Day151 원문을 확인했으며: 메인 '처음부터 무힌트 재분석·재현·root cause Write-up', CS '정수변환·배열: 3문항 구술, 모든 오답 무힌트 재시험 및 오답 근거 기록', 복습 '이전 Pwn 풀이의 힌트 의존성: 회상→Git 근거 대조→반례 재설명', Git 증빙 모두 필수. 시간을 재지 않는다.
 - Current focus: `record[48]→record[64]`로 수정한 Day150 새 로컬 바이너리에서 57B 입력 정상. 사용자 어셈블 분석: record 시작 `rbp-0x50`, Canary `rbp-0x8`, 사이 72B(버퍼 64B+padding 8B) → 73번째 입력 바이트가 Canary 시작. `A×72+00` 73B는 `received:73`/정상, `A×73` 73B는 `received:73`/`stack smashing detected`를 사용자 직접 제출.
 - CS/review: `struct Packet{uint8_t type;uint32_t length;uint8_t flags;}`에서 GCC `sizeof=12, offsetof=0/4/8`를 사용자 로컬 실행 확인. Day118 퍼징 Crash Dedup 복습에서 같은 memcpy/PC라도 A·C는 목적지 16B 초과 WRITE, B는 원본 input_size 4B 초과 READ로 **두 개의 원인**으로 분류함(문답, 새 ASan 실행 아님).
-- Next task: **Day150 이전 Pwn 풀이의 힌트 의존성 복습**. Day082의 Fake Stack Pivot 실패 원인을 Git 원본과 대조해 회상→조건 변경 반례 재설명, 교사 도움과 독립 재현 구분. 1항목 남음. [감사표](day142-150_gap_audit_2026-11-12.md) 참조.
+- Next task: **Day151 메인 무힌트 재분석 첫 단계:** 새로 바이너리/현재 소스/보호기법·입력 경로의 사실을 사용자 손으로 확인하고 재현 가능 입력, 실행 결과, root cause를 독립 설명. 그 뒤 CS 3문항 구술, 이전 Pwn 풀이 Git 대조 반례, write-up/commit 증빙. Day151 미완료.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
-- Limits: 기존 Day150에서 사용자 로컬 실행 증거는 유효하지만 **원래 엑셀의 Day150 메인/CS/보안복습을 전부 채운 건 아니었다**. 또한 Day145 CS, Day146 발표, Day147 도움 후 무힌트 재검증, Day149 CS 누락. 옛 기록을 지우거나 과거 학습을 무효화하지 않고 **필수 부족분만 보완**한다. 누락 세부 항목은 [감사표](day142-150_gap_audit_2026-11-12.md).
+- Limits: Day150까지는 2026-11-12 누락 항목 8/8 보완 완료. 각 항목의 **힌트 후 교정, 독립 실측, 재실행하지 않은 손 추적**은 Write-up에 구분 보존. 이 확인은 Day151의 완료를 의미하지 않는다.
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
 
 ---
@@ -869,6 +869,15 @@ git pull --ff-only
 - 코드에는 실제 메모리 복사가 없으므로 이번 결과는 **길이 검사 판정 오류**를 증명하며 실행 시 OOB/ASan 결과가 아니다.
 - [Day150 CS 보완 write-up](../Day101-160/Day150/day150_writeup.md) 및 [참고 코드](../Day101-160/Day150/narrowing_lab_reference.c), [감사표](day142-150_gap_audit_2026-11-12.md) 반영. 사용자 로컬 원본 narrow_lab 파일 미첨부, 교사 복원 참고 코드 명시.
 - 남은 1항목: Day150 이전 Pwn 풀이 힌트 의존성 복습(계획 대조 후 Day151). 기존 Day082/084 자료 중 Day082 Fake Stack Pivot을 회상·새 반례로 검토 예정.
+
+---
+
+### 2026-11-12 — Day150 과거 Pwn 풀이 복습 보완 완료 (8/8)
+- [Day082 원본 Write-up](../Day040-100/Day082/write_up.txt)와 대조: 처음 heap 청크 시작을 Fake Stack으로 사용해 실패, ret 제거도 실패, 이후 region+0x4000 내부 이동으로 낮은 주소 쪽 스택 사용 여유를 확보해 성공.
+- 사용자는 1번 원인 회상 처음에는 실패했다고 인정하고, 3번에서 스스로 하향 성장과 객체 바깥 메모리 접근 위험을 재구성. 새 반례 region=0x10000, rsp=0x10010에서 sub rsp,0x80 → rsp=0xFF90 (region 시작보다 0x70 아래)로 변경된다고 판단.
+- 교사 정밀 교정: sub 명령 자체는 메모리 쓰기가 아니라 레지스터 조정; **이후** 스택 접근이 할당 객체 바깥에 닿을 수 있고 즉시 crash 여부는 매핑 상황에 따라 다름.
+- [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [8/8 감사표](day142-150_gap_audit_2026-11-12.md)에 오류·교정·독립 반례를 반영. Day082 새 바이너리 실행은 없음.
+- **2026-11-12 추가 보완 감사 8/8 완료.** Day150까지 실제 근거 확인. 이어 최신 엑셀의 Day151 / W05 5/5 시작: 무힌트 처음부터 재분석·재현·root cause write-up; 정수 변환·배열 CS 3문항/오답 무힌트 재시험; 이전 Pwn 풀이 Git 대조; 실제 근거 문서와 커밋. **Day151은 아직 미완료.**
 
 ---
 
