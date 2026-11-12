@@ -47,9 +47,9 @@ git pull --ff-only
 - Last recorded study session: **2026-11-12 — Day142~150 필수 누락 8/8 보완 완료**. Day150 기존 로컬 실측과 이날 보완 기록을 합쳐 **마지막으로 확인된 전체 완료 Day: Day150 (W05 4/5)**. 기존 날짜별 실측·교사 도움은 보존하고 완료 판정은 누락 감사표에 근거. [감사표](day142-150_gap_audit_2026-11-12.md).
 - Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 세부 과제 [엑셀](hanyang-research-plan-2027.xlsx), 실제 진행과 도움받은 부분은 이 로그를 따른다.
 - Plan position: **Day151 / W05 5/5 시작 가능·미완료**. 최신 2026-11-12 첨부 Excel `Day142-276 필수과제` Day151 원문을 확인했으며: 메인 '처음부터 무힌트 재분석·재현·root cause Write-up', CS '정수변환·배열: 3문항 구술, 모든 오답 무힌트 재시험 및 오답 근거 기록', 복습 '이전 Pwn 풀이의 힌트 의존성: 회상→Git 근거 대조→반례 재설명', Git 증빙 모두 필수. 시간을 재지 않는다.
-- Current focus: `record[48]→record[64]`로 수정한 Day150 새 로컬 바이너리에서 57B 입력 정상. 사용자 어셈블 분석: record 시작 `rbp-0x50`, Canary `rbp-0x8`, 사이 72B(버퍼 64B+padding 8B) → 73번째 입력 바이트가 Canary 시작. `A×72+00` 73B는 `received:73`/정상, `A×73` 73B는 `received:73`/`stack smashing detected`를 사용자 직접 제출.
+- Current focus: **Day151 메인 신규 `snapshot_queue.c` 독립 취약점 분석 및 ASan 재현 성공(부분 완료).** 사용자 소스 추적에서 1→2→3 흐름 중 해제된 객체를 last_preview가 계속 가리키는 문제를 발견. ASan 보고: heap-use-after-free, READ size4, show_latest:60, free close_snapshot:50, alloc create_snapshot:24, 객체 116B. [Day151 실측 초안](../Day101-160/Day151/day151_writeup.md).
 - CS/review: `struct Packet{uint8_t type;uint32_t length;uint8_t flags;}`에서 GCC `sizeof=12, offsetof=0/4/8`를 사용자 로컬 실행 확인. Day118 퍼징 Crash Dedup 복습에서 같은 memcpy/PC라도 A·C는 목적지 16B 초과 WRITE, B는 원본 input_size 4B 초과 READ로 **두 개의 원인**으로 분류함(문답, 새 ASan 실행 아님).
-- Next task: **Day151 메인 무힌트 재분석 첫 단계:** 새로 바이너리/현재 소스/보호기법·입력 경로의 사실을 사용자 손으로 확인하고 재현 가능 입력, 실행 결과, root cause를 독립 설명. 그 뒤 CS 3문항 구술, 이전 Pwn 풀이 Git 대조 반례, write-up/commit 증빙. Day151 미완료.
+- Next task: **Day151 메인 Root Cause 독립 문장화 + 사용자 수정안 제시 및 ASan 재실행**. 이어 CS 3문항 구술·오답 무힌트 재검증, 과거 Pwn 복습, Git 증빙으로 하루 완료 판정. 현재 Day151 미완료.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
 - Limits: Day150까지는 2026-11-12 누락 항목 8/8 보완 완료. 각 항목의 **힌트 후 교정, 독립 실측, 재실행하지 않은 손 추적**은 Write-up에 구분 보존. 이 확인은 Day151의 완료를 의미하지 않는다.
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
@@ -878,6 +878,13 @@ git pull --ff-only
 - 교사 정밀 교정: sub 명령 자체는 메모리 쓰기가 아니라 레지스터 조정; **이후** 스택 접근이 할당 객체 바깥에 닿을 수 있고 즉시 crash 여부는 매핑 상황에 따라 다름.
 - [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [8/8 감사표](day142-150_gap_audit_2026-11-12.md)에 오류·교정·독립 반례를 반영. Day082 새 바이너리 실행은 없음.
 - **2026-11-12 추가 보완 감사 8/8 완료.** Day150까지 실제 근거 확인. 이어 최신 엑셀의 Day151 / W05 5/5 시작: 무힌트 처음부터 재분석·재현·root cause write-up; 정수 변환·배열 CS 3문항/오답 무힌트 재시험; 이전 Pwn 풀이 Git 대조; 실제 근거 문서와 커밋. **Day151은 아직 미완료.**
+
+---
+
+### 2026-11-12 — Day151 신규 바이너리 UAF 독립 발견·ASan 재현 (메인 진행 중)
+- 교사가 신규 학습용 `snapshot_queue.c`를 제공, 사용자 소스 직접 검토. 처음 create 내부 `free(active)`를 오해했으나, 1→2→3 흐름에서 active와 last_preview alias 후 close에서 active만 NULL, last_preview는 해제 객체 참조함을 사용자가 파악.
+- 사용자 ASan 실행 보고: `heap-use-after-free`, `READ of size 4`, `show_latest:60`, `close_snapshot:50`에서 free, `create_snapshot:24`에서 alloc, 116B 객체 `0x50c000000040` 오프셋0에서 접근, ABORTING. 원본 출력과 주소/줄수는 사용자의 전사에 기반함.
+- [Day151 메인 Write-up 초안](../Day101-160/Day151/day151_writeup.md) 커밋. 스스로 만든 취약점 가설과 ASan 실측은 증거, **수정·재실행·root cause 최종 요약** 및 CS/복습은 아직 남았으므로 Day151 완료 아님.
 
 ---
 
