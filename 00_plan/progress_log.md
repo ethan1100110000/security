@@ -44,12 +44,12 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last recorded study session: **Day150 — 2026-11-11 / W05 4/5**. 당시 실시한 메인·CS·복습·Git 결과는 유효한 학습 성과로 보존. **2026-11-12 엄격 엑셀 대조 결과 8개 필수 보완 항목 발견, 그중 Day145 CS·Day146 메인 2개 완료(6개 남음)**, 따라서 모든 Day의 정규 완료 판정은 잠정 보류한다. 마지막으로 Day 전체 필수 충족이 새 감사에서 확인된 Day는 **Day146** (11/12 독립 설명·경계 보완 완료). 원장은 [누락 감사표](day142-150_gap_audit_2026-11-12.md).
+- Last recorded study session: **Day150 — 2026-11-11 / W05 4/5**. 당시 실시한 메인·CS·복습·Git 결과는 유효한 학습 성과로 보존. **2026-11-12 엄격 엑셀 대조 결과 8개 필수 보완 항목 발견, 그중 Day145 CS·Day146 메인·Day147 CS 3개 완료(5개 남음)**, 따라서 모든 Day의 정규 완료 판정은 잠정 보류한다. 마지막으로 Day 전체 필수 충족이 새 감사에서 확인된 Day는 **Day146** (11/12 독립 설명·경계 보완 완료). 원장은 [누락 감사표](day142-150_gap_audit_2026-11-12.md).
 - Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 세부 과제 [엑셀](hanyang-research-plan-2027.xlsx), 실제 진행과 도움받은 부분은 이 로그를 따른다.
-- Plan position: **보완 진행 — Day145 CS·Day146 메인 완료, 다음 Day147 CS/복습, Day151 시작 보류**. Day145/146/147/149/150에서 기존 실습을 인정하되 지정된 미충족 항목만 진행. Day151 정규 진행은 보완 항목 8개와 Git 증빙 점검 후.
+- Plan position: **보완 진행 — Day145 CS·Day146 메인·Day147 CS 완료, 다음 Day147 Pwn 복습, Day151 시작 보류**. Day145/146/147/149/150에서 기존 실습을 인정하되 지정된 미충족 항목만 진행. Day151 정규 진행은 보완 항목 8개와 Git 증빙 점검 후.
 - Current focus: `record[48]→record[64]`로 수정한 Day150 새 로컬 바이너리에서 57B 입력 정상. 사용자 어셈블 분석: record 시작 `rbp-0x50`, Canary `rbp-0x8`, 사이 72B(버퍼 64B+padding 8B) → 73번째 입력 바이트가 Canary 시작. `A×72+00` 73B는 `received:73`/정상, `A×73` 73B는 `received:73`/`stack smashing detected`를 사용자 직접 제출.
 - CS/review: `struct Packet{uint8_t type;uint32_t length;uint8_t flags;}`에서 GCC `sizeof=12, offsetof=0/4/8`를 사용자 로컬 실행 확인. Day118 퍼징 Crash Dedup 복습에서 같은 memcpy/PC라도 A·C는 목적지 16B 초과 WRITE, B는 원본 input_size 4B 초과 READ로 **두 개의 원인**으로 분류함(문답, 새 ASan 실행 아님).
-- Next task: **Day147 CS 정수 변환·배열의 새 반례 무힌트 판정**. 이어 Day147 과거 Day085 tcache 독립 반례 설명, Day149 CS 실행, Day150 메인/CS/복습 보완. 6항목 남음. [누락 감사표](day142-150_gap_audit_2026-11-12.md)로 관리.
+- Next task: **Day147 과거 Day085 tcache 풀이의 힌트 의존성 새 반례 독립 설명**. 이후 Day149 CS 로컬 실행과 Day150 메인/CS/복습. [누락 감사표](day142-150_gap_audit_2026-11-12.md)로 관리. 5항목 남음.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
 - Limits: 기존 Day150에서 사용자 로컬 실행 증거는 유효하지만 **원래 엑셀의 Day150 메인/CS/보안복습을 전부 채운 건 아니었다**. 또한 Day145 CS, Day146 발표, Day147 도움 후 무힌트 재검증, Day149 CS 누락. 옛 기록을 지우거나 과거 학습을 무효화하지 않고 **필수 부족분만 보완**한다. 누락 세부 항목은 [감사표](day142-150_gap_audit_2026-11-12.md).
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
@@ -826,6 +826,14 @@ git pull --ff-only
 - 마지막 표현 교정: `input_size-7` 계산 후 양수 검사하는 대신, **먼저 `input_size<7`이면 거부하고 그다음 차이를 계산**. `input_size=7,length=0`은 용량 관점에서 허용 가능; 17B 수정 후 거부는 성공처리가 아니라 exit1.
 - [Day146 보완 write-up](../Day101-160/Day146/day146_writeup.md) 커밋. 최초 전부 무힌트 정답은 아님. 오늘 ASan 새 실험이 아니라 기존 관찰을 재구술한 복습.
 - 다음: Day147 CS 새 변형 문제부터 진행. 남은 6항목, Day151 시작 보류.
+
+---
+
+### 2026-11-12 — Day147 CS 보완 완료 (3/8)
+- 사용자 독립 분류: A `input_size=8,len=6,header=4` OOB Read, B `input_size=24,len=-2`에서 음수→size_t의 거대한 unsigned 변환에 따른 비정상 복사 요청.
+- 사용자 제안 조건: `if (input_size - 4 < len || len < 0) return -1;`. 기본 `input_size < 4` 검사 후라 underflow는 방지되지만 첫 비교의 혼합 타입 변환이 일어나므로 `if (len < 0 || (size_t)len > input_size-4) return -1;` 순서로 교정.
+- [Day147 write-up](../Day101-160/Day147/day147_writeup.md)와 [감사표](day142-150_gap_audit_2026-11-12.md)에 후속 검증 내용 기록. 새 실행 증거가 아니라 사용자의 독립 손 추적; 교사 비교식 타입 교정은 구분.
+- 다음: Day147 Day085 tcache 복습의 다른 조건 반례. 남은 5항목.
 
 ---
 
