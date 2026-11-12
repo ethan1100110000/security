@@ -44,12 +44,12 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last recorded study session: **2026-11-12 — Day142~150 필수 누락 8/8 보완 완료**. Day150 기존 로컬 실측과 이날 보완 기록을 합쳐 **마지막으로 확인된 전체 완료 Day: Day150 (W05 4/5)**. 기존 날짜별 실측·교사 도움은 보존하고 완료 판정은 누락 감사표에 근거. [감사표](day142-150_gap_audit_2026-11-12.md).
+- Last recorded study session: **Day151 / W05 5/5 — 2026-11-12 완료**. 직전 Day142~150 누락 필수 8/8 보완 완료, Day151 신규 소스 독립 분석·ASan UAF 재현·수정 전후 비교·CS 3문항/오답 변경조건 독립재검증·과거 Pwn Git 대조 모두 증빙. **마지막 완료 Day151**. [Day151 write-up](../Day101-160/Day151/day151_writeup.md).
 - Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 세부 과제 [엑셀](hanyang-research-plan-2027.xlsx), 실제 진행과 도움받은 부분은 이 로그를 따른다.
-- Plan position: **Day151 / W05 5/5 시작 가능·미완료**. 최신 2026-11-12 첨부 Excel `Day142-276 필수과제` Day151 원문을 확인했으며: 메인 '처음부터 무힌트 재분석·재현·root cause Write-up', CS '정수변환·배열: 3문항 구술, 모든 오답 무힌트 재시험 및 오답 근거 기록', 복습 '이전 Pwn 풀이의 힌트 의존성: 회상→Git 근거 대조→반례 재설명', Git 증빙 모두 필수. 시간을 재지 않는다.
-- Current focus: **Day151 메인 완료 — 새 로컬 `snapshot_queue.c` UAF 독립 소스 추적, ASan 재현, 수정 및 동일 경로 재검증.** 수정 전 `1→2→3`에서 `heap-use-after-free READ4` (`show_latest:60`, alloc24, free50), 수정 후 `close_snapshot`에서 `last_preview=NULL` 추가해 ASan 오류 없이 `no recent snapshot` 출력(사용자 직접 실측). [Write-up](../Day101-160/Day151/day151_writeup.md).
-- CS/review: Day151 CS 최초 2/3 정답, 함수 매개변수 `sizeof` 오답과 재시험 4/100 오답을 교사 설명 후 8/400으로 정정. **무힌트 새 조건 최종 검증 하나 남음.** Pwn 복습은 Day084 Git 원본과 대조하여 새로운 libc 수치에서 base 0x7ffff7e00000, system 0x7ffff7e4c490 및 잘못된 puts 주소를 사용자 무힌트 계산으로 완료. [Day151 write-up](../Day101-160/Day151/day151_writeup.md).
-- Next task: **Day151 CS 배열 매개변수/포인터 무힌트 새 조건 문제 1개 최종 확인**. 결과 기록 후 Day151 필수 메인/CS/복습/Write-up 충족을 판정. 현재 미완료.
+- Plan position: **Day151 완료. 다음 Day152 / W06 1/5 시작 예정** (계획표상 예정일 2026-11-11이나 실제 일정은 완료일과 별개). 원본 Excel `Day142-276 필수과제`의 Day152: 스택 BOF·호출 규약, 교육용 바이너리에서 스택 프레임·복귀주소·레지스터 역할 확인, CS 스택/호출규약 무힌트 정의·가정과 반례 하나, Day040~050 스택/ROP 이전 풀이 회상·Git 대조·반례, 실험 증거 Write-up/commit. 시간 측정 의무 없음.
+- Current focus: **Day151 메인 완료 — Snapshot Queue UAF 원인·ASan READ4 `show_latest:60`·`close_snapshot:50` free·`create_snapshot:24` alloc, 수정 후 동일 `1→2→3`에서 `no recent snapshot` 및 UAF 미탐지.** 본 메인 실측과 사용자 최초 오답/교사 교정, 사용자 로컬 수정 원본 미업로드는 [Write-up](../Day101-160/Day151/day151_writeup.md)에 구분 기록.
+- CS/review: **Day151 CS 완료:** 첫 3문항 중 2/3 정답; 배열 매개변수 `sizeof` 혼동과 첫 변경 반례 오답을 교사 힌트 후 교정, 마지막 무힌트 새 조건 `int (*p)[5]`에서 `sizeof(p)=8, sizeof(*p)=20, sizeof((*p)[0])=4` 모두 정확. Pwn 복습 Day084 puts leak/offset 계산 `libc_base=0x7ffff7e00000`, `system=0x7ffff7e4c490`, 잘못된 계산은 puts를 가리킨다는 점 독립 확인. [Write-up](../Day101-160/Day151/day151_writeup.md).
+- Next task: **Day152 / W06 1/5 — 스택 BOF·호출 규약**. 교육용 소스/바이너리에서 `call` 이후 스택 프레임, `rbp`/`rsp`, saved RIP 및 레지스터 역할을 사용자 스스로 추적한다. CS 무힌트 개념/반례, Day040~050 과거 스택/ROP Git 복습, Write-up/commit까지 일일 필수. 완료 판정은 아직 아님.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
 - Limits: Day150까지는 2026-11-12 누락 항목 8/8 보완 완료. 각 항목의 **힌트 후 교정, 독립 실측, 재실행하지 않은 손 추적**은 Write-up에 구분 보존. 이 확인은 Day151의 완료를 의미하지 않는다.
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
@@ -910,6 +910,14 @@ git pull --ff-only
 - 사용자 독립 계산: `libc_base=0x7ffff7e00000`, `system=0x7ffff7e4c490`. 잘못된 `puts_leak - system_offset` 후 system_offset을 더하면 실질적으로 **puts 주소**라고 올바르게 답변.
 - [Day151 write-up](../Day101-160/Day151/day151_writeup.md)에 새 수치·원인·Git 근거/도움과 로컬 재실행하지 않은 한계 기록.
 - Pwn 복습 충족. Day151 메인 완료, CS 3문항 구술 기록됐으나 최초 오답에 대한 최종 **무힌트 새 조건** 재검증이 하나 남아 Day 전체 완료는 보류.
+
+---
+
+### 2026-11-12 — Day151 CS 최종 무힌트 변경 조건 통과 / Day151 완료
+- 마지막 CS 검증: `void inspect(int (*p)[5])`에서 `sizeof(p)`, `sizeof(*p)`, `sizeof((*p)[0])` 사용자 독립 답 **8, 20, 4** 모두 정확. 배열 포인터 8B, 5개 int 배열 20B, int 원소 4B의 구분 결과. 사용자는 숫자만 제출했으며 명시적 자료형 문장으로는 답하지 않았음.
+- 원래 최초 3문항 평가 2/3 정답, 첫 오답 `char buf[32]` 함수 매개변수를 배열이라고 착각, 첫 변경조건 `int data[100]`도 4/100 오답. 교사 설명 후 8/400으로 교정했고 **마지막 새 조건은 무힌트로 8/20/4 정답**. 실수·힌트 이력 모두 보존.
+- Day151 메인 UAF 독립 원인 도출/ASan 재현/수정 전후 비교와 Pwn 복습 Day084 Git 대조도 완료. [Day151 최종 Write-up](../Day101-160/Day151/day151_writeup.md) 및 소스 참고본들 Git 반영, **Day151 / W05 5/5 완료**.
+- 다음: 계획표 Day152 / W06 1/5. 실제 계획표의 세부 요구를 기준으로 메인 스택/호출 규약 분석, CS 독립 반례, Day040~050 ROP/스택 리뷰, Git 증빙으로 진행. Day152는 미완료.
 
 ---
 
