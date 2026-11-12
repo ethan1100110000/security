@@ -48,8 +48,8 @@ git pull --ff-only
 - Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 세부 과제 [엑셀](hanyang-research-plan-2027.xlsx), 실제 진행과 도움받은 부분은 이 로그를 따른다.
 - Plan position: **Day151 / W05 5/5 시작 가능·미완료**. 최신 2026-11-12 첨부 Excel `Day142-276 필수과제` Day151 원문을 확인했으며: 메인 '처음부터 무힌트 재분석·재현·root cause Write-up', CS '정수변환·배열: 3문항 구술, 모든 오답 무힌트 재시험 및 오답 근거 기록', 복습 '이전 Pwn 풀이의 힌트 의존성: 회상→Git 근거 대조→반례 재설명', Git 증빙 모두 필수. 시간을 재지 않는다.
 - Current focus: **Day151 메인 완료 — 새 로컬 `snapshot_queue.c` UAF 독립 소스 추적, ASan 재현, 수정 및 동일 경로 재검증.** 수정 전 `1→2→3`에서 `heap-use-after-free READ4` (`show_latest:60`, alloc24, free50), 수정 후 `close_snapshot`에서 `last_preview=NULL` 추가해 ASan 오류 없이 `no recent snapshot` 출력(사용자 직접 실측). [Write-up](../Day101-160/Day151/day151_writeup.md).
-- CS/review: **Day151 CS 3문항 구술 실시:** 최초 2/3 정답(부호변환 NO, 16B 배열 인덱스16 OOB), 함수 매개변수 배열 `sizeof`는 최초 32 오답. 새 조건 A/B의 최초 4/100 오답 후 교정하여 8/400 정답. **힌트 후 정정이므로 엄격 무힌트 재시험은 새 조건 1문제 더 필요**. [Day151 write-up](../Day101-160/Day151/day151_writeup.md).
-- Next task: **Day151 이전 Pwn 복습:** Day084 libc 베이스 오프셋 착오를 옛 Git 자료와 대조해 독립 원인 설명과 새 수치 반례 판단. 이후 CS 오답은 새로운 짧은 무힌트 반례 1개로 검증하고 Git 기록 완료. Day151 전체 미완료.
+- CS/review: Day151 CS 최초 2/3 정답, 함수 매개변수 `sizeof` 오답과 재시험 4/100 오답을 교사 설명 후 8/400으로 정정. **무힌트 새 조건 최종 검증 하나 남음.** Pwn 복습은 Day084 Git 원본과 대조하여 새로운 libc 수치에서 base 0x7ffff7e00000, system 0x7ffff7e4c490 및 잘못된 puts 주소를 사용자 무힌트 계산으로 완료. [Day151 write-up](../Day101-160/Day151/day151_writeup.md).
+- Next task: **Day151 CS 배열 매개변수/포인터 무힌트 새 조건 문제 1개 최종 확인**. 결과 기록 후 Day151 필수 메인/CS/복습/Write-up 충족을 판정. 현재 미완료.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
 - Limits: Day150까지는 2026-11-12 누락 항목 8/8 보완 완료. 각 항목의 **힌트 후 교정, 독립 실측, 재실행하지 않은 손 추적**은 Write-up에 구분 보존. 이 확인은 Day151의 완료를 의미하지 않는다.
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
@@ -902,6 +902,14 @@ git pull --ff-only
 - 변경 반례 `int data[100]` 함수 매개변수와 `int numbers[100]` 실제 배열 비교: 최초 `4,100` 오답, 교사로부터 pointer-vs-array 구분/8B pointer/4B int 설명 후 `8,400` 정답 정정.
 - [Day151 write-up](../Day101-160/Day151/day151_writeup.md)에 정확한 첫 시도와 교정 경위 명시. **엄격한 '오답 무힌트 재시험' 합격 여부는 아직 확인 안 됨**, 새 짧은 조건 하나로 차후 확인. 같은 문제 그대로 반복하지 않는다.
 - 이어 Day084 과거 Pwn Git 리뷰 진행, Day151 전체 완료 보류.
+
+---
+
+### 2026-11-12 — Day151 이전 Pwn 복습 Day084 완료 (최종 CS 한 문제 남음)
+- [Day084 원본 write_up](../Day040-100/Day084/write_up.txt)의 과거 libc 기준값 계산 실패를 대조. 교사가 새 수치 puts_leak=0x7ffff7e80980, puts_offset=0x80980, system_offset=0x4c490을 제시.
+- 사용자 독립 계산: `libc_base=0x7ffff7e00000`, `system=0x7ffff7e4c490`. 잘못된 `puts_leak - system_offset` 후 system_offset을 더하면 실질적으로 **puts 주소**라고 올바르게 답변.
+- [Day151 write-up](../Day101-160/Day151/day151_writeup.md)에 새 수치·원인·Git 근거/도움과 로컬 재실행하지 않은 한계 기록.
+- Pwn 복습 충족. Day151 메인 완료, CS 3문항 구술 기록됐으나 최초 오답에 대한 최종 **무힌트 새 조건** 재검증이 하나 남아 Day 전체 완료는 보류.
 
 ---
 
