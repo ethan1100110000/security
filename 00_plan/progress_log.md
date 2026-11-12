@@ -44,12 +44,12 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last recorded study session: **Day150 — 2026-11-11 / W05 4/5**. 당시 실시한 메인·CS·복습·Git 결과는 유효한 학습 성과로 보존. **2026-11-12 엄격 엑셀 대조 결과 Day145 이후 8개 필수 보완 항목 발견**, 따라서 모든 Day의 정규 완료 판정은 잠정 보류한다. 마지막으로 Day 전체 필수 충족이 새 감사에서 확인된 Day는 **Day144**. 원장은 [누락 감사표](day142-150_gap_audit_2026-11-12.md).
+- Last recorded study session: **Day150 — 2026-11-11 / W05 4/5**. 당시 실시한 메인·CS·복습·Git 결과는 유효한 학습 성과로 보존. **2026-11-12 엄격 엑셀 대조 결과 8개 필수 보완 항목 발견, 그중 Day145 CS 1개 완료(7개 남음)**, 따라서 모든 Day의 정규 완료 판정은 잠정 보류한다. 마지막으로 Day 전체 필수 충족이 새 감사에서 확인된 Day는 **Day145** (11/12 CS 보완 완료). 원장은 [누락 감사표](day142-150_gap_audit_2026-11-12.md).
 - Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 세부 과제 [엑셀](hanyang-research-plan-2027.xlsx), 실제 진행과 도움받은 부분은 이 로그를 따른다.
-- Plan position: **보완 진행 — Day145 CS부터 복구, Day151 시작 보류**. Day145/146/147/149/150에서 기존 실습을 인정하되 지정된 미충족 항목만 진행. Day151 정규 진행은 보완 항목 8개와 Git 증빙 점검 후.
+- Plan position: **보완 진행 — Day145 CS 완료, 다음 Day146 메인 독립 설명, Day151 시작 보류**. Day145/146/147/149/150에서 기존 실습을 인정하되 지정된 미충족 항목만 진행. Day151 정규 진행은 보완 항목 8개와 Git 증빙 점검 후.
 - Current focus: `record[48]→record[64]`로 수정한 Day150 새 로컬 바이너리에서 57B 입력 정상. 사용자 어셈블 분석: record 시작 `rbp-0x50`, Canary `rbp-0x8`, 사이 72B(버퍼 64B+padding 8B) → 73번째 입력 바이트가 Canary 시작. `A×72+00` 73B는 `received:73`/정상, `A×73` 73B는 `received:73`/`stack smashing detected`를 사용자 직접 제출.
 - CS/review: `struct Packet{uint8_t type;uint32_t length;uint8_t flags;}`에서 GCC `sizeof=12, offsetof=0/4/8`를 사용자 로컬 실행 확인. Day118 퍼징 Crash Dedup 복습에서 같은 memcpy/PC라도 A·C는 목적지 16B 초과 WRITE, B는 원본 input_size 4B 초과 READ로 **두 개의 원인**으로 분류함(문답, 새 ASan 실행 아님).
-- Next task: **Day145 CS ELF 섹션/세그먼트의 실제 조건 변경 실험과 반론 검증**부터 시작. 이어 Day146 메인 무힌트 연결 설명, Day147 CS/복습 무힌트 반례, Day149 CS 정수변환·배열 실행, Day150 메인 제어가능/불가/악용전제·CS 정수변환배열 조건 변경·이전 Pwn 복습. 항목별 상태는 [감사표](day142-150_gap_audit_2026-11-12.md)와 대조.
+- Next task: **Day146 메인 7바이트 파서의 무힌트 독립 연결 설명**. 이후 Day147 CS/복습, Day149 CS, Day150 메인/CS/복습을 차례로 보완. 남은 7항목은 [누락 감사표](day142-150_gap_audit_2026-11-12.md)에서 관리.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
 - Limits: 기존 Day150에서 사용자 로컬 실행 증거는 유효하지만 **원래 엑셀의 Day150 메인/CS/보안복습을 전부 채운 건 아니었다**. 또한 Day145 CS, Day146 발표, Day147 도움 후 무힌트 재검증, Day149 CS 누락. 옛 기록을 지우거나 과거 학습을 무효화하지 않고 **필수 부족분만 보완**한다. 누락 세부 항목은 [감사표](day142-150_gap_audit_2026-11-12.md).
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
@@ -808,6 +808,15 @@ git pull --ff-only
 - Evidence gap: Day146 로컬 수정 원본 소스, Day150 로컬 제작 `challenge.c`/`packet_layout.c`/`build.sh` 원격 미확인; 재구성 참고 소스와 원본 혼동 금지. 사용자가 직접 컴파일/실험한 사실과 Git 저장 근거를 구분한다.
 - Status: Day150까지의 기존 실습/문답/커밋 결과는 보존, 엄격 정규 완료는 감사 중 **Day145부터 보완 필요**. Day151과 W06로 이동 보류.
 - Next: Day145 CS의 ELF 조건 변경 실험 시작. 매일 해당 Day 최신 엑셀 우선 확인하고 누락만 해결한다.
+
+---
+
+### 2026-11-12 — Day145 CS 필수 보완 완료 (1/8)
+- 조건 전환: `unsigned char probe[16];`은 .bss, `unsigned char probe[16]={0x41};`은 .data라고 사용자가 예상.
+- 사용자 로컬 `readelf -sW/-SW` 실측: `probe` Ndx26 .bss/NOBITS, Ndx25 .data/PROGBITS. 마지막 RW PT_LOAD: elf_bss FileSiz258/MemSiz278 → 차0x20; elf_data FileSiz268/MemSiz270 → 차0x08. 사용자가 elf_bss의 차이가 더 크다고 답했다.
+- 독립 반론: "NOBITS이면 실행 중 메모리도 없다"는 주장에 **파일에 저장되지 않을 뿐 메모리에는 존재한다**고 사용자가 답함.
+- 증거: [Day145 보완 write-up](../Day101-160/Day145/day145_writeup.md); 사용자 로컬 C 파일 전체 원문/실행 출력은 미제출, readelf 출력은 채팅 제출.
+- 판정: 8항목 중 **1개 완료, 7개 남음**. 다음 Day146 메인 무힌트 통합 설명. Day151 보류 지속.
 
 ---
 
