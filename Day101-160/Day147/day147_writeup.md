@@ -126,3 +126,16 @@ int process(const unsigned char *input, size_t input_size, int32_t len) {
 - **의미를 명확히 하는 최종 교정:** 기존 `if(input_size < 4) return -1;` 및 `if(len > 12) return -1;` 아래에 `if (len < 0 || (size_t)len > input_size - 4) return -1;`을 추가한다. `||`의 단락 평가로 음수를 먼저 걸러 안전한 타입 변환 후 원본 길이를 검사한다.
 - 정확한 전체 방어에는 전달된 `input`이 실제 `input_size`바이트 읽을 수 있는 유효 객체를 가리킨다는 호출 계약도 필요하다.
 - 완료 판정: 사용자 스스로 서로 다른 원인과 방어 조건을 제시했고, 교사는 signed/unsigned 비교 순서 및 명시적 캐스트를 보완했다. **Day147 CS 누락 항목 보완 완료**, 처음부터 완벽한 무힌트 수정 코드 제출이라고 기록하지 않음.
+
+## 2026-11-12 보완 — Day085 Tcache 조건 변경 복습
+
+**원본 근거:** [Day085 write_up.txt](../../Day040-100/Day085/write_up.txt)의 Tcache count 관리·연결 리스트 및 Fake Stack 분석. 기존 Day147 복습에서는 count=1에서 첫 할당 후 count0이면 뒤 조작한 next를 따라 할당하지 못할 수 있다는 점을 교사의 힌트 후 회상했음. 이번은 **별도 새 조건 반례 문답**이며 과거 Day085 바이너리를 다시 실행한 것은 아니다.
+
+**새 조건:** 같은 크기 Tcache가 `count=3, C→B→A→NULL`인 상태에서 첫 `malloc` 호출로 `C` 반환. 그다음 **현재 리스트 head**에 쓰기 가능한 경우를 가정하고 `B.next=TARGET`으로 조작. Safe-Linking/정렬 검사는 충족한다고 문제에서 가정.
+
+- 사용자 처음 답: 첫 `malloc` 반환 `C`, count2는 **정확**. 하지만 다음 두 반환을 `C, TARGET`이라고 답하여 이미 pop된 C와 현재 head를 혼동.
+- 교사가 '첫 C가 빠진 뒤 현재 head는?'이라고 질문해 연결 리스트의 상태를 다시 추적하도록 유도함.
+- 사용자 교정 답: **`B, TARGET`**. 근거: 첫 pop 뒤 count2/head B, B.next 변경 뒤 첫 malloc은 B를 반환하며 count1/head TARGET, 그다음 malloc은 TARGET을 반환하고 count0이 됨. A는 바뀐 next 경로에서는 도달하지 못함.
+- 최종 확인의 범위: 이 문제에서 정의한 단순화된 tcache 상태 및 Safe-Linking 등의 조건을 가정한 **개념 추적**이다. 특정 glibc 버전에서 TARGET을 실제 검증 통과시키거나 공격 성공을 재현했다는 의미 아님.
+
+**보완 판정:** 조건 변경 반례에서 최초 한 번의 오류가 있었고 교사의 힌트 후 정확한 리스트 전이와 반환값을 다시 답했으므로 Day147 복습의 '힌트 의존성 인식→새 조건 재설명'을 **교정 기록과 함께 완료**. 완전 무힌트 첫 시도 성공으로 기록하지 않음.
