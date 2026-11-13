@@ -46,10 +46,10 @@ git pull --ff-only
 
 - Last recorded study session: **Day151 / W05 5/5 — 2026-11-12 완료**. 직전 Day142~150 누락 필수 8/8 보완 완료, Day151 신규 소스 독립 분석·ASan UAF 재현·수정 전후 비교·CS 3문항/오답 변경조건 독립재검증·과거 Pwn Git 대조 모두 증빙. **마지막 완료 Day151**. [Day151 write-up](../Day101-160/Day151/day151_writeup.md).
 - Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 세부 과제 [엑셀](hanyang-research-plan-2027.xlsx), 실제 진행과 도움받은 부분은 이 로그를 따른다.
-- Plan position: **Day151 완료. 다음 Day152 / W06 1/5 시작 예정** (계획표상 예정일 2026-11-11이나 실제 일정은 완료일과 별개). 원본 Excel `Day142-276 필수과제`의 Day152: 스택 BOF·호출 규약, 교육용 바이너리에서 스택 프레임·복귀주소·레지스터 역할 확인, CS 스택/호출규약 무힌트 정의·가정과 반례 하나, Day040~050 스택/ROP 이전 풀이 회상·Git 대조·반례, 실험 증거 Write-up/commit. 시간 측정 의무 없음.
+- Plan position: **Day152 / W06 1/5 진행 시작 (2026-11-13), 미완료**. 원본 Excel Day152 메인: 교육용 바이너리 스택프레임·복귀주소·레지스터 실측, CS 호출규약 무힌트 정의/가정+반례, Day040~050 ROP/스택 복습, 환경·명령·관찰·반례·도움·독립 재검증 Write-up/Git 모두 요구.
 - Current focus: **Day151 메인 완료 — Snapshot Queue UAF 원인·ASan READ4 `show_latest:60`·`close_snapshot:50` free·`create_snapshot:24` alloc, 수정 후 동일 `1→2→3`에서 `no recent snapshot` 및 UAF 미탐지.** 본 메인 실측과 사용자 최초 오답/교사 교정, 사용자 로컬 수정 원본 미업로드는 [Write-up](../Day101-160/Day151/day151_writeup.md)에 구분 기록.
 - CS/review: **Day151 CS 완료:** 첫 3문항 중 2/3 정답; 배열 매개변수 `sizeof` 혼동과 첫 변경 반례 오답을 교사 힌트 후 교정, 마지막 무힌트 새 조건 `int (*p)[5]`에서 `sizeof(p)=8, sizeof(*p)=20, sizeof((*p)[0])=4` 모두 정확. Pwn 복습 Day084 puts leak/offset 계산 `libc_base=0x7ffff7e00000`, `system=0x7ffff7e4c490`, 잘못된 계산은 puts를 가리킨다는 점 독립 확인. [Write-up](../Day101-160/Day151/day151_writeup.md).
-- Next task: **Day152 / W06 1/5 — 스택 BOF·호출 규약**. 교육용 소스/바이너리에서 `call` 이후 스택 프레임, `rbp`/`rsp`, saved RIP 및 레지스터 역할을 사용자 스스로 추적한다. CS 무힌트 개념/반례, Day040~050 과거 스택/ROP Git 복습, Write-up/commit까지 일일 필수. 완료 판정은 아직 아님.
+- Next task: **Day152 메인 실측:** [call_frame_probe.c](../Day101-160/Day152/call_frame_probe.c)를 로컬 빌드하고 GDB에서 함수 진입 시 인자 레지스터, RSP의 반환 주소, 프레임 생성 전후를 사용자 독립 추적. 그 후 CS·Day040~050 복습·기록 진행. Day152 미완료.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
 - Limits: Day150까지는 2026-11-12 누락 항목 8/8 보완 완료. 각 항목의 **힌트 후 교정, 독립 실측, 재실행하지 않은 손 추적**은 Write-up에 구분 보존. 이 확인은 Day151의 완료를 의미하지 않는다.
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
@@ -918,6 +918,13 @@ git pull --ff-only
 - 원래 최초 3문항 평가 2/3 정답, 첫 오답 `char buf[32]` 함수 매개변수를 배열이라고 착각, 첫 변경조건 `int data[100]`도 4/100 오답. 교사 설명 후 8/400으로 교정했고 **마지막 새 조건은 무힌트로 8/20/4 정답**. 실수·힌트 이력 모두 보존.
 - Day151 메인 UAF 독립 원인 도출/ASan 재현/수정 전후 비교와 Pwn 복습 Day084 Git 대조도 완료. [Day151 최종 Write-up](../Day101-160/Day151/day151_writeup.md) 및 소스 참고본들 Git 반영, **Day151 / W05 5/5 완료**.
 - 다음: 계획표 Day152 / W06 1/5. 실제 계획표의 세부 요구를 기준으로 메인 스택/호출 규약 분석, CS 독립 반례, Day040~050 ROP/스택 리뷰, Git 증빙으로 진행. Day152는 미완료.
+
+---
+
+### 2026-11-13 — Day152 / W06 1/5 시작, 교육용 코드 Git 추가 (미완료)
+- [현재 Excel](hanyang-research-plan-2027.xlsx)의 Day152 필수: 스택 프레임·복귀주소·인자 레지스터의 교육용 바이너리 실측 / CS 스택·호출 규약 무힌트 설명과 반례 / Day040~050 스택·ROP 과거 풀이 회상·Git 대조·반례 / 근거와 Write-up, Git 기록.
+- [교사 제공 C 실습 코드](../Day101-160/Day152/call_frame_probe.c)를 Git에 추가함: `inspect(int a,b,c,d,e,f)` 비인라인 호출, 지역 배열 관찰. **사용자 GDB 실측 전**, Day 시작만 기록하고 완료 처리하지 않음.
+- 첫 단계: GDB `break *inspect`로 함수 진입 직전 스택/레지스터를 관찰하고 실제 값을 설명한다.
 
 ---
 
