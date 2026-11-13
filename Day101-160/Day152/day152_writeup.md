@@ -35,3 +35,16 @@ x/4gx $rsp
 - **오개념 확인:** 사용자가 "rsp에 있는 복귀 주소를 rbp에 넣기"라고 말한 것은 부정확. `push rbp` 이후의 `rsp`는 이미 **저장된 옛 RBP**를 가리키므로 `mov rbp,rsp`는 해당 슬롯의 **주소**를 RBP 레지스터에 넣는다. `rbp`의 내용이 반환 주소가 아님. 반환 주소는 `[rbp+8]`에 그대로 보존됨.
 - 함수 진입 초기 `rsp=0x7fffffffdf78`, `rbp=0x7fffffffdf90` 가정시: push 후 `rsp=0x7fffffffdf70`; mov 후 `rbp=0x7fffffffdf70`; sub 후 `rsp=0x7fffffffdf30`. `[rbp]`는 호출자 프레임 포인터 저장 슬롯, `[rbp+8]`은 이전에 확인한 반환 주소 `0x555555555259`.
 - `sub rsp,0x40`은 로컬 프레임 공간 0x40B 확보이며, 위 주소 변화는 이 세 명령의 **예상 계산**. **아직 사용자 GDB 실행 후 실제 새 RSP/RBP 값 재제출은 없음**.
+
+
+### 2026-11-13 프롤로그 중간 상태 검증 — 저장된 RBP와 복귀주소
+사용자는 `push rbp; mov rbp,rsp`까지 실행한 시점으로 판단되는 Pwndbg 값을 제출했다.
+```
+rbp  0x7fffffffdf70
+rsp  0x7fffffffdf70
+x/2gx $rbp
+0x7fffffffdf70: 0x00007fffffffdf90  0x0000555555555259
+```
+- 사용자 독립 설명: 아직 `sub rsp,0x40` 실행 전이라 RSP/RBP가 같은 값이며, 첫 슬롯은 호출자의 RBP, 다음 슬롯은 반환주소. **실측과 일치**.
+- 처음 `break *inspect` 당시 RSP=0x7fffffffdf78, RBP=0x7fffffffdf90. `push rbp` 이후 `rsp=0x7fffffffdf70`, `mov rbp,rsp` 이후 RBP도 `0x7fffffffdf70`. `[rbp]`의 내용 `0x7fffffffdf90`는 호출자 저장 RBP이며 `[rbp+8]`의 `0x555555555259`는 반환주소.
+- 앞서 "RBP에 복귀주소를 넣는다"는 오개념을 이번에 **사용자 스스로 정확하게 구분하여 교정**. `sub rsp,0x40`은 다음 명령으로 관찰될 것으로 예상되며 아직 이 실측 메시지에서는 해당 명령 실행 후 RSP는 확인하지 않음.
