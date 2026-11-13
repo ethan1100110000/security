@@ -47,9 +47,9 @@ git pull --ff-only
 - Last recorded study session: **Day151 / W05 5/5 — 2026-11-12 완료**. 직전 Day142~150 누락 필수 8/8 보완 완료, Day151 신규 소스 독립 분석·ASan UAF 재현·수정 전후 비교·CS 3문항/오답 변경조건 독립재검증·과거 Pwn Git 대조 모두 증빙. **마지막 완료 Day151**. [Day151 write-up](../Day101-160/Day151/day151_writeup.md).
 - Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 세부 과제 [엑셀](hanyang-research-plan-2027.xlsx), 실제 진행과 도움받은 부분은 이 로그를 따른다.
 - Plan position: **Day152 / W06 1/5 진행 시작 (2026-11-13), 미완료**. 원본 Excel Day152 메인: 교육용 바이너리 스택프레임·복귀주소·레지스터 실측, CS 호출규약 무힌트 정의/가정+반례, Day040~050 ROP/스택 복습, 환경·명령·관찰·반례·도움·독립 재검증 Write-up/Git 모두 요구.
-- Current focus: **Day151 메인 완료 — Snapshot Queue UAF 원인·ASan READ4 `show_latest:60`·`close_snapshot:50` free·`create_snapshot:24` alloc, 수정 후 동일 `1→2→3`에서 `no recent snapshot` 및 UAF 미탐지.** 본 메인 실측과 사용자 최초 오답/교사 교정, 사용자 로컬 수정 원본 미업로드는 [Write-up](../Day101-160/Day151/day151_writeup.md)에 구분 기록.
+- Current focus: **Day152 메인 GDB 첫 관찰 완료 (진행 중)**. `break *inspect` 상태 인자 RDI/RSI/RDX/RCX/R8/R9=11/22/33/44/55/66, RSP=0x7fffffffdf78, RBP=0x7fffffffdf90, `[RSP]=0x555555555259`은 호출자 복귀주소 후보. 프롤로그가 아직 실행되지 않았다면 RBP는 caller 프레임 포인터; `RBP-RSP=0x18`은 inspect 프레임 크기가 아님. [Day152 write-up](../Day101-160/Day152/day152_writeup.md).
 - CS/review: **Day151 CS 완료:** 첫 3문항 중 2/3 정답; 배열 매개변수 `sizeof` 혼동과 첫 변경 반례 오답을 교사 힌트 후 교정, 마지막 무힌트 새 조건 `int (*p)[5]`에서 `sizeof(p)=8, sizeof(*p)=20, sizeof((*p)[0])=4` 모두 정확. Pwn 복습 Day084 puts leak/offset 계산 `libc_base=0x7ffff7e00000`, `system=0x7ffff7e4c490`, 잘못된 계산은 puts를 가리킨다는 점 독립 확인. [Write-up](../Day101-160/Day151/day151_writeup.md).
-- Next task: **Day152 메인 실측:** [call_frame_probe.c](../Day101-160/Day152/call_frame_probe.c)를 로컬 빌드하고 GDB에서 함수 진입 시 인자 레지스터, RSP의 반환 주소, 프레임 생성 전후를 사용자 독립 추적. 그 후 CS·Day040~050 복습·기록 진행. Day152 미완료.
+- Next task: **Day152 메인 반환주소 및 프롤로그 확증**. `x/i *(void **)$rsp`로 return target 확인, `disassemble inspect`에서 `push rbp; mov rbp,rsp; sub rsp,...` 등을 실측하여 프레임/레지스터 변화 독립 설명. 이후 CS 조건변경·Day040~050 스택 ROP Git 복습·기록. Day152 미완료.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
 - Limits: Day150까지는 2026-11-12 누락 항목 8/8 보완 완료. 각 항목의 **힌트 후 교정, 독립 실측, 재실행하지 않은 손 추적**은 Write-up에 구분 보존. 이 확인은 Day151의 완료를 의미하지 않는다.
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
@@ -925,6 +925,13 @@ git pull --ff-only
 - [현재 Excel](hanyang-research-plan-2027.xlsx)의 Day152 필수: 스택 프레임·복귀주소·인자 레지스터의 교육용 바이너리 실측 / CS 스택·호출 규약 무힌트 설명과 반례 / Day040~050 스택·ROP 과거 풀이 회상·Git 대조·반례 / 근거와 Write-up, Git 기록.
 - [교사 제공 C 실습 코드](../Day101-160/Day152/call_frame_probe.c)를 Git에 추가함: `inspect(int a,b,c,d,e,f)` 비인라인 호출, 지역 배열 관찰. **사용자 GDB 실측 전**, Day 시작만 기록하고 완료 처리하지 않음.
 - 첫 단계: GDB `break *inspect`로 함수 진입 직전 스택/레지스터를 관찰하고 실제 값을 설명한다.
+
+---
+
+### 2026-11-13 — Day152 인자 레지스터·반환 주소 GDB 첫 실측 (진행 중)
+- 사용자 GDB/Pwndbg `break *inspect`, `info registers rdi rsi rdx rcx r8 r9 rsp rbp`, `x/4gx $rsp`: 정수 인자 11/22/33/44/55/66 모두 지정 레지스터에 일치. RSP=0x7fffffffdf78, RBP=0x7fffffffdf90, [RSP]=0x555555555259로 반환주소 후보 표시.
+- 호출 전후 RSP 방향을 처음에는 +8로 혼동했으나 교사 설명 후 메모리 관찰 진행. 현재 RBP-RSP=24B는 함수 프롤로그 이전이므로 현재 함수의 frame size로 해석하면 안 됨. 대상 복귀주소가 실제 caller 다음 명령인지 추가 디스어셈블 확인 필요.
+- [Day152 실측 초안](../Day101-160/Day152/day152_writeup.md) 커밋. 다음: `x/i *(void **)$rsp`, `disassemble inspect` 실제 결과 검증. **Day152 메인·CS·복습·Git 전체 완료 아님**.
 
 ---
 
