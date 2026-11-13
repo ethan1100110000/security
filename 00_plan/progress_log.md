@@ -44,14 +44,14 @@ git pull --ff-only
 
 ## Current Pointer
 
-- Last recorded study session: **Day151 / W05 5/5 — 2026-11-12 완료**. 직전 Day142~150 누락 필수 8/8 보완 완료, Day151 신규 소스 독립 분석·ASan UAF 재현·수정 전후 비교·CS 3문항/오답 변경조건 독립재검증·과거 Pwn Git 대조 모두 증빙. **마지막 완료 Day151**. [Day151 write-up](../Day101-160/Day151/day151_writeup.md).
+- Last recorded study session: **2026-11-13 — Day152 / W06 1/5 전체 필수 완료**. 메인 교육용 바이너리 GDB 호출 규약·프롤로그·RBP/RSP·복귀주소 관찰, CS 7·8번째 정수 인자 전달 위치 무힌트 재시험, Day043·Day050 스택 정렬 반대 사례 무힌트 재판단, Write-up·진도 로그 Git 커밋 완료. **마지막 전체 완료 Day152**. [Write-up](../Day101-160/Day152/day152_writeup.md).
 - Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 세부 과제 [엑셀](hanyang-research-plan-2027.xlsx), 실제 진행과 도움받은 부분은 이 로그를 따른다.
-- Plan position: **Day152 / W06 1/5 진행 시작 (2026-11-13), 미완료**. 원본 Excel Day152 메인: 교육용 바이너리 스택프레임·복귀주소·레지스터 실측, CS 호출규약 무힌트 정의/가정+반례, Day040~050 ROP/스택 복습, 환경·명령·관찰·반례·도움·독립 재검증 Write-up/Git 모두 요구.
-- Current focus: **Day152 메인 호출규약·스택 프롤로그 관찰 완료, Day 전체 미완료.** 사용자 GDB 관찰: 진입 인자 RDI..R9=11/22/33/44/55/66; `push rbp; mov rbp,rsp` 후 RSP=RBP=0x7fffffffdf70, `[rbp]=0x7fffffffdf90`, `[rbp+8]=0x555555555259`. `sub rsp,0x40` 후 예상 RSP=0x7fffffffdf30/RBP 고정을 사용자가 '맞아'로 확인(별도 출력 미제출). [Day152 write-up](../Day101-160/Day152/day152_writeup.md).
-- CS/review: **Day152 CS 완료.** ABI 첫 6개 레지스터는 정확했으나 7번째 R10/`rbp+0x3c` 최초 오답, 스택 전달/프롤로그 설명 뒤 `[rbp+0x10]`으로 정정, 마지막 새 8개 인자 조건에서 `g=[rbp+0x10]`, `h=[rbp+0x18]` 무힌트 정확. 남은 복습: Day040~050 이전 스택/ROP 풀이 회상→Git 대조→정렬 반례 설명. [Day152 write-up](../Day101-160/Day152/day152_writeup.md).
-- Next task: **Day152 마지막 Pwn 2회독**: Day043/Day050 실제 Git 기록의 `ret` 가젯·16B 스택 정렬 실패와 성공 차이 회상, 기록과 대조, 새 정렬 반례 설명. 이후 Write-up·로그 갱신 후 Day152 완료 판정. 현재 미완료.
+- Plan position: **Day152 / W06 1/5 완료 → 다음 Day153 / W06 2/5 (미시작)**. Excel `Day142-276 필수과제` 기준 메인/CS/복습/Write-up 4영역 모두 엄격 완료 원칙. 계획 날짜와 실제 수행일 구분.
+- Current focus: **Day152 완료**. 인자 RDI/RSI/RDX/RCX/R8/R9, 프롤로그 후 `[rbp]` 호출자 프레임 포인터/`[rbp+8]` 반환주소, `sub rsp,0x40` 공간 확보 관찰. 직접 출력은 프롤로그 앞/중간; 최종 RSP 감소값은 사용자 구두 확인이며 반환 주소의 실제 main 다음 명령 별도 디스어셈블 출력을 받지는 않았음을 구분. [Write-up](../Day101-160/Day152/day152_writeup.md).
+- CS/review: **Day152 완료**. 7번째 인자 R10/offset 0x3c 오답 후 교정, 새 조건에서 7·8번째 `[rbp+0x10]`/`[rbp+0x18]` 무힌트 정답. Day043은 `ret` 추가해 진입 정렬 0→8, Day050은 반대로 기존 `ret` 제거. 새 조건 A=0이면 추가, B=8이면 그대로라는 사용자 무힌트 정답. 답은 선택지만 제시했지만 앞선 문답에서 ret에 의한 8B 증감 원리를 답한 이력 보존. [Write-up](../Day101-160/Day152/day152_writeup.md).
+- Next task: **Day153 / W06 2/5**. 새 세션 시작 시 해당 날짜 Excel의 4영역 필수 과제와 이전 Git 진도 확인 후 진행한다. Day153 미시작/미완료.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
-- Limits: Day150까지는 2026-11-12 누락 항목 8/8 보완 완료. 각 항목의 **힌트 후 교정, 독립 실측, 재실행하지 않은 손 추적**은 Write-up에 구분 보존. 이 확인은 Day151의 완료를 의미하지 않는다.
+- Limits: Day142~150 누락 필수 8/8 보완 뒤 Day151, Day152 완료. GDB 재실행/새 관찰과 교사 힌트·구두 확인·옛 Git 대조를 명확히 구분한다. **Day153 이후 작업은 아직 시작하지 않음**.
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
 
 ---
@@ -952,6 +952,13 @@ git pull --ff-only
 - 최초 7번째 정수 인자를 R10, RBP 기준 +0x3c로 잘못 답함. 교사 설명 후 `[rbp+0x10]`로 교정.
 - 새 8개 정수 인자와 `sub rsp,0x60` 조건에서 7번째 `[rbp+0x10]`, 8번째 `[rbp+0x18]`를 **힌트 없이 정답**. [Day152 write-up](../Day101-160/Day152/day152_writeup.md)에 최초 오답, 도움, 독립 재시험 구분 기록.
 - **Day152 메인/CS 완료**, 남은 Day040~050 스택/ROP Git 회상→대조→반례와 최종 Write-up. Day152 전체 미완료.
+
+---
+
+### 2026-11-13 — Day152 Pwn 복습 무힌트 재검증 / 전체 완료
+- 최종 조건 변경: `ret` 없는 `win` 진입에서 A `RSP%16=0`, B `RSP%16=8`에 대해 사용자가 **"a는 추가 b는 유지"**라고 독립 판단. `ret`은 RSP를 8B 높여 0↔8 전환. 사용자는 이번 답에서 원인 서술은 생략했으나 앞선 문제에서 원리를 정확히 답변했음.
+- [Day043](../Day040-100/Day043/write_up.txt)의 `ret` 추가 성공과 [Day050](../Day040-100/Day050/write_up.txt)의 `ret` 제거 성공이 상반됨을 교사가 Git 원문과 대조. 로컬 과거 실험을 오늘 다시 실행한 것은 아님.
+- Day152 [최종 Write-up](../Day101-160/Day152/day152_writeup.md) 및 코드 [call_frame_probe.c](../Day101-160/Day152/call_frame_probe.c)에 실측·교정·반례·한계 기록. 메인/CS/복습/Write-up 4영역 **전체 완료 판정**, 마지막 완료 Day152. 다음 Day153/W06 2/5 미시작.
 
 ---
 
