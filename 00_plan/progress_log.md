@@ -48,8 +48,8 @@ git pull --ff-only
 - Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 세부 과제 [엑셀](hanyang-research-plan-2027.xlsx), 실제 진행과 도움받은 부분은 이 로그를 따른다.
 - Plan position: **Day152 / W06 1/5 진행 시작 (2026-11-13), 미완료**. 원본 Excel Day152 메인: 교육용 바이너리 스택프레임·복귀주소·레지스터 실측, CS 호출규약 무힌트 정의/가정+반례, Day040~050 ROP/스택 복습, 환경·명령·관찰·반례·도움·독립 재검증 Write-up/Git 모두 요구.
 - Current focus: **Day152 메인 호출규약·스택 프롤로그 관찰 완료, Day 전체 미완료.** 사용자 GDB 관찰: 진입 인자 RDI..R9=11/22/33/44/55/66; `push rbp; mov rbp,rsp` 후 RSP=RBP=0x7fffffffdf70, `[rbp]=0x7fffffffdf90`, `[rbp+8]=0x555555555259`. `sub rsp,0x40` 후 예상 RSP=0x7fffffffdf30/RBP 고정을 사용자가 '맞아'로 확인(별도 출력 미제출). [Day152 write-up](../Day101-160/Day152/day152_writeup.md).
-- CS/review: **Day151 CS 완료:** 첫 3문항 중 2/3 정답; 배열 매개변수 `sizeof` 혼동과 첫 변경 반례 오답을 교사 힌트 후 교정, 마지막 무힌트 새 조건 `int (*p)[5]`에서 `sizeof(p)=8, sizeof(*p)=20, sizeof((*p)[0])=4` 모두 정확. Pwn 복습 Day084 puts leak/offset 계산 `libc_base=0x7ffff7e00000`, `system=0x7ffff7e4c490`, 잘못된 계산은 puts를 가리킨다는 점 독립 확인. [Write-up](../Day101-160/Day151/day151_writeup.md).
-- Next task: **Day152 CS x86-64 System V 호출규약의 무힌트 정의·가정·새 조건 반례**. 이후 Day040~050 스택/ROP 과거 Git 자료 대조, 조건 변경 사례와 Write-up/commit. Day152 미완료.
+- CS/review: **Day152 CS 완료.** ABI 첫 6개 레지스터는 정확했으나 7번째 R10/`rbp+0x3c` 최초 오답, 스택 전달/프롤로그 설명 뒤 `[rbp+0x10]`으로 정정, 마지막 새 8개 인자 조건에서 `g=[rbp+0x10]`, `h=[rbp+0x18]` 무힌트 정확. 남은 복습: Day040~050 이전 스택/ROP 풀이 회상→Git 대조→정렬 반례 설명. [Day152 write-up](../Day101-160/Day152/day152_writeup.md).
+- Next task: **Day152 마지막 Pwn 2회독**: Day043/Day050 실제 Git 기록의 `ret` 가젯·16B 스택 정렬 실패와 성공 차이 회상, 기록과 대조, 새 정렬 반례 설명. 이후 Write-up·로그 갱신 후 Day152 완료 판정. 현재 미완료.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
 - Limits: Day150까지는 2026-11-12 누락 항목 8/8 보완 완료. 각 항목의 **힌트 후 교정, 독립 실측, 재실행하지 않은 손 추적**은 Write-up에 구분 보존. 이 확인은 Day151의 완료를 의미하지 않는다.
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
@@ -945,6 +945,13 @@ git pull --ff-only
 - `sub rsp,0x40` 명령 `ni` 실행 후 레지스터가 예상 RSP=0x7fffffffdf30, RBP=0x7fffffffdf70과 일치한다는 사용자 구두 확인. 실제 레지스터 별도 출력은 제출하지 않아 예상/확인을 구분.
 - 스택 프레임·saved RBP·return slot·인자 레지스터의 기존 사용자 GDB 실측과 합쳐 Day152 메인 관찰 완료. [Day152 write-up](../Day101-160/Day152/day152_writeup.md)에 기록.
 - 이어 CS 호출 규약 무힌트 개념·반례, Day040~050 스택/ROP 복습 및 Git 기록. Day152 전체 미완료.
+
+---
+
+### 2026-11-13 — Day152 CS 변경 조건 재시험 통과
+- 최초 7번째 정수 인자를 R10, RBP 기준 +0x3c로 잘못 답함. 교사 설명 후 `[rbp+0x10]`로 교정.
+- 새 8개 정수 인자와 `sub rsp,0x60` 조건에서 7번째 `[rbp+0x10]`, 8번째 `[rbp+0x18]`를 **힌트 없이 정답**. [Day152 write-up](../Day101-160/Day152/day152_writeup.md)에 최초 오답, 도움, 독립 재시험 구분 기록.
+- **Day152 메인/CS 완료**, 남은 Day040~050 스택/ROP Git 회상→대조→반례와 최종 Write-up. Day152 전체 미완료.
 
 ---
 
