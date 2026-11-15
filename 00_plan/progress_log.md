@@ -6,7 +6,7 @@
 - Last completed: 증거와 함께 확인한 마지막 완료 Day
 - Active plan / Plan position: 적용 계획과 실제 진행 중인 주차
 - Current focus: 현재 진행 내용과 확인된 이해 수준
-- Next task: **Day153 / W06 / FINAL.xlsx `01_일일124`**. 처음 보는 교육용 stripped ELF의 입력 길이·스택 덮어쓰기 경로와 GDB/ASan 관찰 차이를 독립 분석한다. CS/과거 스택·ROP 복습/증빙을 함께 수행하고 Git에 근거를 남긴다. 아직 미시작.
+- Next task: 다음에 바로 시작할 작업
 
 ---
 
@@ -51,7 +51,7 @@ git pull --ff-only
 - Plan position: **Day152 / 구계획 W06 1/5 완료 → 새 FINAL 계획 Day153 / W06 (미시작)**. Day153은 고급 스택 ABI·버퍼 경계 실전 재진단부터 시작한다. 신규 Day는 최초 수행과 검증 전까지 완료로 표시하지 않는다.
 - Current focus: **Day152 완료**. 인자 RDI/RSI/RDX/RCX/R8/R9, 프롤로그 후 `[rbp]` 호출자 프레임 포인터/`[rbp+8]` 반환주소, `sub rsp,0x40` 공간 확보 관찰. 직접 출력은 프롤로그 앞/중간; 최종 RSP 감소값은 사용자 구두 확인이며 반환 주소의 실제 main 다음 명령 별도 디스어셈블 출력을 받지는 않았음을 구분. [Write-up](../Day101-160/Day152/day152_writeup.md).
 - CS/review: **Day152 완료**. 7번째 인자 R10/offset 0x3c 오답 후 교정, 새 조건에서 7·8번째 `[rbp+0x10]`/`[rbp+0x18]` 무힌트 정답. Day043은 `ret` 추가해 진입 정렬 0→8, Day050은 반대로 기존 `ret` 제거. 새 조건 A=0이면 추가, B=8이면 그대로라는 사용자 무힌트 정답. 답은 선택지만 제시했지만 앞선 문답에서 ret에 의한 8B 증감 원리를 답한 이력 보존. [Write-up](../Day101-160/Day152/day152_writeup.md).
-- Next task: **Day153 / W06 2/5**. 새 세션 시작 시 해당 날짜 Excel의 4영역 필수 과제와 이전 Git 진도 확인 후 진행한다. Day153 미시작/미완료.
+- Next task: **Day153 / FINAL W06 1/4 (미시작)**. 새 최종 엑셀 `01_일일124`에 따라 처음 보는 교육용 stripped ELF의 입력 길이→스택 덮어쓰기 경로를 분석하고 GDB/ASan 관찰 차이를 설명한다. CS: SysV ABI 인자 7~9번 추적, 복습: Day040~050 Stack/ROP 최초 회상→원본 대조→새 반례, 기록: 원본 코드·실측·Git 증거까지 수행한다. 아직 미시작/미완료.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
 - Limits: Day142~150 누락 필수 8/8 보완 뒤 Day151, Day152 완료. GDB 재실행/새 관찰과 교사 힌트·구두 확인·옛 Git 대조를 명확히 구분한다. **Day153 이후 작업은 아직 시작하지 않음**.
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
