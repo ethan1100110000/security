@@ -4,18 +4,18 @@
 
 현재 진도는 [`00_plan/progress_log.md`](00_plan/progress_log.md)에서 확인할 수 있다.
 
-## Current Study Plan
+## Current Study Plan (2026-11-15 FINAL)
 
-2026-10-27 개정한 PwnLab 중심 계획을 따른다. 취약점 분석·리버싱·익스플로잇을 강화하고 AFL++·AIMFuzz·BASTAG도 유지한다.
+**현행 계획은 하나만 사용한다:** [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](00_plan/pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx).
 
-- [현재 진도와 다음 Day](00_plan/progress_log.md): 실제 수행 상태의 기준.
-- [운영 원칙과 주간 계획](00_plan/hanyang_research_plan_2027.md): 완료 판정의 기준.
-- [일일 과제 엑셀](00_plan/hanyang-research-plan-2027.xlsx): Day142~276 과제와 예정일.
-- [복습·교사·증거 확인 규칙](00_plan/review_rules.md).
+- **핵심 방향:** Pwn 기반 Binary Exploitation / Reverse Engineering / Vulnerability Research. Fuzzing은 취약점 발견·crash triage를 위한 보조 도구.
+- **실행 범위:** Day153~276 총 124개 일일 필수 과제. Day152까지의 실측·오답·Write-up은 그대로 보존. 새 계획 작성만으로 진도가 완료되지 않는다.
+- **실제 진도:** [progress_log.md](00_plan/progress_log.md)의 Current Pointer가 유일한 진도 원장.
+- **운영·복습·교사 원칙:** FINAL.xlsx의 `08_운영규칙`, `13_장기기억`, `14_복습실행로그`와 [review_rules.md](00_plan/review_rules.md)를 따른다.
+- **필수 완료:** 메인·CS·복습·Write-up/Git 증거, 도움받은 경우 새 조건 무힌트 재검증. 지연복습은 D+2/7/21/60 기준으로 기록한다.
+- **최종 준비 판정:** 독립적인 Stack/Heap/Stripped 바이너리 실기, 장기 기억 유지, 재현 가능한 연구 성과, 기술 구술. 원서·학위 마감은 학습 진도와 독립적으로 관리한다.
 
-메인·CS·복습·write-up을 모두 수행하고 도움받은 오답은 조건 변경으로 재검증한다. 시간은 권장 배분이며 측정·최소 시간으로 완료를 판정하지 않는다. 미완료 과제는 같은 Day로 이월한다. 계획과 로그를 변경한 것만으로 진도가 완료된 것은 아니다.
-
-폐기된 옛 계획과 중복 안내는 Git history에서만 확인한다. 과거 Day의 실험·분석 기록은 그대로 보존한다.
+기존 학습계획 파일은 중복을 막기 위해 현행 브랜치에서 정리했고 Git 이력에 보존된다. [Day142~150 당시 검증 기록](00_plan/archive/day142-150_gap_audit_2026-11-12.md)은 역사적 학습 증거이지 현재 계획이 아니다.
 
 ## Reversing Portfolio
 

@@ -6,15 +6,15 @@
 - Last completed: 증거와 함께 확인한 마지막 완료 Day
 - Active plan / Plan position: 적용 계획과 실제 진행 중인 주차
 - Current focus: 현재 진행 내용과 확인된 이해 수준
-- Next task: 다음에 바로 시작할 작업
+- Next task: **Day153 / W06 / FINAL.xlsx `01_일일124`**. 처음 보는 교육용 stripped ELF의 입력 길이·스택 덮어쓰기 경로와 GDB/ASan 관찰 차이를 독립 분석한다. CS/과거 스택·ROP 복습/증빙을 함께 수행하고 Git에 근거를 남긴다. 아직 미시작.
 
 ---
 
 ## Operating Rule
 
 공부 시작 전:
-- 최신 저장소의 이 로그, [현재 30주 계획](hanyang_research_plan_2027.md), [2회독 규칙](review_rules.md)을 확인한다.
-- 주간 상세 과제는 [`hanyang-research-plan-2027.xlsx`](hanyang-research-plan-2027.xlsx)를 따른다. 완료·다음 Day는 이 로그, 운영 기준은 현재 Markdown 계획을 따른다. 폐기한 이전 계획은 Git history에만 남긴다.
+- 최신 저장소의 이 로그, [최종 학습계획표](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), [복습·교사 규칙](review_rules.md)을 확인한다.
+- 현행 일일·주간 과제는 단일 최종 엑셀 [`pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx`](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx)의 `01_일일124`·`02_주간25`를 따른다. 실제 완료·다음 Day는 이 로그, 운영 기준은 엑셀 `08_운영규칙`, 지연복습은 `13_장기기억`·`14_복습실행로그`를 따른다. 폐기된 계획은 Git history에만 남긴다.
 - 사용자는 로컬 저장소에서 다음을 실행한다. 충돌이나 미커밋 변경이 있으면 강제 덮어쓰기하지 않고 먼저 확인한다.
 
 ```bash
@@ -44,9 +44,11 @@ git pull --ff-only
 
 ## Current Pointer
 
+> 2026-11-15 계획 전환: 최종 엑셀만 현행으로 사용. 과거 Day 진도·실습·오답 기록은 그대로 보존하며, 기존 계획 변경은 학습 완료로 계산하지 않는다.
+
 - Last recorded study session: **2026-11-13 — Day152 / W06 1/5 전체 필수 완료**. 메인 교육용 바이너리 GDB 호출 규약·프롤로그·RBP/RSP·복귀주소 관찰, CS 7·8번째 정수 인자 전달 위치 무힌트 재시험, Day043·Day050 스택 정렬 반대 사례 무힌트 재판단, Write-up·진도 로그 Git 커밋 완료. **마지막 전체 완료 Day152**. [Write-up](../Day101-160/Day152/day152_writeup.md).
-- Active plan: [PwnLab 중심 30주 계획](hanyang_research_plan_2027.md). 일일 세부 과제 [엑셀](hanyang-research-plan-2027.xlsx), 실제 진행과 도움받은 부분은 이 로그를 따른다.
-- Plan position: **Day152 / W06 1/5 완료 → 다음 Day153 / W06 2/5 (미시작)**. Excel `Day142-276 필수과제` 기준 메인/CS/복습/Write-up 4영역 모두 엄격 완료 원칙. 계획 날짜와 실제 수행일 구분.
+- Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx). Day153~276의 124개 필수 과제와 주간·블라인드·장기기억·최종실기·연구품질·외부마감 게이트를 단일 계획으로 적용한다.
+- Plan position: **Day152 / 구계획 W06 1/5 완료 → 새 FINAL 계획 Day153 / W06 (미시작)**. Day153은 고급 스택 ABI·버퍼 경계 실전 재진단부터 시작한다. 신규 Day는 최초 수행과 검증 전까지 완료로 표시하지 않는다.
 - Current focus: **Day152 완료**. 인자 RDI/RSI/RDX/RCX/R8/R9, 프롤로그 후 `[rbp]` 호출자 프레임 포인터/`[rbp+8]` 반환주소, `sub rsp,0x40` 공간 확보 관찰. 직접 출력은 프롤로그 앞/중간; 최종 RSP 감소값은 사용자 구두 확인이며 반환 주소의 실제 main 다음 명령 별도 디스어셈블 출력을 받지는 않았음을 구분. [Write-up](../Day101-160/Day152/day152_writeup.md).
 - CS/review: **Day152 완료**. 7번째 인자 R10/offset 0x3c 오답 후 교정, 새 조건에서 7·8번째 `[rbp+0x10]`/`[rbp+0x18]` 무힌트 정답. Day043은 `ret` 추가해 진입 정렬 0→8, Day050은 반대로 기존 `ret` 제거. 새 조건 A=0이면 추가, B=8이면 그대로라는 사용자 무힌트 정답. 답은 선택지만 제시했지만 앞선 문답에서 ret에 의한 8B 증감 원리를 답한 이력 보존. [Write-up](../Day101-160/Day152/day152_writeup.md).
 - Next task: **Day153 / W06 2/5**. 새 세션 시작 시 해당 날짜 Excel의 4영역 필수 과제와 이전 Git 진도 확인 후 진행한다. Day153 미시작/미완료.
@@ -804,7 +806,7 @@ git pull --ff-only
 
 ### 2026-11-12 — 최신 엑셀 전수 대조 및 누락 복구 개시
 - Source: `00_plan/hanyang-research-plan-2027.xlsx`, sha `e4228231109a601f5c58f5108e94b99d0870b3cb`, `Day142-276 필수과제`, `엄격 완료 규칙`. Day142~150 write-up/GDB·실험 증거와 행별 대조. W01~W03는 기존 완료 기록 유지.
-- Finding: Day145 CS, Day146 메인 무힌트 통합 설명, Day147 CS/복습 도움 후 독립 재검증, Day149 CS, Day150 메인/CS/복습 총 **8개의 필수 추가 확인 항목**. 확실한 과제 교체와 독립 재검증 근거가 약한 항목을 [상세 감사표](day142-150_gap_audit_2026-11-12.md)에서 구분. Day142~144/148 새 필수 누락 발견되지 않음.
+- Finding: Day145 CS, Day146 메인 무힌트 통합 설명, Day147 CS/복습 도움 후 독립 재검증, Day149 CS, Day150 메인/CS/복습 총 **8개의 필수 추가 확인 항목**. 확실한 과제 교체와 독립 재검증 근거가 약한 항목을 [상세 감사표](archive/day142-150_gap_audit_2026-11-12.md)에서 구분. Day142~144/148 새 필수 누락 발견되지 않음.
 - Evidence gap: Day146 로컬 수정 원본 소스, Day150 로컬 제작 `challenge.c`/`packet_layout.c`/`build.sh` 원격 미확인; 재구성 참고 소스와 원본 혼동 금지. 사용자가 직접 컴파일/실험한 사실과 Git 저장 근거를 구분한다.
 - Status: Day150까지의 기존 실습/문답/커밋 결과는 보존, 엄격 정규 완료는 감사 중 **Day145부터 보완 필요**. Day151과 W06로 이동 보류.
 - Next: Day145 CS의 ELF 조건 변경 실험 시작. 매일 해당 Day 최신 엑셀 우선 확인하고 누락만 해결한다.
@@ -832,7 +834,7 @@ git pull --ff-only
 ### 2026-11-12 — Day147 CS 보완 완료 (3/8)
 - 사용자 독립 분류: A `input_size=8,len=6,header=4` OOB Read, B `input_size=24,len=-2`에서 음수→size_t의 거대한 unsigned 변환에 따른 비정상 복사 요청.
 - 사용자 제안 조건: `if (input_size - 4 < len || len < 0) return -1;`. 기본 `input_size < 4` 검사 후라 underflow는 방지되지만 첫 비교의 혼합 타입 변환이 일어나므로 `if (len < 0 || (size_t)len > input_size-4) return -1;` 순서로 교정.
-- [Day147 write-up](../Day101-160/Day147/day147_writeup.md)와 [감사표](day142-150_gap_audit_2026-11-12.md)에 후속 검증 내용 기록. 새 실행 증거가 아니라 사용자의 독립 손 추적; 교사 비교식 타입 교정은 구분.
+- [Day147 write-up](../Day101-160/Day147/day147_writeup.md)와 [감사표](archive/day142-150_gap_audit_2026-11-12.md)에 후속 검증 내용 기록. 새 실행 증거가 아니라 사용자의 독립 손 추적; 교사 비교식 타입 교정은 구분.
 - 다음: Day147 Day085 tcache 복습의 다른 조건 반례. 남은 5항목.
 
 ---
@@ -840,7 +842,7 @@ git pull --ff-only
 ### 2026-11-12 — Day147 Pwn 복습 보완 완료 (4/8)
 - [Day085 write_up.txt](../Day040-100/Day085/write_up.txt) 과거 tcache poisoning 자료와 대조. 조건 변경: count3, C→B→A에서 첫 malloc C/count2를 사용자가 맞힘. 남은 head B의 next를 TARGET으로 바꾸면 두 번 더 malloc 시 처음 C/TARGET 오답을 내었다가, 교사의 head 재확인 힌트 후 B/TARGET으로 교정.
 - 이 문답은 Safe-Linking/정렬 검증 등의 선결 조건을 충족한다고 가정한 **개념 모델**. 실제 glibc 추가 실험이나 무힌트 최초 성공은 아니다.
-- [Day147 보완 Write-up](../Day101-160/Day147/day147_writeup.md)과 [감사표](day142-150_gap_audit_2026-11-12.md)에 실수·교사 도움·정정 답안 보존.
+- [Day147 보완 Write-up](../Day101-160/Day147/day147_writeup.md)과 [감사표](archive/day142-150_gap_audit_2026-11-12.md)에 실수·교사 도움·정정 답안 보존.
 - Day145 CS·146 메인·147 CS/복습 4항목 완료, **4항목 남음**. Day148은 기존 근거상 추가 미충족 없음. 다음 Day149 CS 실제 실행 관찰. Day151 시작 보류.
 
 ---
@@ -867,7 +869,7 @@ git pull --ff-only
 - 사용자 예상: `(uint8_t)256==0`이므로 축소 후 `n`으로 검사하는 wrong_check에서 범위 외 `len=256`을 잘못 허용할 수 있다.
 - 사용자 로컬 실행: `A wrong=0/right=0`, `B wrong=0/right=-3`, `C wrong=-4/right=-3` 세 결과가 예측과 일치했다고 보고. A 경계 허용, B 축소로 검사 우회, C 둘 다 거부하되 검사 순서 차이.
 - 코드에는 실제 메모리 복사가 없으므로 이번 결과는 **길이 검사 판정 오류**를 증명하며 실행 시 OOB/ASan 결과가 아니다.
-- [Day150 CS 보완 write-up](../Day101-160/Day150/day150_writeup.md) 및 [참고 코드](../Day101-160/Day150/narrowing_lab_reference.c), [감사표](day142-150_gap_audit_2026-11-12.md) 반영. 사용자 로컬 원본 narrow_lab 파일 미첨부, 교사 복원 참고 코드 명시.
+- [Day150 CS 보완 write-up](../Day101-160/Day150/day150_writeup.md) 및 [참고 코드](../Day101-160/Day150/narrowing_lab_reference.c), [감사표](archive/day142-150_gap_audit_2026-11-12.md) 반영. 사용자 로컬 원본 narrow_lab 파일 미첨부, 교사 복원 참고 코드 명시.
 - 남은 1항목: Day150 이전 Pwn 풀이 힌트 의존성 복습(계획 대조 후 Day151). 기존 Day082/084 자료 중 Day082 Fake Stack Pivot을 회상·새 반례로 검토 예정.
 
 ---
@@ -876,7 +878,7 @@ git pull --ff-only
 - [Day082 원본 Write-up](../Day040-100/Day082/write_up.txt)와 대조: 처음 heap 청크 시작을 Fake Stack으로 사용해 실패, ret 제거도 실패, 이후 region+0x4000 내부 이동으로 낮은 주소 쪽 스택 사용 여유를 확보해 성공.
 - 사용자는 1번 원인 회상 처음에는 실패했다고 인정하고, 3번에서 스스로 하향 성장과 객체 바깥 메모리 접근 위험을 재구성. 새 반례 region=0x10000, rsp=0x10010에서 sub rsp,0x80 → rsp=0xFF90 (region 시작보다 0x70 아래)로 변경된다고 판단.
 - 교사 정밀 교정: sub 명령 자체는 메모리 쓰기가 아니라 레지스터 조정; **이후** 스택 접근이 할당 객체 바깥에 닿을 수 있고 즉시 crash 여부는 매핑 상황에 따라 다름.
-- [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [8/8 감사표](day142-150_gap_audit_2026-11-12.md)에 오류·교정·독립 반례를 반영. Day082 새 바이너리 실행은 없음.
+- [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [8/8 감사표](archive/day142-150_gap_audit_2026-11-12.md)에 오류·교정·독립 반례를 반영. Day082 새 바이너리 실행은 없음.
 - **2026-11-12 추가 보완 감사 8/8 완료.** Day150까지 실제 근거 확인. 이어 최신 엑셀의 Day151 / W05 5/5 시작: 무힌트 처음부터 재분석·재현·root cause write-up; 정수 변환·배열 CS 3문항/오답 무힌트 재시험; 이전 Pwn 풀이 Git 대조; 실제 근거 문서와 커밋. **Day151은 아직 미완료.**
 
 ---
