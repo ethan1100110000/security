@@ -208,3 +208,8 @@ gcc -O0 -g -fsanitize=address -fno-omit-frame-pointer asan_repro.c -o asan_repro
 ```
 - `[rbp+0x10/0x18/0x20]` 실제 컴파일된 명령에서 확인, 함수 프롤로그 `push rbp; mov rbp,rsp` 기준 SysV AMD64 스택 인자 전달과 일치. **CS의 컴파일 코드 기반 검증 완료**. 엄밀하게는 GDB 레지스터·메모리 동적 관찰은 아니며 별도 수행되지 않았음.
 - 다음 필수 게이트: Day040~050 무힌트 회상→기존 Git 기록 대조→새 반례 판단, 실제 ASan 출력 요약 보완(현재 구두 정상 확인), Day153 write-up + 기록 반영. **전체 Day 미완료**.
+
+## Day040–050 review: stack alignment counterexample (attempt 1)
+- 무노트/무힌트 조건 변경 문제: 함수 진입 직후 `RSP % 16 = 8`; `push rbp; mov rbp,rsp; sub rsp,0x28; call printf`에서 `call` 직전 16B 정렬 만족 여부.
+- 사용자 첫 답변: **"만족함"** — 오답. 추적: 진입 8 → `push rbp` 후 0 → `sub rsp,0x28` (40B) 후 8 → `call` 직전 `RSP%16=8`, 정렬 미충족. `call` 자체가 복귀 주소 8B를 push하여 피호출 함수 진입에서는 `RSP%16=0`이 되지만, 호출 전 요구 조건은 `RSP%16=0`임.
+- 사용자 재설명/새 반례 검증은 아직 기다리는 중. 이 오답은 Day040~050 장기복습에서 미해결 약점으로 기록; 단순 정답 제시만으로 완료 처리하지 않음.
