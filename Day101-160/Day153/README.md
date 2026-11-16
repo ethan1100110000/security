@@ -1,4 +1,4 @@
-# Day153 / FINAL W06 1/4 — first-look stripped ELF (진행 중)
+# Day153 / FINAL W06 1/4 — first-look stripped ELF (완료: 2026-11-16)
 
 ## 대상
 - `target_elf.gz.b64`: **교사가 생성한 로컬 교육용 x86-64 Linux stripped ELF**를 gzip+base64로 보관한 것. 소스는 첫 독립 분석 전에는 공개하지 않음.
@@ -221,3 +221,12 @@ gcc -O0 -g -fsanitize=address -fno-omit-frame-pointer asan_repro.c -o asan_repro
 - 바꾼 조건 `sub rsp,0x20`에서 학생 답 `만족함` — **정답**, `push rbp` 후 0, `sub 32` 후에도 0.
 - 교사가 Git 원본 [Day043](../../Day040-100/Day043/write_up.txt), [Day050](../../Day040-100/Day050/write_up.txt)와 대조: Day043은 `ret` 가젯 없이 win 진입시 RSP%16=0으로 쉘 상호작용 실패, `ret` 추가 뒤 8로 성공. Day050은 `ret` 포함 시 진입 정렬 문제, 제거 뒤 성공. 상황에 따라 `ret` 추가/제거를 선택해야 함.
 - 복습 판정: **교정 후 새로운 sub 0x20 조건 정답, 과거 원본 대조 완료**. 첫 오답과 교사 힌트 사실 유지하며 1차 무힌트 통과로 기록하지 않음.
+
+## 2026-11-16 final gate: student-local ASan evidence
+- 사용자 WSL에서 ASan 재현 모델의 오류 2줄 직접 제출:
+```text
+==926==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x7ffd9fe9f4d0 at pc 0x752c0803a2c3 bp 0x7ffd9fe9f440 sp 0x7ffd9fe9ebe8
+WRITE of size 80 at 0x7ffd9fe9f4d0 thread T0
+```
+- 정확한 진단 종류 `stack-buffer-overflow`, 쓰기 크기 **80B** 실측 확인. 48B 배열은 교사 재구성 모델 가정이며 원본 ELF 원시 C 선언의 확증은 아님.
+- [Day153 최종 Write-up](day153_writeup.md) 추가 및 사용자 증거로 보완. 메인·CS·복습(최초 오답 교정 포함)·기록의 Day153 필수 항목 **완료**, 최종 진도 `00_plan/progress_log.md` 갱신. 완료일 2026-11-16.
