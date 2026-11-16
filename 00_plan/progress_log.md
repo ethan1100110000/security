@@ -5,8 +5,8 @@
 
 - Last completed: 증거와 함께 확인한 마지막 완료 Day
 - Active plan / Plan position: 적용 계획과 실제 진행 중인 주차
-- Current focus: **Day153 메인 Ghidra/GDB 분석·재현, CS objdump, Day043/050 정렬 복습/교정, Write-up 작성 완료 (전체 판정 전)**. PXN1 helper 파싱·길이 조건→memcpy, a=80에서 지역변수/출력 오염(mode=16705), a=96에서 saved return address가 'A'로 변조되고 ret(0x4012e8)에서 비정규 주소 예외, ABI 7~9번째 인자 오프셋 objdump 실측. 교사 작성 ASan 재현 C 모델 사용자 WSL에서 입력 문제 해결 후 "이제 정확하네"라고 보고했지만 **ASan의 실제 오류 원문/WRITE 크기 아직 미제출**. [Day153 write-up](../Day101-160/Day153/day153_writeup.md), [evidence README](../Day101-160/Day153/README.md).
-- Next task: **Day153 사용자 로컬 ASan 핵심 원문 2줄(`ERROR: AddressSanitizer: ...`, `WRITE of size ...`)과 정상 입력 실행 출력 확인 후 증거 게이트 판정**. main/CS/review/Write-up 수행은 기록했으나 별도 교사 작성 ASan 모델 vs 실제 원본 ELF의 구분을 유지. 완료 승인 전에는 Last completed Day152 유지. 이후 Day154 Canary/NX 조건 통제 실험.
+- Current focus: 현재 진행 내용과 확인된 이해 수준
+- Next task: 다음에 바로 시작할 작업
 
 ---
 
@@ -44,17 +44,17 @@ git pull --ff-only
 
 ## Current Pointer
 
-> 2026-11-15 계획 전환: 최종 엑셀만 현행으로 사용. 과거 Day 진도·실습·오답 기록은 그대로 보존하며, 기존 계획 변경은 학습 완료로 계산하지 않는다.
+> 2026-11-15 확정된 FINAL 엑셀만 현행 계획으로 사용한다. 완료·미완료는 날짜가 아니라 제출된 증거로 판정한다.
 
-- Last recorded study session: **2026-11-13 — Day152 / W06 1/5 전체 필수 완료**. 메인 교육용 바이너리 GDB 호출 규약·프롤로그·RBP/RSP·복귀주소 관찰, CS 7·8번째 정수 인자 전달 위치 무힌트 재시험, Day043·Day050 스택 정렬 반대 사례 무힌트 재판단, Write-up·진도 로그 Git 커밋 완료. **마지막 전체 완료 Day152**. [Write-up](../Day101-160/Day152/day152_writeup.md).
-- Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx). Day153~276의 124개 필수 과제와 주간·블라인드·장기기억·최종실기·연구품질·외부마감 게이트를 단일 계획으로 적용한다.
-- Plan position: **FINAL Day153 / W06 1/4 진행 시작 (2026-11-16), 미완료.** FINAL 엑셀 `01_일일124`의 첫 실습은 낯선 stripped ELF 입력 길이→스택 경계 경로 무힌트 분석, 이후 GDB와 ASan 위치 차이 검증. 실제 완료 마지막 Day152.
-- Current focus: **Day153 Ghidra + 원 어셈블리 교차분석을 통해 정적 프로그램 흐름 복원 완료(진행 중)**. `_start→main` 후보 0x4012e9, `read` 후 helper 0x401176에서 len>=8, `PXN1`, 리틀엔디언 a/b, a<=112 및 a<=read_len-8, memset 48B 후 memcpy(input+8,a), 최대 48B 합산·출력 흐름을 사용자가 독립 서술. GDB로 memcpy 직전 RDI/RSI/RDX 및 정상 32바이트 쓰기 구두 확인. **스택 목적지 실제 크기는 48B memset vs Ghidra 약 60B 추정으로 미확정**, ASan 초과쓰기 대조 미실시. [Day153 README](../Day101-160/Day153/README.md).
-- CS/review: **Day153 CS 완료** — 사용자 objdump 7/8/9번째 인자 `[rbp+0x10/0x18/0x20]`. **Day040~050 복습 조건 변경 교정 완료** — 첫 `sub rsp,0x28` 조건 '만족' 오답, 교사 설명 후 '미충족'으로 교정, `sub rsp,0x20` 새 조건 '만족' 정답. Git Day043 원본은 ret 추가, Day050 원본은 ret 제거로 정렬을 교정한 대조 사례. 첫 오답·힌트 사실 보존. D+2/7/21/60은 기준일이 도래한 앵커인지 별도 확인 필요.
-- Next task: **Day153 메인 버퍼 경계/메모리 오류 증거 확보**. main과 helper의 서로 다른 RBP 오프셋/함수 프레임 구분, `memset` 48바이트와 목적지 실제 배열 크기 분리, 정상·경계·초과 입력에 대한 GDB/ASan 관찰 비교. 그 후 ABI 7~9번째 인자, 과거 Stack/ROP 복습, 재현 가능한 입력·Write-up/Git. 교사 선제 명령어 최소화. Day153 전체 미완료.
-- Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
-- Limits: Day142~150 누락 필수 8/8 보완 뒤 Day151, Day152 완료. GDB 재실행/새 관찰과 교사 힌트·구두 확인·옛 Git 대조를 명확히 구분한다. **Day153 이후 작업은 아직 시작하지 않음**.
-- Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
+- Last completed: **2026-11-16 — Day153 / FINAL W06 1/4 전체 필수 완료.** [Day153 Write-up](../Day101-160/Day153/day153_writeup.md), [Day153 근거 README](../Day101-160/Day153/README.md).
+- Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276의 124개 필수 과제 및 운영·장기기억 규칙 적용.
+- Plan position: **다음 Day154 / FINAL W06 2/4**. Day153의 정적 분석, GDB, ASan 재현 모델 비교, CS 실측, 복습/Write-up 완료.
+- Current focus: Day153에서 **PXN1 stripped ELF** Ghidra·어셈블리 비교로 제어 흐름 복원, GDB에서 `a=32` 정상 복사, `a=80`의 a/b 지역변수 오염과 `accepted: mode=16705 sum=3120`, `a=96`의 saved RBP/복귀 주소 오염 및 `ret`에서의 비정규 주소 처리 실패 관찰. 별도 교사 재현 C 모델 사용자 WSL ASan 직접 실측: `stack-buffer-overflow`, `WRITE of size 80`. **원본 ELF 자체를 ASan 계측한 증거는 아님**. 원본 배열 선언 크기 미확정은 기록 보존.
+- CS/review: 사용자 objdump에서 SysV AMD64 7/8/9번째 정수 인자 `[rbp+0x10/+0x18/+0x20]` 직접 확인. Day043/050 Git 원본 대조 및 스택 정렬 새 조건 복습: 첫 `sub rsp,0x28` 판단 오답을 교사 힌트로 교정하고, `sub rsp,0x20` 변경 조건은 정답. 초기 오답·도움 여부 보존.
+- Next task: **Day154 최종 엑셀의 다음 필수 과제** 시작. 해당 일차 복습과 만기(D+2/7/21/60) 체크는 해당 학습일 기준으로 확인하고, 이미 증명한 Day153의 기초 실험 반복은 피한다.
+- Evidence: [Day153 write-up](../Day101-160/Day153/day153_writeup.md), [reconstructed ASan model](../Day101-160/Day153/asan_repro.c), [README](../Day101-160/Day153/README.md), 과거 [Day043](../Day040-100/Day043/write_up.txt) / [Day050](../Day040-100/Day050/write_up.txt) 복습 근거.
+- Limits: ASan `local_buffer[48]`은 독립 재현 모델의 가정으로 **원본 stripped ELF 배열 크기 입증이 아님**. 사용자 ASan 제출은 오류 헤더·WRITE 크기 2줄이며 전체 트레이스/정상 출력 전문은 미제출. 원본 GDB 출력과 교사 재현 모델 결과는 분리 기록한다.
+- Teaching: 기본 조작 반복보다 처음 보는 바이너리에서 가설→증거→검증을 우선하고, 사용자가 요청하지 않은 기초 명령 나열은 피한다.
 
 ---
 
@@ -979,6 +979,15 @@ git pull --ff-only
 - `read(...,0xc0)`는 호출 요청 길이 192B일 뿐 메인 버퍼 선언 크기의 증거 아님. `memset(...,0x30)`은 48B 초기화할 뿐 실제 목적지 버퍼가 48B라고 확정 못 함. 사용자가 Ghidra에서는 약 60B 로컬로 보인다고 보고. 메인의 `rbp-0x58` 호칭은 앞선 `rbp-0xd0` 관찰과 상충하므로 함수별 프레임 재확인 필요.
 - 실제 GDB 이전 실측: `RDI=0x7fffffffde60`, `RSI=0x7fffffffdec8`, `RDX=0x20`, 이후 `0x41` 32B 목적지 기록 사용자 구두 확인. 이번 Ghidra 분석은 별도 정적 분석이며 실제 ASan 경계 실측을 대신하지 않음.
 - [Day153 README](../Day101-160/Day153/README.md)에 누적 기록; 메인 정적 흐름 복원은 완료, 버퍼 경계·GDB/ASan 비교·CS/복습/Git 최종 조건 미완료. **마지막 전체 완료 Day152**.
+
+---
+
+### 2026-11-16 — Day153 최종 완료 판정
+- 사용자 WSL에서 `asan_repro`의 `probe80.bin` 실행 진단 직접 제출: `ERROR: AddressSanitizer: stack-buffer-overflow`, `WRITE of size 80`. 모델의 48B 배열에서 80B 쓰기를 진단한다는 비교 실습의 **실측 증거 충족**.
+- Day153의 메인 정적 흐름/스택 쓰기 오염 GDB, 시스템 호출규약 7~9 정수 인자 objdump, Day043/050 복습 교정·변경조건 확인, 상세 write-up을 GitHub에서 확인해 **Day153 완료**. 사용자 로컬 실측과 교사 제공 모델은 구분.
+- 초기 스택 정렬 오답, 메인/helper 스택 오프셋의 별도 확인 필요, 원본 배열 선언 크기 미확정, ASan 전체 트레이스 미제출은 한계로 기록하되 이번 차시 수행 자체를 취소하지 않음.
+- Commit evidence: [Day153 write-up](../Day101-160/Day153/day153_writeup.md), [Day153 README](../Day101-160/Day153/README.md), [ASan 비교 모델](../Day101-160/Day153/asan_repro.c).
+- **Next: FINAL Day154 / W06 2/4**.
 
 ---
 
