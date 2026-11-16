@@ -49,9 +49,9 @@ git pull --ff-only
 - Last recorded study session: **2026-11-13 — Day152 / W06 1/5 전체 필수 완료**. 메인 교육용 바이너리 GDB 호출 규약·프롤로그·RBP/RSP·복귀주소 관찰, CS 7·8번째 정수 인자 전달 위치 무힌트 재시험, Day043·Day050 스택 정렬 반대 사례 무힌트 재판단, Write-up·진도 로그 Git 커밋 완료. **마지막 전체 완료 Day152**. [Write-up](../Day101-160/Day152/day152_writeup.md).
 - Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx). Day153~276의 124개 필수 과제와 주간·블라인드·장기기억·최종실기·연구품질·외부마감 게이트를 단일 계획으로 적용한다.
 - Plan position: **FINAL Day153 / W06 1/4 진행 시작 (2026-11-16), 미완료.** FINAL 엑셀 `01_일일124`의 첫 실습은 낯선 stripped ELF 입력 길이→스택 경계 경로 무힌트 분석, 이후 GDB와 ASan 위치 차이 검증. 실제 완료 마지막 Day152.
-- Current focus: **Day153 첫 독립 바이너리 분석 준비.** 교사 작성 로컬 교육용 stripped ELF를 gzip/base64로 [Day153 target_elf.gz.b64](../Day101-160/Day153/target_elf.gz.b64)에 추가, 해시·복원 명령·개념을 [Day153 README](../Day101-160/Day153/README.md)에 기록. 소스는 아직 제공하지 않아 블라인드 첫 분석 유지. 학생의 바이너리 실행·GDB·ASan 실측은 **아직 제출되지 않음**.
+- Current focus: **Day153 Ghidra + 원 어셈블리 교차분석을 통해 정적 프로그램 흐름 복원 완료(진행 중)**. `_start→main` 후보 0x4012e9, `read` 후 helper 0x401176에서 len>=8, `PXN1`, 리틀엔디언 a/b, a<=112 및 a<=read_len-8, memset 48B 후 memcpy(input+8,a), 최대 48B 합산·출력 흐름을 사용자가 독립 서술. GDB로 memcpy 직전 RDI/RSI/RDX 및 정상 32바이트 쓰기 구두 확인. **스택 목적지 실제 크기는 48B memset vs Ghidra 약 60B 추정으로 미확정**, ASan 초과쓰기 대조 미실시. [Day153 README](../Day101-160/Day153/README.md).
 - CS/review: Day152까지 완료 기록 보존. **Day153 CS(7~9번째 정수 인자/실측), 복습(Day040~050 회상→Git 대조→새 반례), D+2/7/21/60 만기 점검** 모두 아직 미시작; 설명만으로 자동 완료 금지.
-- Next task: **Day153 메인 첫 무힌트 추적:** 사용자 `git pull --ff-only`, Day153 target_elf.gz.b64 복원 후 `sha256sum`, `file`, `checksec`, `strings`, `readelf`, `objdump`로 입력 경로·길이 검사·복사 후보를 스스로 식별하고 주소와 근거 제출. 이후 GDB→ASan 대조, SysV ABI 7~9번째 인자, Day040~050 회상/대조/반례, Git 원본 증빙. 미완료.
+- Next task: **Day153 메인 버퍼 경계/메모리 오류 증거 확보**. main과 helper의 서로 다른 RBP 오프셋/함수 프레임 구분, `memset` 48바이트와 목적지 실제 배열 크기 분리, 정상·경계·초과 입력에 대한 GDB/ASan 관찰 비교. 그 후 ABI 7~9번째 인자, 과거 Stack/ROP 복습, 재현 가능한 입력·Write-up/Git. 교사 선제 명령어 최소화. Day153 전체 미완료.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
 - Limits: Day142~150 누락 필수 8/8 보완 뒤 Day151, Day152 완료. GDB 재실행/새 관찰과 교사 힌트·구두 확인·옛 Git 대조를 명확히 구분한다. **Day153 이후 작업은 아직 시작하지 않음**.
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
@@ -970,6 +970,15 @@ git pull --ff-only
 - 첫 요청: 사용자 자신의 로컬 환경에서 git pull, 바이너리 복원/해시 확인, checksec/strings/readelf/objdump 무힌트 분석→입력 도달 경로·검사·복사 후보 주소/증거.
 - 교사 로컬 사전 검증(사용자 실습으로 계산하지 않음): 정상 입력 실행과 길이 경계 사례, overflow 입력에 의한 비계측 바이너리 비정상 종료 및 ASan의 write overflow 탐지 확인. **이 재현 입력·소스·ASan 해설은 블라인드 첫 분석 전 공개하지 않음**.
 - 남은 필수: 사용자 GDB·ASan 오류 위치 비교, 근거 2종/경계 반례/환경과 빌드 입력 로그, SysV ABI 7~9번째 인자 추적, Day040~050 과거 사례 대조/무힌트 전이, 원본·리플레이 스크립트·Write-up·Git 증거. **Day153 미완료**.
+
+---
+
+### 2026-11-16 — Day153 Ghidra 프로그램 전체 흐름 독립 재구성
+- 사용자가 Ghidra 디컴파일과 기존 어셈블리를 직접 대조해 입력→최소 8B→`PXN1` 헤더→16비트 a/b 파싱→`a<=112 && a<=read_count-8`→로컬 48B memset→`memcpy(local,input+8,a)`→최대 48B 누적합→`printf("accepted: mode=%u sum=%u")` 흐름을 독립 설명.
+- 기존에는 확인되지 않았던 **원본 입력 길이 검사** `a<=read_count-8`도 발견했으며, 소스 버퍼를 넘어 읽을 수 있다는 초기 미확정 가능성을 해당 유효 경로에 한해 좁힘.
+- `read(...,0xc0)`는 호출 요청 길이 192B일 뿐 메인 버퍼 선언 크기의 증거 아님. `memset(...,0x30)`은 48B 초기화할 뿐 실제 목적지 버퍼가 48B라고 확정 못 함. 사용자가 Ghidra에서는 약 60B 로컬로 보인다고 보고. 메인의 `rbp-0x58` 호칭은 앞선 `rbp-0xd0` 관찰과 상충하므로 함수별 프레임 재확인 필요.
+- 실제 GDB 이전 실측: `RDI=0x7fffffffde60`, `RSI=0x7fffffffdec8`, `RDX=0x20`, 이후 `0x41` 32B 목적지 기록 사용자 구두 확인. 이번 Ghidra 분석은 별도 정적 분석이며 실제 ASan 경계 실측을 대신하지 않음.
+- [Day153 README](../Day101-160/Day153/README.md)에 누적 기록; 메인 정적 흐름 복원은 완료, 버퍼 경계·GDB/ASan 비교·CS/복습/Git 최종 조건 미완료. **마지막 전체 완료 Day152**.
 
 ---
 
