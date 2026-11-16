@@ -213,3 +213,11 @@ gcc -O0 -g -fsanitize=address -fno-omit-frame-pointer asan_repro.c -o asan_repro
 - 무노트/무힌트 조건 변경 문제: 함수 진입 직후 `RSP % 16 = 8`; `push rbp; mov rbp,rsp; sub rsp,0x28; call printf`에서 `call` 직전 16B 정렬 만족 여부.
 - 사용자 첫 답변: **"만족함"** — 오답. 추적: 진입 8 → `push rbp` 후 0 → `sub rsp,0x28` (40B) 후 8 → `call` 직전 `RSP%16=8`, 정렬 미충족. `call` 자체가 복귀 주소 8B를 push하여 피호출 함수 진입에서는 `RSP%16=0`이 되지만, 호출 전 요구 조건은 `RSP%16=0`임.
 - 사용자 재설명/새 반례 검증은 아직 기다리는 중. 이 오답은 Day040~050 장기복습에서 미해결 약점으로 기록; 단순 정답 제시만으로 완료 처리하지 않음.
+
+
+## Day040–050 alignment review: correction and changed condition
+
+- 첫 반례 `entry RSP%16=8; push rbp; mov rbp,rsp; sub rsp,0x28; call printf`: 학생 첫 답 `만족함`(오답). 교사가 프롤로그 기준 추적을 제시한 뒤 사용자는 질문의 판단 시점이 `printf` **직전**임을 스스로 재확인하고 정렬 위반으로 바로 교정. 이때 `push` 후 0, `sub 0x28` 후 8이므로 호출 직전 ABI 정렬 미충족.
+- 바꾼 조건 `sub rsp,0x20`에서 학생 답 `만족함` — **정답**, `push rbp` 후 0, `sub 32` 후에도 0.
+- 교사가 Git 원본 [Day043](../../Day040-100/Day043/write_up.txt), [Day050](../../Day040-100/Day050/write_up.txt)와 대조: Day043은 `ret` 가젯 없이 win 진입시 RSP%16=0으로 쉘 상호작용 실패, `ret` 추가 뒤 8로 성공. Day050은 `ret` 포함 시 진입 정렬 문제, 제거 뒤 성공. 상황에 따라 `ret` 추가/제거를 선택해야 함.
+- 복습 판정: **교정 후 새로운 sub 0x20 조건 정답, 과거 원본 대조 완료**. 첫 오답과 교사 힌트 사실 유지하며 1차 무힌트 통과로 기록하지 않음.
