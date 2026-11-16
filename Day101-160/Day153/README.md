@@ -43,3 +43,10 @@ objdump -d -M intel target_elf | less
 - `main` 탐색 독립 전략: 처음 호출의 첫 인자에 main이 들어있을 거라고 추정. **교정 필요**: 첫 번째 call이라는 순서는 보편적인 식별 기준이 아니며, ELF entry에서 `_start` 초기화 코드가 `__libc_start_main`에 넘기는 첫 인자(RDI)를 근거로 추적해야 함. 입력 도달 경로는 XREF/콜사이트/호출 인자 확인으로 검증 예정.
 - 다음 제출 요구: (1) `checksec` 네 보호기법 전체 결과, (2) `readelf -W -h` entry 및 `__libc_start_main` 호출 전후 역어셈블, (3) 실제 `read` call site와 그 앞에서 설정되는 RDI/RSI/RDX를 보여주는 어셈블리.
 - **현시점 검증 등급:** 가설 단계. 사용자 GDB 동적 계측·ASan 대조·취약점 재현 아직 없음.
+
+## Independent static evidence: _start → main candidate
+
+- 사용자 독립 제출: stripped ELF .text `0x401090`부터 시작하는 코드. `xor ebp,ebp`, `mov r9,rdx`, `pop rsi`, `mov rdx,rsp`, stack alignment, `mov rdi,0x4012e9` at `0x4010a4`, `call QWORD PTR [rip+0x2f27]` at `0x4010ab`, `hlt` at `0x4010b1`.
+- 사용자의 **최초 독립 가설**: `0x4012e9`가 main. 이 근거는 통상적인 x86-64 glibc `_start`에서 `__libc_start_main`의 첫 인자(`rdi`)로 main 함수 포인터를 넘기는 패턴과 일치하므로 **강한 main 후보**임.
+- **확증되지 않은 부분:** `call QWORD PTR [rip+0x2f27]`의 간접 호출 대상은 아직 실제 GOT dynamic relocation을 사용자가 보여주지 않음. `0x403fd8`이 `__libc_start_main` relocation인지 확인해야 심볼 문자열이 없는 상태에서도 startup 경로가 확증됨. objdump의 근처 임의 라벨 `<memcpy@plt+0x2f58>`는 호출 목표의 심볼을 보장하지 않음.
+- 사용자 요청으로 분석 절차·명령어 선제 지시를 중단하고 독립 분석 결과만 증거 관점에서 평가. 사용자는 Ghidra가 판단을 더 쉽게 만든다고 언급; Ghidra 추정도 GOT relocation/교차참조가 뒷받침할 때 강해짐. **메인 취약점 분석/실행 실측은 아직 미제출.**
