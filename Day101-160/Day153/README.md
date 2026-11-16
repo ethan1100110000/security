@@ -196,3 +196,15 @@ gcc -O0 -g -fsanitize=address -fno-omit-frame-pointer asan_repro.c -o asan_repro
 ## CS: stack argument offset concept check
 - 사용자는 x86-64 System V ABI에서 정수/포인터 1~6번째 인자는 RDI/RSI/RDX/RCX/R8/R9를 사용하고, 함수 프롤로그 `push rbp; mov rbp,rsp` 이후 7번째 인자가 `[rbp+0x10]`에 놓인다는 개념 확인 질문에 **독립적으로 정답('후자')**을 제시함.
 - 근거: `[rbp]` 저장된 이전 RBP, `[rbp+8]` 복귀 주소, `[rbp+0x10]` 7번째 인자. 8~9번째 위치와 컴파일된 코드/GDB 실측은 **아직 검증되지 않음**.
+
+## CS evidence: 7th–9th integer arguments in compiled assembly
+
+- 사용자 작성 `abi9.c`의 `test(long a,...,long i)` (`return g+h+i`)를 `gcc -O0 -g -fno-omit-frame-pointer`로 컴파일한 후 `objdump -d -M intel`에서 직접 확인·제출한 어셈블리:
+```asm
+1169: mov rdx,QWORD PTR [rbp+0x10]   ; g, 7번째 정수 인자
+116d: mov rax,QWORD PTR [rbp+0x18]   ; h, 8번째 정수 인자
+1171: add rdx,rax
+1174: mov rax,QWORD PTR [rbp+0x20]   ; i, 9번째 정수 인자
+```
+- `[rbp+0x10/0x18/0x20]` 실제 컴파일된 명령에서 확인, 함수 프롤로그 `push rbp; mov rbp,rsp` 기준 SysV AMD64 스택 인자 전달과 일치. **CS의 컴파일 코드 기반 검증 완료**. 엄밀하게는 GDB 레지스터·메모리 동적 관찰은 아니며 별도 수행되지 않았음.
+- 다음 필수 게이트: Day040~050 무힌트 회상→기존 Git 기록 대조→새 반례 판단, 실제 ASan 출력 요약 보완(현재 구두 정상 확인), Day153 write-up + 기록 반영. **전체 Day 미완료**.
