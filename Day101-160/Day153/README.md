@@ -184,3 +184,11 @@ gcc -O0 -g -fsanitize=address -fno-omit-frame-pointer asan_repro.c -o asan_repro
 - 교사 정밀화: 일반 바이너리도 보호되지 않은 주소 접근 시 즉시 예외가 날 수 있고, 잘못된 쓰기가 발생해도 즉시 충돌이 나지 않을 수 있음. ASan은 삽입된 계측·redzone 및 런타임 검사로 도구가 추적하는 경계를 감지하며 모든 메모리 오류를 100% 검출하는 것은 아님.
 - **재현 코드를 학생 자신의 WSL에서 실행한 출력은 아직 공유되지 않음.** ASan에서 확인된 48B 목적지 배열은 교사 제공 독립 모델의 설정이지 원본 stripped ELF의 소스 배열 크기를 확증하는 증거가 아님.
 - 다음 과제: 필요시 로컬 실행 로그 32B 정상·80B ASan 오류를 제출, 이후 Day153 CS 7~9번째 인자 / Day040~050 복습 / write-up 완료 조건 점검.
+
+## User-local ASan reproduction status
+
+- 사용자 WSL에서 `asan_repro.c`를 `gcc -O0 -g -fsanitize=address -fno-omit-frame-pointer`로 직접 컴파일했음.
+- 최초 실행 `./asan_repro < probe32.bin`은 입력 파일이 없어 실패; `./asan_repro < probe80.bin`은 `bad length` (재현 모델의 입력 유효성 검사에 의해 거부). 원인: 준비된 파일의 이름/내용이 기대한 probe 형식과 일치하지 않음.
+- 교사의 수정 안내에 따라 `PXN1` / a=32 or 80 / b=0 / 'A'×a 구조로 파일을 새로 만들도록 함(각각 총 40B, 88B).
+- 사용자 최종 응답: **"아아 이제 정확하네"**. 입력 생성/실행 문제가 해결되었다는 확인으로 기록. **ASan 오류 원문, WRITE 크기, 실제 정상 출력 전문은 아직 채팅에 붙여넣지 않았으므로 수치 실측을 추가 주장하지 않음.**
+- 다음: 메인 부분 개념은 통과, 7~9번째 인자의 ABI 실측, Day040~050 복습, 최종 write-up 및 Git 게이트 수행. Day153 전체 미완료.
