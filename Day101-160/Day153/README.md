@@ -165,3 +165,16 @@ rdx 0x20
 - 사용자 독립 원인 분석: `ret`가 `RSP`가 가리키는 스택 최상위 8바이트를 복귀 대상으로 사용하려 하며, 해당 슬롯이 입력의 `A`로 덮여 있으므로 오류 발생할 것이라고 설명. **개념 및 인과관계 정확**.
 - 세부: `0x4141414141414141`은 x86-64 비정규(non-canonical) 주소. `ret`가 유효하지 않은 반환 주소를 사용하려다 예외가 일어나므로 RIP가 그 주소로 바뀌기보다 **`ret` 명령어 주소에 남아 보일 수 있음**. 이번에 공유된 결과만으로는 구체적인 Unix signal 문자열이 명시되지 않았으며, SIGSEGV 자체는 별도 확인 대상. 스택 슬롯 및 실행 실패 경로는 충분히 강한 제어흐름 변조 증거.
 - 단계: 메인 취약점의 실제 지역변수·복귀주소 오염과 반환 시점의 실패까지 동적 검증 완료. ASan 대조/원본 배열 크기 단정 방지, CS ABI 7~9, 복습, 최종 Write-up은 남음.
+
+
+## ASan comparison exercise: reconstructed C model (teacher supplied)
+
+- `asan_repro.c` 신규 생성: 학생이 복원한 PXN1 파서 흐름을 기반으로 교사가 작성한 **독립 C 재현 모델**. **원본 stripped ELF의 소스 코드가 아님**. 특히 `local_buffer[48]`은 검증을 위한 **가설적 선언 크기**이며 원본 소스 레이아웃은 여전히 미확정.
+- Linux 컴파일:
+```bash
+gcc -O0 -g -fsanitize=address -fno-omit-frame-pointer asan_repro.c -o asan_repro
+./asan_repro < probe32.bin
+./asan_repro < probe80.bin
+```
+- 교사가 별도 컨테이너에서 같은 코드/동일 형식 입력으로 **32B 정상 출력** `accepted: mode=0 sum=2080`, **80B ASan** `ERROR: AddressSanitizer: stack-buffer-overflow`, `WRITE of size 80`, `process`의 `memcpy`, `local_buffer[48]` out-of-bounds을 재현. 이는 **재현 모델의 검증**이지 학생 로컬 또는 원본 stripped ELF의 ASan 실측은 아님.
+- 학습 목표: 원본 GDB는 실행 중 스택 로컬/복귀 주소가 덮이는 결과를 보았고, ASan 모델은 복사 시점의 스택 배열 경계 위반을 진단함을 비교. 학생이 자신의 WSL에서 32B/80B 결과와 원인 차이를 확인·설명하면 본 과제 대조 증거로 제출 가능.
