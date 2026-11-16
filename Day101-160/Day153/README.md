@@ -102,3 +102,14 @@ objdump -d -M intel target_elf | less
 ## memcmp 4-byte identifier observed in GDB
 - 사용자가 GDB에서 비교 대상 `0x402011`의 4바이트 값을 `50 58 4e 31` (hex)로 직접 보고함. ASCII로 **`PXN1`**. 이는 `memcmp`의 4바이트 비교가 성공하려면 필요한 입력 식별값으로 해석됨.
 - 해당 값은 사용자의 **직접 관찰**이며 `memcmp` 결과/조건 통과, `memcpy`에서의 RDI/RSI/RDX 값 및 실제 취약점 재현은 **아직 검증되지 않음**.
+
+
+## GDB evidence: memcpy arguments for 32-byte benign probe
+- 사용자 로컬 GDB/Pwndbg에서 입력 파일 `probe.bin` (`PXN1`, 첫 16-bit 값=32, 둘째 값=0, `A` 32개)과 `break *0x401285`로 `memcpy` 직전 레지스터 출력 **실측**:
+```
+rdi 0x7fffffffde60
+rsi 0x7fffffffdec8
+rdx 0x20
+```
+- SysV AMD64 `memcpy(dst, src, n)` 기준: 목적지 `0x7fffffffde60`(스택 로컬 영역), 원본 `0x7fffffffdec8`(원본 입력의 헤더 뒤), 크기 `0x20=32`바이트. 정적 분석한 `rbp-0x50`, `input+8`, `value1` 매핑과 일치.
+- 이 실측은 **`memcpy` 호출 직전 인자 검증**이며, 실제 복사 완료 또는 버퍼 경계 초과를 입증하는 증거는 아직 아님. 다음은 목적지 주소를 GDB convenience 변수로 보존하고 `ni` 전후 메모리를 비교, 이후 경계 값으로 별도 검증한다.
