@@ -5,8 +5,8 @@
 
 - Last completed: 증거와 함께 확인한 마지막 완료 Day
 - Active plan / Plan position: 적용 계획과 실제 진행 중인 주차
-- Current focus: **Day153 메인 정적 분석·GDB 동적 검증 사실상 완료**: PXN1 파서 길이·경계 재구성, memcpy 32B 복사 확인, a=80에서 a/b 지역변수 변조·mode=16705 확인, a=96에서 saved RBP/return-address를 'A'로 덮고 ret(0x4012e8)에서 잘못된 주소를 사용하려는 현상 관찰. 소스 미공개이므로 원본 배열 선언 크기 확정은 유보. 교사 작성 별도 ASan C 모델은 사용자 WSL에서 입력 파일 재생성 후 정상 동작이라고 보고(정확한 ASan 출력 원문 미제출). [Day153 README](../Day101-160/Day153/README.md).
-- Next task: **Day153 복습 진행**: Day040~050의 스택 정렬/호출 규약 등 노트 없이 새 반례부터 판단, 기존 Git의 근거와 비교, 부족점 교정. 다음으로 사용자 ASan 실행 핵심 원문 확인(필요 시) 및 Day153 write-up, 진행 로그 커밋 후 완료 판정. 마지막 전체 완료 Day152.
+- Current focus: **Day153 메인 Ghidra/GDB 분석·재현, CS objdump, Day043/050 정렬 복습/교정, Write-up 작성 완료 (전체 판정 전)**. PXN1 helper 파싱·길이 조건→memcpy, a=80에서 지역변수/출력 오염(mode=16705), a=96에서 saved return address가 'A'로 변조되고 ret(0x4012e8)에서 비정규 주소 예외, ABI 7~9번째 인자 오프셋 objdump 실측. 교사 작성 ASan 재현 C 모델 사용자 WSL에서 입력 문제 해결 후 "이제 정확하네"라고 보고했지만 **ASan의 실제 오류 원문/WRITE 크기 아직 미제출**. [Day153 write-up](../Day101-160/Day153/day153_writeup.md), [evidence README](../Day101-160/Day153/README.md).
+- Next task: **Day153 사용자 로컬 ASan 핵심 원문 2줄(`ERROR: AddressSanitizer: ...`, `WRITE of size ...`)과 정상 입력 실행 출력 확인 후 증거 게이트 판정**. main/CS/review/Write-up 수행은 기록했으나 별도 교사 작성 ASan 모델 vs 실제 원본 ELF의 구분을 유지. 완료 승인 전에는 Last completed Day152 유지. 이후 Day154 Canary/NX 조건 통제 실험.
 
 ---
 
@@ -50,7 +50,7 @@ git pull --ff-only
 - Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx). Day153~276의 124개 필수 과제와 주간·블라인드·장기기억·최종실기·연구품질·외부마감 게이트를 단일 계획으로 적용한다.
 - Plan position: **FINAL Day153 / W06 1/4 진행 시작 (2026-11-16), 미완료.** FINAL 엑셀 `01_일일124`의 첫 실습은 낯선 stripped ELF 입력 길이→스택 경계 경로 무힌트 분석, 이후 GDB와 ASan 위치 차이 검증. 실제 완료 마지막 Day152.
 - Current focus: **Day153 Ghidra + 원 어셈블리 교차분석을 통해 정적 프로그램 흐름 복원 완료(진행 중)**. `_start→main` 후보 0x4012e9, `read` 후 helper 0x401176에서 len>=8, `PXN1`, 리틀엔디언 a/b, a<=112 및 a<=read_len-8, memset 48B 후 memcpy(input+8,a), 최대 48B 합산·출력 흐름을 사용자가 독립 서술. GDB로 memcpy 직전 RDI/RSI/RDX 및 정상 32바이트 쓰기 구두 확인. **스택 목적지 실제 크기는 48B memset vs Ghidra 약 60B 추정으로 미확정**, ASan 초과쓰기 대조 미실시. [Day153 README](../Day101-160/Day153/README.md).
-- CS/review: **Day153 CS 컴파일 어셈블리 검증 완료**: 사용자 `abi9.c` objdump에서 7/8/9번째 정수 인자를 `[rbp+0x10]`, `[rbp+0x18]`, `[rbp+0x20]`으로 직접 확인. GDB ABI 실측은 별도 수행 안 함. **Day040~050 복습(무힌트 회상→기존 Git 대조→새 반례), D+2/7/21/60 만기 확인 및 최종 Write-up은 아직 미완료**.
+- CS/review: **Day153 CS 완료** — 사용자 objdump 7/8/9번째 인자 `[rbp+0x10/0x18/0x20]`. **Day040~050 복습 조건 변경 교정 완료** — 첫 `sub rsp,0x28` 조건 '만족' 오답, 교사 설명 후 '미충족'으로 교정, `sub rsp,0x20` 새 조건 '만족' 정답. Git Day043 원본은 ret 추가, Day050 원본은 ret 제거로 정렬을 교정한 대조 사례. 첫 오답·힌트 사실 보존. D+2/7/21/60은 기준일이 도래한 앵커인지 별도 확인 필요.
 - Next task: **Day153 메인 버퍼 경계/메모리 오류 증거 확보**. main과 helper의 서로 다른 RBP 오프셋/함수 프레임 구분, `memset` 48바이트와 목적지 실제 배열 크기 분리, 정상·경계·초과 입력에 대한 GDB/ASan 관찰 비교. 그 후 ABI 7~9번째 인자, 과거 Stack/ROP 복습, 재현 가능한 입력·Write-up/Git. 교사 선제 명령어 최소화. Day153 전체 미완료.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
 - Limits: Day142~150 누락 필수 8/8 보완 뒤 Day151, Day152 완료. GDB 재실행/새 관찰과 교사 힌트·구두 확인·옛 Git 대조를 명확히 구분한다. **Day153 이후 작업은 아직 시작하지 않음**.
