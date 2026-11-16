@@ -178,3 +178,9 @@ gcc -O0 -g -fsanitize=address -fno-omit-frame-pointer asan_repro.c -o asan_repro
 ```
 - 교사가 별도 컨테이너에서 같은 코드/동일 형식 입력으로 **32B 정상 출력** `accepted: mode=0 sum=2080`, **80B ASan** `ERROR: AddressSanitizer: stack-buffer-overflow`, `WRITE of size 80`, `process`의 `memcpy`, `local_buffer[48]` out-of-bounds을 재현. 이는 **재현 모델의 검증**이지 학생 로컬 또는 원본 stripped ELF의 ASan 실측은 아님.
 - 학습 목표: 원본 GDB는 실행 중 스택 로컬/복귀 주소가 덮이는 결과를 보았고, ASan 모델은 복사 시점의 스택 배열 경계 위반을 진단함을 비교. 학생이 자신의 WSL에서 32B/80B 결과와 원인 차이를 확인·설명하면 본 과제 대조 증거로 제출 가능.
+
+## Concept check: ASan versus uninstrumented execution
+- 학생 독립 개념 설명: 과거 1바이트 overflow 실험과 같은 맥락이며, 일반 실행에서는 주변 메모리 손상이 바로 오류를 발생시키지 않을 수 있고 ASan에서는 경계 초과 쓰기 시점에 감지 가능. **핵심 구분 정확, 개념 확인 통과**.
+- 교사 정밀화: 일반 바이너리도 보호되지 않은 주소 접근 시 즉시 예외가 날 수 있고, 잘못된 쓰기가 발생해도 즉시 충돌이 나지 않을 수 있음. ASan은 삽입된 계측·redzone 및 런타임 검사로 도구가 추적하는 경계를 감지하며 모든 메모리 오류를 100% 검출하는 것은 아님.
+- **재현 코드를 학생 자신의 WSL에서 실행한 출력은 아직 공유되지 않음.** ASan에서 확인된 48B 목적지 배열은 교사 제공 독립 모델의 설정이지 원본 stripped ELF의 소스 배열 크기를 확증하는 증거가 아님.
+- 다음 과제: 필요시 로컬 실행 로그 32B 정상·80B ASan 오류를 제출, 이후 Day153 CS 7~9번째 인자 / Day040~050 복습 / write-up 완료 조건 점검.
