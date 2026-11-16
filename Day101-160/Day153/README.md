@@ -36,3 +36,10 @@ objdump -d -M intel target_elf | less
 - 분석을 시작한 뒤 소스가 공개되더라도 최초 무힌트 분석 판단과 AI 도움 범위를 보존한다.
 - `target_elf`는 위 텍스트에 포함된 원본 바이너리의 로컬 생성물이다. Git에는 복원이 가능한 `*.b64`를 보존한다.
 - 패치 소스·ASan 비교 자료·replay.sh·사용자의 실제 실행 로그/Write-up은 후속 분석 후 추가한다. 현재는 **실험 준비 단계**.
+
+## First independent triage (user reported, not yet verified)
+- 사용자 첫 답변(원본 도구 출력 미제출): 보호 기법은 NX 활성과 Partial RELRO를 관찰했다고 보고함. **Canary/PIE 상태는 미제출**. checksec 원문은 확인되지 않아 최종 판정 아님.
+- 입력 함수는 `read`라고 보고함. ELF import 목록에 보이는 것인지 실제 입력 처리 경로에서 `read@plt` 호출을 확인한 것인지는 아직 검증되지 않음.
+- `main` 탐색 독립 전략: 처음 호출의 첫 인자에 main이 들어있을 거라고 추정. **교정 필요**: 첫 번째 call이라는 순서는 보편적인 식별 기준이 아니며, ELF entry에서 `_start` 초기화 코드가 `__libc_start_main`에 넘기는 첫 인자(RDI)를 근거로 추적해야 함. 입력 도달 경로는 XREF/콜사이트/호출 인자 확인으로 검증 예정.
+- 다음 제출 요구: (1) `checksec` 네 보호기법 전체 결과, (2) `readelf -W -h` entry 및 `__libc_start_main` 호출 전후 역어셈블, (3) 실제 `read` call site와 그 앞에서 설정되는 RDI/RSI/RDX를 보여주는 어셈블리.
+- **현시점 검증 등급:** 가설 단계. 사용자 GDB 동적 계측·ASan 대조·취약점 재현 아직 없음.
