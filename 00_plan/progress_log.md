@@ -48,10 +48,10 @@ git pull --ff-only
 
 - Last recorded study session: **2026-11-13 — Day152 / W06 1/5 전체 필수 완료**. 메인 교육용 바이너리 GDB 호출 규약·프롤로그·RBP/RSP·복귀주소 관찰, CS 7·8번째 정수 인자 전달 위치 무힌트 재시험, Day043·Day050 스택 정렬 반대 사례 무힌트 재판단, Write-up·진도 로그 Git 커밋 완료. **마지막 전체 완료 Day152**. [Write-up](../Day101-160/Day152/day152_writeup.md).
 - Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx). Day153~276의 124개 필수 과제와 주간·블라인드·장기기억·최종실기·연구품질·외부마감 게이트를 단일 계획으로 적용한다.
-- Plan position: **Day152 / 구계획 W06 1/5 완료 → 새 FINAL 계획 Day153 / W06 (미시작)**. Day153은 고급 스택 ABI·버퍼 경계 실전 재진단부터 시작한다. 신규 Day는 최초 수행과 검증 전까지 완료로 표시하지 않는다.
-- Current focus: **Day152 완료**. 인자 RDI/RSI/RDX/RCX/R8/R9, 프롤로그 후 `[rbp]` 호출자 프레임 포인터/`[rbp+8]` 반환주소, `sub rsp,0x40` 공간 확보 관찰. 직접 출력은 프롤로그 앞/중간; 최종 RSP 감소값은 사용자 구두 확인이며 반환 주소의 실제 main 다음 명령 별도 디스어셈블 출력을 받지는 않았음을 구분. [Write-up](../Day101-160/Day152/day152_writeup.md).
-- CS/review: **Day152 완료**. 7번째 인자 R10/offset 0x3c 오답 후 교정, 새 조건에서 7·8번째 `[rbp+0x10]`/`[rbp+0x18]` 무힌트 정답. Day043은 `ret` 추가해 진입 정렬 0→8, Day050은 반대로 기존 `ret` 제거. 새 조건 A=0이면 추가, B=8이면 그대로라는 사용자 무힌트 정답. 답은 선택지만 제시했지만 앞선 문답에서 ret에 의한 8B 증감 원리를 답한 이력 보존. [Write-up](../Day101-160/Day152/day152_writeup.md).
-- Next task: **Day153 / FINAL W06 1/4 (미시작)**. 새 최종 엑셀 `01_일일124`에 따라 처음 보는 교육용 stripped ELF의 입력 길이→스택 덮어쓰기 경로를 분석하고 GDB/ASan 관찰 차이를 설명한다. CS: SysV ABI 인자 7~9번 추적, 복습: Day040~050 Stack/ROP 최초 회상→원본 대조→새 반례, 기록: 원본 코드·실측·Git 증거까지 수행한다. 아직 미시작/미완료.
+- Plan position: **FINAL Day153 / W06 1/4 진행 시작 (2026-11-16), 미완료.** FINAL 엑셀 `01_일일124`의 첫 실습은 낯선 stripped ELF 입력 길이→스택 경계 경로 무힌트 분석, 이후 GDB와 ASan 위치 차이 검증. 실제 완료 마지막 Day152.
+- Current focus: **Day153 첫 독립 바이너리 분석 준비.** 교사 작성 로컬 교육용 stripped ELF를 gzip/base64로 [Day153 target_elf.gz.b64](../Day101-160/Day153/target_elf.gz.b64)에 추가, 해시·복원 명령·개념을 [Day153 README](../Day101-160/Day153/README.md)에 기록. 소스는 아직 제공하지 않아 블라인드 첫 분석 유지. 학생의 바이너리 실행·GDB·ASan 실측은 **아직 제출되지 않음**.
+- CS/review: Day152까지 완료 기록 보존. **Day153 CS(7~9번째 정수 인자/실측), 복습(Day040~050 회상→Git 대조→새 반례), D+2/7/21/60 만기 점검** 모두 아직 미시작; 설명만으로 자동 완료 금지.
+- Next task: **Day153 메인 첫 무힌트 추적:** 사용자 `git pull --ff-only`, Day153 target_elf.gz.b64 복원 후 `sha256sum`, `file`, `checksec`, `strings`, `readelf`, `objdump`로 입력 경로·길이 검사·복사 후보를 스스로 식별하고 주소와 근거 제출. 이후 GDB→ASan 대조, SysV ABI 7~9번째 인자, Day040~050 회상/대조/반례, Git 원본 증빙. 미완료.
 - Evidence: [Day150 write-up](../Day101-160/Day150/day150_writeup.md), [사용자 실측 발췌](../Day101-160/Day150/day150_user_observations.md), [Day150 README](../Day101-160/Day150/README.md), [재현용 참고 소스](../Day101-160/Day150/experiment_submit64.c), [구조체 레이아웃 참고 코드](../Day101-160/Day150/packet_layout_reference.c). 기존 사용자 로컬 `challenge.c`, `build.sh`, `packet_layout.c` 원본 파일은 미업로드이며 Git 이름 충돌 방지를 위해 다른 이름의 재구성 파일을 추가했다.
 - Limits: Day142~150 누락 필수 8/8 보완 뒤 Day151, Day152 완료. GDB 재실행/새 관찰과 교사 힌트·구두 확인·옛 Git 대조를 명확히 구분한다. **Day153 이후 작업은 아직 시작하지 않음**.
 - Teaching: 사용자 정적 역어셈블에 충분한 근거가 있으면 반복 프레임 추적을 강요하지 않는다. 시간 측정으로 완료를 대신하지 않고 누락 과제는 보완한다.
@@ -961,6 +961,15 @@ git pull --ff-only
 - 최종 조건 변경: `ret` 없는 `win` 진입에서 A `RSP%16=0`, B `RSP%16=8`에 대해 사용자가 **"a는 추가 b는 유지"**라고 독립 판단. `ret`은 RSP를 8B 높여 0↔8 전환. 사용자는 이번 답에서 원인 서술은 생략했으나 앞선 문제에서 원리를 정확히 답변했음.
 - [Day043](../Day040-100/Day043/write_up.txt)의 `ret` 추가 성공과 [Day050](../Day040-100/Day050/write_up.txt)의 `ret` 제거 성공이 상반됨을 교사가 Git 원문과 대조. 로컬 과거 실험을 오늘 다시 실행한 것은 아님.
 - Day152 [최종 Write-up](../Day101-160/Day152/day152_writeup.md) 및 코드 [call_frame_probe.c](../Day101-160/Day152/call_frame_probe.c)에 실측·교정·반례·한계 기록. 메인/CS/복습/Write-up 4영역 **전체 완료 판정**, 마지막 완료 Day152. 다음 Day153/W06 2/5 미시작.
+
+---
+
+### 2026-11-16 — FINAL Day153 W06 1/4 블라인드 ELF 실습 시작
+- 단일 FINAL.xlsx 01_일일124 Day153 과제 및 08_운영규칙/13_장기기억 확인. 마지막 실제 완료 Day152, 신규 Day153 미완료.
+- 교사가 새 교육용 ELF를 빌드 후 strip하여 [압축 인코딩 저장](../Day101-160/Day153/target_elf.gz.b64)하고 [설정·복원·SHA-256 README](../Day101-160/Day153/README.md) 작성. **교사 생성 바이너리**이며 사용자 원본 코드라고 주장하지 않는다.
+- 첫 요청: 사용자 자신의 로컬 환경에서 git pull, 바이너리 복원/해시 확인, checksec/strings/readelf/objdump 무힌트 분석→입력 도달 경로·검사·복사 후보 주소/증거.
+- 교사 로컬 사전 검증(사용자 실습으로 계산하지 않음): 정상 입력 실행과 길이 경계 사례, overflow 입력에 의한 비계측 바이너리 비정상 종료 및 ASan의 write overflow 탐지 확인. **이 재현 입력·소스·ASan 해설은 블라인드 첫 분석 전 공개하지 않음**.
+- 남은 필수: 사용자 GDB·ASan 오류 위치 비교, 근거 2종/경계 반례/환경과 빌드 입력 로그, SysV ABI 7~9번째 인자 추적, Day040~050 과거 사례 대조/무힌트 전이, 원본·리플레이 스크립트·Write-up·Git 증거. **Day153 미완료**.
 
 ---
 
