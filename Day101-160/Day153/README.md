@@ -192,3 +192,7 @@ gcc -O0 -g -fsanitize=address -fno-omit-frame-pointer asan_repro.c -o asan_repro
 - 교사의 수정 안내에 따라 `PXN1` / a=32 or 80 / b=0 / 'A'×a 구조로 파일을 새로 만들도록 함(각각 총 40B, 88B).
 - 사용자 최종 응답: **"아아 이제 정확하네"**. 입력 생성/실행 문제가 해결되었다는 확인으로 기록. **ASan 오류 원문, WRITE 크기, 실제 정상 출력 전문은 아직 채팅에 붙여넣지 않았으므로 수치 실측을 추가 주장하지 않음.**
 - 다음: 메인 부분 개념은 통과, 7~9번째 인자의 ABI 실측, Day040~050 복습, 최종 write-up 및 Git 게이트 수행. Day153 전체 미완료.
+
+## CS: stack argument offset concept check
+- 사용자는 x86-64 System V ABI에서 정수/포인터 1~6번째 인자는 RDI/RSI/RDX/RCX/R8/R9를 사용하고, 함수 프롤로그 `push rbp; mov rbp,rsp` 이후 7번째 인자가 `[rbp+0x10]`에 놓인다는 개념 확인 질문에 **독립적으로 정답('후자')**을 제시함.
+- 근거: `[rbp]` 저장된 이전 RBP, `[rbp+8]` 복귀 주소, `[rbp+0x10]` 7번째 인자. 8~9번째 위치와 컴파일된 코드/GDB 실측은 **아직 검증되지 않음**.
