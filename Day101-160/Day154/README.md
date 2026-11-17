@@ -98,3 +98,8 @@ Aborted (core dumped)
 - 2026-11-17 사용자 보고: 이전에 예측한 나머지 **Canary OFF/NX OFF → SIGSEGV**, **Canary ON/NX ON → `stack smashing detected` / Aborted**가 로컬 실행에서 **"예상대로임"**이라고 일치 확인됨. 두 새 조건의 *실제 터미널 출력 전문*은 미제출이므로 **구두 결과 일치 확인**으로 기록.
 - 4조건 80B overflow 표: OFF/OFF → SIGSEGV(구두 일치), OFF/ON → `ret`에서 SIGSEGV(터미널 및 GDB 원인 설명), ON/OFF → stack smashing detected/Aborted(터미널 전문 제출), ON/ON → stack smashing detected/Aborted(구두 일치).
 - 결론: 이 입력에서 NX만 변경해서는 오류 종류가 바뀌지 않았고, Canary 설정이 탐지 경로의 변화를 만들었다. **NX가 모든 상황에서 무관하다는 일반화는 금지**. 이제 `exec_probe()`를 이용해 스택 명령어 실행 시도에서 NX ON/OFF 차이를 분리해 관찰한다. 이후 `data_probe()`로 인접 데이터 변경과 Canary의 한계를 확인할 것.
+
+## Stage C prediction: stack execution probe
+- 학생 독립 설명: `exec_probe`가 스택 배열에 `0xc3`(x86-64 `ret` 명령)를 저장하고 이를 실행하려 하며, **BOF 없이** NX ON/OFF의 명령어 실행 허용 차이를 확인하는 실험이라고 정확히 이해함. NX ON도 스택에 `0xc3`을 저장하는 **쓰기 작업은 가능**하며, 실행 권한 없는 스택 페이지에서 명령어 실행을 시도할 때 문제가 된다고 설명.
+- 사전 가설: NX OFF에서 함수 포인터를 통한 스택 `ret` 실행 성공 예상, NX ON에서는 실행 권한 문제로 오류 예상. **실행 결과는 아직 제출되지 않음**.
+- 다음은 Canary OFF를 고정하고 `./lab_canary-off_nx-off execute` / `./lab_canary-off_nx-on execute` 관찰, 필요하면 GDB에서 잘못된 메모리 접근 주소/권한을 대조.
