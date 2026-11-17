@@ -61,3 +61,23 @@ Use the parallel variants to complete the matrix. Keep compiler flags and input 
 - 사용자 독립 사전 가설: Canary OFF에서는 오버플로우로 오염된 메모리가 이후 사용되지 않으면 바로 오류 없이 실행될 가능성이 있음. Canary ON에서는 오버플로우가 canary 슬롯을 덮었다면 함수 끝의 검사가 불일치를 감지해 `stack smashing detected`와 함께 중단될 가능성이 높음. NX ON은 스택에서 명령어 실행을 막고, NX OFF면 스택 명령 실행 가능성을 허용한다.
 - 교사 검토: 큰 방향 정확. 단 **canary는 오버플로우 자체를 모두 감지하는 것이 아니라 guard가 변경되고 체크 경로를 지날 때 검출**한다. **Canary OFF가 안전한 정상 종료를 뜻하지 않으며**, 특히 이번 local 32B 대상에 80B 입력이면 saved RBP/return address까지 오염될 수 있어 `ret`에서 실패할 가능성도 큼. NX OFF는 스택 실행 권한에 대한 필요 조건 일부만 제거할 뿐 임의의 셸코드 실행 성공을 보장하지 않는다. NX ON도 스택의 데이터 변조/ROP 등을 직접 막지는 않음.
 - 상태: 실측 4변형 결과 제출 전. 다음 작업은 **B (Canary OFF / NX ON)** vs **C (Canary ON / NX OFF)**에 동일 80B를 넣고 출력·signal·종료 위치 확인해 가설과 대조.
+
+
+## Stage B — first controlled user-local run B vs C
+
+- 사용자가 동일 `input80.bin` (`A`×80)를 `overflow` 모드로 각 빌드 실행한 **WSL 실측 원문**:
+```text
+[B: Canary OFF / NX ON]
+[overflow] enter up to 80 bytes
+[overflow] read=80 first=0x41
+Segmentation fault (core dumped)
+
+[C: Canary ON / NX OFF]
+[overflow] enter up to 80 bytes
+[overflow] read=80 first=0x41
+*** stack smashing detected ***: terminated
+Aborted (core dumped)
+```
+- 비교: 두 변형 모두 `read`에서 80B를 읽고 첫 바이트 0x41을 확인함. **Canary OFF**에서는 SIGSEGV를 의미하는 셸 메시지가 출력되지만, 정확한 예외 지점/원인(손상된 복귀 주소 등)은 **아직 GDB 실측 전이라 가설**. **Canary ON**에서는 stack protector 검사 실패에 따른 중단 메시지와 `Aborted`(일반적으로 SIGABRT)가 관찰됨. NX 조건도 동시에 다르므로 이 두 관찰만으로 NX 인과관계를 완전히 분리하지 말고 동일 NX에서 Canary만 변경한 다른 쌍도 비교할 것.
+- 사용자 사전 예상의 'Canary OFF에서는 메모리 오염 후에도 오류가 나지 않을 수 있음'은 **일반 원리로 맞지만 이 80B 실험에서 정상 종료로 이어지지는 않음**. Canary ON 검사 탐지 예상은 확인됨.
+- 다음 검증: Canary OFF/NX ON에 GDB로 중단 지점 `RIP`, `x/i $rip`, `RSP`, backtrace를 확인한 뒤, 상대 조건을 통제하여 off/off 및 on/on도 실행. 실제 출력을 받기 전 4조건 완료로 표시하지 않음.
