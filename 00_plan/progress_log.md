@@ -44,17 +44,17 @@ git pull --ff-only
 
 ## Current Pointer
 
-> 2026-11-15 확정된 FINAL 엑셀만 현행 계획으로 사용한다. 완료·미완료는 날짜가 아니라 제출된 증거로 판정한다.
+> 2026-11-15 확정된 FINAL 엑셀만 현행 계획으로 사용한다. 학습 완료와 미완료는 날짜가 아니라 제출된 증거로 판정한다.
 
-- Last completed: **2026-11-16 — Day153 / FINAL W06 1/4 전체 필수 완료.** [Day153 Write-up](../Day101-160/Day153/day153_writeup.md), [Day153 근거 README](../Day101-160/Day153/README.md).
-- Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276의 124개 필수 과제 및 운영·장기기억 규칙 적용.
-- Plan position: **Day154 / FINAL W06 2/4 진행 시작 (2026-11-17), 미완료**. 보호기법 4조건(Canary/NX)을 한 번에 하나씩 바꾸는 통제 실험; Day153 완료는 유지.
-- Current focus: Day153에서 **PXN1 stripped ELF** Ghidra·어셈블리 비교로 제어 흐름 복원, GDB에서 `a=32` 정상 복사, `a=80`의 a/b 지역변수 오염과 `accepted: mode=16705 sum=3120`, `a=96`의 saved RBP/복귀 주소 오염 및 `ret`에서의 비정규 주소 처리 실패 관찰. 별도 교사 재현 C 모델 사용자 WSL ASan 직접 실측: `stack-buffer-overflow`, `WRITE of size 80`. **원본 ELF 자체를 ASan 계측한 증거는 아님**. 원본 배열 선언 크기 미확정은 기록 보존.
-- CS/review: 사용자 objdump에서 SysV AMD64 7/8/9번째 정수 인자 `[rbp+0x10/+0x18/+0x20]` 직접 확인. Day043/050 Git 원본 대조 및 스택 정렬 새 조건 복습: 첫 `sub rsp,0x28` 판단 오답을 교사 힌트로 교정하고, `sub rsp,0x20` 변경 조건은 정답. 초기 오답·도움 여부 보존.
-- Next task: **Day154 실험 Stage A** — [condition_matrix.c](../Day101-160/Day154/condition_matrix.c) 및 [build_matrix.sh](../Day101-160/Day154/build_matrix.sh) 읽고 Canary/NX 두 보호기법의 역할과 data/overflow/execute 세 분기 예상 결과를 **실험 전** 독립적으로 설명. 이후 동일 입력으로 4가지 컴파일 조건 실측; GDB/objdump/readelf 2종 이상 증거 확보, CS와 Day043/050 복습 후 Write-up/Git 완료. 파일 준비만으로는 Day154 완료 처리하지 않음.
-- Evidence: [Day153 write-up](../Day101-160/Day153/day153_writeup.md), [reconstructed ASan model](../Day101-160/Day153/asan_repro.c), [README](../Day101-160/Day153/README.md), 과거 [Day043](../Day040-100/Day043/write_up.txt) / [Day050](../Day040-100/Day050/write_up.txt) 복습 근거.
-- Limits: ASan `local_buffer[48]`은 독립 재현 모델의 가정으로 **원본 stripped ELF 배열 크기 입증이 아님**. 사용자 ASan 제출은 오류 헤더·WRITE 크기 2줄이며 전체 트레이스/정상 출력 전문은 미제출. 원본 GDB 출력과 교사 재현 모델 결과는 분리 기록한다.
-- Teaching: 기본 조작 반복보다 처음 보는 바이너리에서 가설→증거→검증을 우선하고, 사용자가 요청하지 않은 기초 명령 나열은 피한다.
+- Last completed: **2026-11-17 — Day154 / FINAL W06 2/4 전체 필수 완료**. [Day154 Write-up](../Day101-160/Day154/day154_writeup.md), [Day154 증거 README](../Day101-160/Day154/README.md).
+- Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276의 124개 과제와 운영·장기복습 규칙.
+- Plan position: **다음 Day155 / FINAL W06 3/4**. Day153(2026-11-16), Day154(2026-11-17) 완료.
+- Current focus: Day154에 `condition_matrix.c` 하나를 같은 소스/옵션 조합 4개로 빌드해 Canary ON/OFF × NX ON/OFF 차이를 확인. 80B `A` overflow: Canary OFF = SIGSEGV (`ret`의 `[rsp]` 오염 GDB 확인), Canary ON = stack smashing detected/SIGABRT. `exec_probe`의 NX ON/OFF 스택 명령 실행 제한 사용자 구두 확인. Canary·NX 둘 다 ON에서도 `bytes[16]`에 20B 입력으로 `marker=0x1122334441414141` 변조 사용자 실측.
+- CS/review: 사용자 objdump에서 `fs:0x28` TLS Canary 저장 `[rbp-0x8]`, 비교 `sub; je`, 실패시 `__stack_chk_fail`을 독립 해석. readelf GNU_STACK NX OFF `RWE` vs NX ON `RW` 비교. Day043/050 Git 원본 대조 후 새로운 `pop rdi; ret` 진입 `RSP%16=8` → `win` 진입 `RSP%16=8`으로 별도 ret 불필요하다는 독립 정답 및 `+8`씩 계산.
+- Next task: **Day155 / FINAL W06 3/4**: 최종 엑셀 해당 일일 과제부터 확인하고 메인·CS·복습·기록을 진행. Day153/154의 이미 검증된 기초 개념을 동일 방식으로 반복시키지 말 것. 해당 날짜의 D+2/7/21/60 지연복습은 실제 앵커 기준 확인.
+- Evidence: [Day154 write-up](../Day101-160/Day154/day154_writeup.md), [README](../Day101-160/Day154/README.md), [실험 C 소스](../Day101-160/Day154/condition_matrix.c), [빌드 스크립트](../Day101-160/Day154/build_matrix.sh); 이전 복습 [Day043](../Day040-100/Day043/write_up.txt)/[Day050](../Day040-100/Day050/write_up.txt).
+- Limits: 보호 조합 결과 중 OFF/ON, ON/OFF는 터미널 원문 제출, 나머지 두 조합 및 NX execute는 **사용자 구두 일치**; GDB의 `ret` 확인은 사용자 설명(전체 덤프 미제출); `GNU_STACK`도 RWE/RW 요약 보고. `marker` 값은 직접 보고. 실제/구두 근거를 섞어 기록하지 않는다.
+- Teaching: 사용자 독립 예측·근거를 우선하며 이미 확인한 원리의 반복 대신 새로운 반례/새 바이너리로 전이 검증.
 
 ---
 
@@ -996,6 +996,15 @@ git pull --ff-only
 - 교사 작성 **독립 교육용** C 타깃 `Day101-160/Day154/condition_matrix.c`, 동일 조건 2x2 컴파일 스크립트 `build_matrix.sh`, 절차 `README.md`를 GitHub에 추가. 3가지 국소 분기 data/overflow/execute를 이용해 보호기법 효과를 분리 가능하게 준비. 교사 컨테이너에서 빌드 가능성과 변형별 동작 검증을 완료했으나 **사용자 자신의 실험/예상/근거를 대체하지 않음**.
 - **현재 사용자 측 진행:** 아직 Day154 소스 확인/실험 결과 제출 전. Stage A 사전 예상 질문부터 시작 예정.
 - 마지막 완료 Day153, Day154 미완료.
+
+---
+
+### 2026-11-17 — Day154 최종 완료 판정
+- 실험: 4개 Canary/NX 조합을 사용한 80B overflow 종료 방식 구분, GDB에서 Canary OFF 반환 위치 실패 설명, NX stack `ret` 실행 성공/차단(구두), 둘 다 ON에서 구조체 인접 `marker` 값 변경 `0x1122334441414141` 직접 관찰. 사전 예측과 실제 결과 대조 완료.
+- CS: `fs:0x28` Canary 가져오기·저장·복귀 직전 검사·`__stack_chk_fail` 분기 학생 objdump 원문 증거; NX `GNU_STACK RWE/RW` 사용자 readelf 결과 요약.
+- 복습: [Day043](../Day040-100/Day043/write_up.txt), [Day050](../Day040-100/Day050/write_up.txt) 원본 참조. `pop rdi; ret` 가젯 진입 `RSP%16=8`에서 두 명령 각각 +8B로 목표 `win` 진입 정렬 `8` 달성, 별도 `ret` 불필요라는 사용자 무힌트 정답.
+- 기록: [Day154 write-up](../Day101-160/Day154/day154_writeup.md), [증거 README](../Day101-160/Day154/README.md), [소스](../Day101-160/Day154/condition_matrix.c)·[빌드](../Day101-160/Day154/build_matrix.sh) Git 커밋. 일부 터미널 원문 대신 구두 결과 확인의 증거 한계 유지.
+- **판정:** Day154 메인·CS·복습·기록 필수 완료. 마지막 전체 완료 Day154, **다음 Day155 / FINAL W06 3/4**.
 
 ---
 
