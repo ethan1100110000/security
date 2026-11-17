@@ -81,3 +81,8 @@ Aborted (core dumped)
 - 비교: 두 변형 모두 `read`에서 80B를 읽고 첫 바이트 0x41을 확인함. **Canary OFF**에서는 SIGSEGV를 의미하는 셸 메시지가 출력되지만, 정확한 예외 지점/원인(손상된 복귀 주소 등)은 **아직 GDB 실측 전이라 가설**. **Canary ON**에서는 stack protector 검사 실패에 따른 중단 메시지와 `Aborted`(일반적으로 SIGABRT)가 관찰됨. NX 조건도 동시에 다르므로 이 두 관찰만으로 NX 인과관계를 완전히 분리하지 말고 동일 NX에서 Canary만 변경한 다른 쌍도 비교할 것.
 - 사용자 사전 예상의 'Canary OFF에서는 메모리 오염 후에도 오류가 나지 않을 수 있음'은 **일반 원리로 맞지만 이 80B 실험에서 정상 종료로 이어지지는 않음**. Canary ON 검사 탐지 예상은 확인됨.
 - 다음 검증: Canary OFF/NX ON에 GDB로 중단 지점 `RIP`, `x/i $rip`, `RSP`, backtrace를 확인한 뒤, 상대 조건을 통제하여 off/off 및 on/on도 실행. 실제 출력을 받기 전 4조건 완료로 표시하지 않음.
+
+## GDB confirmation: Canary OFF / NX ON return-site failure
+- 사용자 GDB 후속 구두 보고: Canary OFF / NX ON `overflow < input80.bin`에서 `RIP`는 `ret` 명령을 가리키고, 복귀 대상으로 사용할 스택의 슬롯에 `0x4141414141414141`이 기록되어 있어 예외가 발생함을 직접 확인했다고 설명.
+- 정밀 구분: **`RSP` 레지스터 자체가 0x4141…이라는 뜻이 아니라 `[RSP]`에 저장된 8바이트 값이 0x4141…**이어야 `ret`가 이 값을 복귀 주소로 사용하려 한다는 설명이 성립. 사용자 공유는 주소/레지스터 원문 덤프가 아닌 구두 실측 해설이며, 그 범위만 검증 기록.
+- 이에 따라 B 조건의 SIGSEGV 위치가 `ret`임을 사용자 보고로 확인. 다음은 같은 80B 입력에 `lab_canary-off_nx-off`와 `lab_canary-on_nx-on` 두 조건을 실행해 Canary/NX 통제 비교를 완성할 것.
