@@ -116,3 +116,22 @@ Aborted (core dumped)
 - 학생 독립 설명: `bytes[16]` 다음의 `marker`로 20바이트 쓰기의 초과 4바이트가 넘어가고, 보호용 Canary 슬롯을 변경하지 않으므로 stack smashing 검사가 해당 데이터 변조를 알아채지 못한다고 판단. **핵심 원리 및 리틀엔디언 결과 정확**. `marker`의 하위 4바이트는 `41 41 41 41`, 상위 4바이트는 기존 `0x11223344`가 유지됨.
 - 정밀 조건: `bytes` 멤버의 16B 경계는 넘었지만 별도 스택 카나리를 건드리지 않고 **같은 struct 안의 다음 필드를 수정**한 예. Canary는 모든 경계를 추적하는 도구가 아니며 NX는 해당 데이터 수정과 무관. `read`가 `bytes` 멤버 크기보다 길게 쓰는 동작은 안전한 C 코드가 아니고, 두 보호기법이 켜져도 막히지 않을 수 있음.
 - 상태: **80B overflow의 4조건 비교, NX 스택 명령 실행 구두 확인, 보호기법 ON에서도 인접 필드 오염 실측**까지 메인 실험 진행. CS 보호코드/메모리 퍼미션 실제 근거 및 별도 전이/복습, Day154 write-up/Git은 진행 예정. 완료 처리 전.
+
+
+## CS user evidence: canary initialization and check in overflow_probe
+
+- 사용자 스스로 `lab_canary-on_nx-on`의 `objdump -d -M intel`에서 발견한 `overflow_probe` 프롤로그/에필로그 Canary 경로:
+```asm
+4012dd: mov rax,QWORD PTR fs:0x28
+4012e6: mov QWORD PTR [rbp-0x8],rax
+...
+40134b: mov rax,QWORD PTR [rbp-0x8]
+40134f: sub rax,QWORD PTR fs:0x28
+401358: je 40135f
+40135a: call 4010d0 <__stack_chk_fail@plt>
+40135f: leave
+401360: ret
+```
+- 사용자 독립 해석: 프롤로그에서 `fs:0x28`의 원본 TLS Canary를 `[rbp-0x8]`에 저장, 반환 전 저장 Canary와 원본 Canary를 비교, 같으면 `leave;ret`, 다르면 `__stack_chk_fail@plt` 호출. **분석 정확**.
+- 정밀화: `sub` 결과 0이면 ZF=1이 되어 `je` 분기로 검사 통과, 0이 아니면 실패 호출. 검사 시점은 `leave;ret` 직전이며 복사/쓰기 순간을 가로막는 검사가 아님. CS Canary 어셈블리 근거 확인 완료.
+- 다음 CS 조건 확인: `readelf -lW`에서 `GNU_STACK` 플래그를 NX ON/OFF 변형끼리 비교하여 실행 권한 `RWE` vs `RW` 관찰. NX 입력·동작 구두 증거와 정적 권한 근거를 연결. 이후 복습 및 Day154 Write-up.
