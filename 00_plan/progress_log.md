@@ -48,10 +48,10 @@ git pull --ff-only
 
 - Last completed: **2026-11-16 — Day153 / FINAL W06 1/4 전체 필수 완료.** [Day153 Write-up](../Day101-160/Day153/day153_writeup.md), [Day153 근거 README](../Day101-160/Day153/README.md).
 - Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276의 124개 필수 과제 및 운영·장기기억 규칙 적용.
-- Plan position: **다음 Day154 / FINAL W06 2/4**. Day153의 정적 분석, GDB, ASan 재현 모델 비교, CS 실측, 복습/Write-up 완료.
+- Plan position: **Day154 / FINAL W06 2/4 진행 시작 (2026-11-17), 미완료**. 보호기법 4조건(Canary/NX)을 한 번에 하나씩 바꾸는 통제 실험; Day153 완료는 유지.
 - Current focus: Day153에서 **PXN1 stripped ELF** Ghidra·어셈블리 비교로 제어 흐름 복원, GDB에서 `a=32` 정상 복사, `a=80`의 a/b 지역변수 오염과 `accepted: mode=16705 sum=3120`, `a=96`의 saved RBP/복귀 주소 오염 및 `ret`에서의 비정규 주소 처리 실패 관찰. 별도 교사 재현 C 모델 사용자 WSL ASan 직접 실측: `stack-buffer-overflow`, `WRITE of size 80`. **원본 ELF 자체를 ASan 계측한 증거는 아님**. 원본 배열 선언 크기 미확정은 기록 보존.
 - CS/review: 사용자 objdump에서 SysV AMD64 7/8/9번째 정수 인자 `[rbp+0x10/+0x18/+0x20]` 직접 확인. Day043/050 Git 원본 대조 및 스택 정렬 새 조건 복습: 첫 `sub rsp,0x28` 판단 오답을 교사 힌트로 교정하고, `sub rsp,0x20` 변경 조건은 정답. 초기 오답·도움 여부 보존.
-- Next task: **Day154 최종 엑셀의 다음 필수 과제** 시작. 해당 일차 복습과 만기(D+2/7/21/60) 체크는 해당 학습일 기준으로 확인하고, 이미 증명한 Day153의 기초 실험 반복은 피한다.
+- Next task: **Day154 실험 Stage A** — [condition_matrix.c](../Day101-160/Day154/condition_matrix.c) 및 [build_matrix.sh](../Day101-160/Day154/build_matrix.sh) 읽고 Canary/NX 두 보호기법의 역할과 data/overflow/execute 세 분기 예상 결과를 **실험 전** 독립적으로 설명. 이후 동일 입력으로 4가지 컴파일 조건 실측; GDB/objdump/readelf 2종 이상 증거 확보, CS와 Day043/050 복습 후 Write-up/Git 완료. 파일 준비만으로는 Day154 완료 처리하지 않음.
 - Evidence: [Day153 write-up](../Day101-160/Day153/day153_writeup.md), [reconstructed ASan model](../Day101-160/Day153/asan_repro.c), [README](../Day101-160/Day153/README.md), 과거 [Day043](../Day040-100/Day043/write_up.txt) / [Day050](../Day040-100/Day050/write_up.txt) 복습 근거.
 - Limits: ASan `local_buffer[48]`은 독립 재현 모델의 가정으로 **원본 stripped ELF 배열 크기 입증이 아님**. 사용자 ASan 제출은 오류 헤더·WRITE 크기 2줄이며 전체 트레이스/정상 출력 전문은 미제출. 원본 GDB 출력과 교사 재현 모델 결과는 분리 기록한다.
 - Teaching: 기본 조작 반복보다 처음 보는 바이너리에서 가설→증거→검증을 우선하고, 사용자가 요청하지 않은 기초 명령 나열은 피한다.
@@ -988,6 +988,14 @@ git pull --ff-only
 - 초기 스택 정렬 오답, 메인/helper 스택 오프셋의 별도 확인 필요, 원본 배열 선언 크기 미확정, ASan 전체 트레이스 미제출은 한계로 기록하되 이번 차시 수행 자체를 취소하지 않음.
 - Commit evidence: [Day153 write-up](../Day101-160/Day153/day153_writeup.md), [Day153 README](../Day101-160/Day153/README.md), [ASan 비교 모델](../Day101-160/Day153/asan_repro.c).
 - **Next: FINAL Day154 / W06 2/4**.
+
+---
+
+### 2026-11-17 — Day154 시작: Canary × NX 4조건 통제 실험
+- FINAL 엑셀 `01_일일124` Day154 과제를 확인: 4조건 통제 비교, 쓰기 오염/실제 코드 실행 구분, 스택 카나리 검사 시점과 NX 실행 금지 역할, Day040~050 복습, 원본 증빙·반례·Git.
+- 교사 작성 **독립 교육용** C 타깃 `Day101-160/Day154/condition_matrix.c`, 동일 조건 2x2 컴파일 스크립트 `build_matrix.sh`, 절차 `README.md`를 GitHub에 추가. 3가지 국소 분기 data/overflow/execute를 이용해 보호기법 효과를 분리 가능하게 준비. 교사 컨테이너에서 빌드 가능성과 변형별 동작 검증을 완료했으나 **사용자 자신의 실험/예상/근거를 대체하지 않음**.
+- **현재 사용자 측 진행:** 아직 Day154 소스 확인/실험 결과 제출 전. Stage A 사전 예상 질문부터 시작 예정.
+- 마지막 완료 Day153, Day154 미완료.
 
 ---
 
