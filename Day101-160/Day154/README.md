@@ -103,3 +103,8 @@ Aborted (core dumped)
 - 학생 독립 설명: `exec_probe`가 스택 배열에 `0xc3`(x86-64 `ret` 명령)를 저장하고 이를 실행하려 하며, **BOF 없이** NX ON/OFF의 명령어 실행 허용 차이를 확인하는 실험이라고 정확히 이해함. NX ON도 스택에 `0xc3`을 저장하는 **쓰기 작업은 가능**하며, 실행 권한 없는 스택 페이지에서 명령어 실행을 시도할 때 문제가 된다고 설명.
 - 사전 가설: NX OFF에서 함수 포인터를 통한 스택 `ret` 실행 성공 예상, NX ON에서는 실행 권한 문제로 오류 예상. **실행 결과는 아직 제출되지 않음**.
 - 다음은 Canary OFF를 고정하고 `./lab_canary-off_nx-off execute` / `./lab_canary-off_nx-on execute` 관찰, 필요하면 GDB에서 잘못된 메모리 접근 주소/권한을 대조.
+
+## Stage C user-local NX exec probe (verbal confirmation)
+- 사용자 WSL에서 `./lab_canary-off_nx-off execute`와 `./lab_canary-off_nx-on execute`를 각각 실행하고 **"실행해봤어 예상대로네"**라고 결과가 사전 가설과 일치했다고 구두 보고.
+- 사전 가설은 NX OFF일 때 스택 내 1바이트 `ret` 실행 후 반환 가능, NX ON일 때 스택 실행 시도에서 오류 발생. **정확한 출력/시그널/GDB 중단 위치의 원문은 제공되지 않았으므로 구두 일치 확인에 한정**. `exec_probe`는 BOF 없는 별도 명령 실행권한 실험임.
+- 다음 과제: Canary ON/NX ON으로 고정해 `data_probe`의 `struct {bytes[16]; marker;}`에 20바이트를 넣고, marker 변화 및 가드 비손상 여부를 확인하여 **Canary의 탐지 범위가 스택의 모든 데이터 변경에 미치지 않음**을 실측.
