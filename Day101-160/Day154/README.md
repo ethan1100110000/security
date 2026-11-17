@@ -108,3 +108,11 @@ Aborted (core dumped)
 - 사용자 WSL에서 `./lab_canary-off_nx-off execute`와 `./lab_canary-off_nx-on execute`를 각각 실행하고 **"실행해봤어 예상대로네"**라고 결과가 사전 가설과 일치했다고 구두 보고.
 - 사전 가설은 NX OFF일 때 스택 내 1바이트 `ret` 실행 후 반환 가능, NX ON일 때 스택 실행 시도에서 오류 발생. **정확한 출력/시그널/GDB 중단 위치의 원문은 제공되지 않았으므로 구두 일치 확인에 한정**. `exec_probe`는 BOF 없는 별도 명령 실행권한 실험임.
 - 다음 과제: Canary ON/NX ON으로 고정해 `data_probe`의 `struct {bytes[16]; marker;}`에 20바이트를 넣고, marker 변화 및 가드 비손상 여부를 확인하여 **Canary의 탐지 범위가 스택의 모든 데이터 변경에 미치지 않음**을 실측.
+
+
+## Stage D: struct neighbor modification with both protections ON
+
+- 학생 로컬 실험 결과: `./lab_canary-on_nx-on data < input20.bin` 실행에서 `marker=0x1122334441414141` 확인(이번 사용자 메시지 직접 보고).
+- 학생 독립 설명: `bytes[16]` 다음의 `marker`로 20바이트 쓰기의 초과 4바이트가 넘어가고, 보호용 Canary 슬롯을 변경하지 않으므로 stack smashing 검사가 해당 데이터 변조를 알아채지 못한다고 판단. **핵심 원리 및 리틀엔디언 결과 정확**. `marker`의 하위 4바이트는 `41 41 41 41`, 상위 4바이트는 기존 `0x11223344`가 유지됨.
+- 정밀 조건: `bytes` 멤버의 16B 경계는 넘었지만 별도 스택 카나리를 건드리지 않고 **같은 struct 안의 다음 필드를 수정**한 예. Canary는 모든 경계를 추적하는 도구가 아니며 NX는 해당 데이터 수정과 무관. `read`가 `bytes` 멤버 크기보다 길게 쓰는 동작은 안전한 C 코드가 아니고, 두 보호기법이 켜져도 막히지 않을 수 있음.
+- 상태: **80B overflow의 4조건 비교, NX 스택 명령 실행 구두 확인, 보호기법 ON에서도 인접 필드 오염 실측**까지 메인 실험 진행. CS 보호코드/메모리 퍼미션 실제 근거 및 별도 전이/복습, Day154 write-up/Git은 진행 예정. 완료 처리 전.
