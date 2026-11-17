@@ -135,3 +135,8 @@ Aborted (core dumped)
 - 사용자 독립 해석: 프롤로그에서 `fs:0x28`의 원본 TLS Canary를 `[rbp-0x8]`에 저장, 반환 전 저장 Canary와 원본 Canary를 비교, 같으면 `leave;ret`, 다르면 `__stack_chk_fail@plt` 호출. **분석 정확**.
 - 정밀화: `sub` 결과 0이면 ZF=1이 되어 `je` 분기로 검사 통과, 0이 아니면 실패 호출. 검사 시점은 `leave;ret` 직전이며 복사/쓰기 순간을 가로막는 검사가 아님. CS Canary 어셈블리 근거 확인 완료.
 - 다음 CS 조건 확인: `readelf -lW`에서 `GNU_STACK` 플래그를 NX ON/OFF 변형끼리 비교하여 실행 권한 `RWE` vs `RW` 관찰. NX 입력·동작 구두 증거와 정적 권한 근거를 연결. 이후 복습 및 Day154 Write-up.
+
+## CS evidence: NX GNU_STACK ELF header (user observation)
+- 사용자 직접 `readelf -lW` 비교 보고: `nx-off` 바이너리의 `GNU_STACK` 플래그는 **`RWE`**, `nx-on`은 **`RW`**. 따라서 ON 설정에서는 GNU_STACK에 실행 권한 **E**가 없음을 정확히 설명.
+- 사용자 원문은 플래그/의미에 대한 요약이며 readelf 전체 출력은 미제출. 앞서 `exec_probe` NX ON/OFF 동작 비교와 정적 헤더 증거가 연결되어 **Day154 CS 보호기법 구현 확인 완료**.
+- 다음 Day043/050 누적복습에서는 **`pop rdi; ret` 가젯과 단독 `ret`가 각자 소비하는 스택 슬롯 수가 다른 새 조건**에서 목표 함수 진입의 `RSP%16`을 판단한다. 이전날 했던 동일 `sub rsp` 문답은 반복하지 않는다. 사용자 독립 답변 및 설명 후 기록.
