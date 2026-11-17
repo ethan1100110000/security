@@ -91,3 +91,10 @@ Aborted (core dumped)
 - 사용자 독립 예측(미실험): 동일한 `A×80` 오버플로우에서 NX ON/OFF 변화만으로는 중단 방식에 실질적인 차이가 없을 것으로 예상. Canary ON/OFF가 보호 경로(`__stack_chk_fail` vs 손상 복귀주소 `ret`)의 차이를 결정할 것으로 설명.
 - 판단: 현재 입력은 실행 가능한 코드가 아니라 `0x41` 반복이며 `0x4141414141414141`은 비정규 반환 대상이므로, 해당 위치로 명령어를 가져오는 NX 검사 전에 반환 과정에서 실패할 것으로 예측하는 근거가 타당함. **NX가 항상 무관한 게 아니며 스택 코드 실행이 시도될 경우 별도로 영향**.
 - OFF/OFF, ON/ON **실제 실행 출력은 아직 미제출**. 이후 결과와 예측을 대조 예정.
+
+
+## Stage B 80-byte overflow matrix: user confirmation
+
+- 2026-11-17 사용자 보고: 이전에 예측한 나머지 **Canary OFF/NX OFF → SIGSEGV**, **Canary ON/NX ON → `stack smashing detected` / Aborted**가 로컬 실행에서 **"예상대로임"**이라고 일치 확인됨. 두 새 조건의 *실제 터미널 출력 전문*은 미제출이므로 **구두 결과 일치 확인**으로 기록.
+- 4조건 80B overflow 표: OFF/OFF → SIGSEGV(구두 일치), OFF/ON → `ret`에서 SIGSEGV(터미널 및 GDB 원인 설명), ON/OFF → stack smashing detected/Aborted(터미널 전문 제출), ON/ON → stack smashing detected/Aborted(구두 일치).
+- 결론: 이 입력에서 NX만 변경해서는 오류 종류가 바뀌지 않았고, Canary 설정이 탐지 경로의 변화를 만들었다. **NX가 모든 상황에서 무관하다는 일반화는 금지**. 이제 `exec_probe()`를 이용해 스택 명령어 실행 시도에서 NX ON/OFF 차이를 분리해 관찰한다. 이후 `data_probe()`로 인접 데이터 변경과 Canary의 한계를 확인할 것.
