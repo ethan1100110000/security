@@ -1,4 +1,4 @@
-# Day154 / FINAL W06 2/4 — Canary × NX 4-condition controlled experiment (in progress)
+# Day154 / FINAL W06 2/4 — Canary × NX 4-condition controlled experiment (완료: 2026-11-17)
 
 **Source of task:** FINAL XLSX `01_일일124`, Day154 (2026-11-17).
 **Goal:** Compare crash location / check timing in a 2×2 Canary/NX matrix while changing only one protection setting at a time. Distinguish data corruption from code execution.
@@ -140,3 +140,13 @@ Aborted (core dumped)
 - 사용자 직접 `readelf -lW` 비교 보고: `nx-off` 바이너리의 `GNU_STACK` 플래그는 **`RWE`**, `nx-on`은 **`RW`**. 따라서 ON 설정에서는 GNU_STACK에 실행 권한 **E**가 없음을 정확히 설명.
 - 사용자 원문은 플래그/의미에 대한 요약이며 readelf 전체 출력은 미제출. 앞서 `exec_probe` NX ON/OFF 동작 비교와 정적 헤더 증거가 연결되어 **Day154 CS 보호기법 구현 확인 완료**.
 - 다음 Day043/050 누적복습에서는 **`pop rdi; ret` 가젯과 단독 `ret`가 각자 소비하는 스택 슬롯 수가 다른 새 조건**에서 목표 함수 진입의 `RSP%16`을 판단한다. 이전날 했던 동일 `sub rsp` 문답은 반복하지 않는다. 사용자 독립 답변 및 설명 후 기록.
+
+## Day043/050 changed-condition review: pop rdi; ret
+- 교사 제시 무힌트 새 반례: `pop rdi; ret` 가젯 진입 시 `RSP%16=8`, 인자값과 `win` 주소가 순서대로 스택에 있으며 목표 `win` 진입 `RSP%16=8`. 학생 답 "올바르지않나? pop ret이 각각 rsp + 8을 하니까" — **정답 및 핵심 근거 독립 제시**.
+- 계산: 진입 8 → `pop rdi` (+8B) 후 0 → `ret` (+8B) 후 8. 따라서 `win` 진입의 ABI 기준을 충족하므로 **단독 `ret` 추가 불필요**. 추가 `ret`은 이 조건에서는 8→0으로 바꾸어 잘못 정렬한다.
+- 과거 Git [Day043](../../Day040-100/Day043/write_up.txt)은 `ret` 추가로 성공, [Day050](../../Day040-100/Day050/write_up.txt)은 `ret` 제거 후 성공. 보호 여부가 아니라 목표 함수 진입 시 RSP 정렬에 따라 결정해야 함.
+- 이 문제는 전날 단순 `sub rsp` 계산 반복이 아니라 **POP+RET 가젯의 두 슬롯 소비**를 적용한 새 조건의 독립 답변. Review 조건 충족.
+
+## Final Day154 status
+- 80B overflow 보호 조합 4개(두 개 출력 원문/두 개 구두 일치), GDB `ret` 오류 위치 구두 확인, stack command execution NX 실험 구두 확인, 20B 구조체 멤버 초과 쓰기/marker 실측, Canary 검사 코드 objdump 학생 원문, NX `GNU_STACK` RWE/RW readelf 학생 요약, ROP 정렬 새로운 조건 정답까지 수행.
+- [Day154 Write-up](day154_writeup.md)에 실제/구두 관찰의 경계를 보존해 기록. **메인·CS·복습·Git 4영역 완료 (2026-11-17)**. 전 범위 터미널 원문/신호 값 미제출, data member UB와 구조체 경계 사이 구분 등 한계를 기록.
