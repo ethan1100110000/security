@@ -56,3 +56,10 @@ If GDB also reports `Error disabling address space randomization`, mark ASLR-OFF
 - CS: PIE relocation vs ASLR mapping plus at least one independent `runtime - offset = image base` or inverse calculation.
 - Review: Day040~050 prior Git evidence and Day153 D+2 fresh independent reasoning; new scenario/counterexample (avoid rote repeated quizzes).
 - Git: input source / build flags / actual stdout CSV & notes / environment & blocked controls, a reproducible write-up, commit SHA. Teacher notes partial completion if external permission blocked; does not fabricate ASLR-OFF.
+
+
+## Stage A — student independent predictions
+
+- 학생이 ASLR ON 전제에서 10회 재시작 시 예상한 결과: **PIE OFF**이면 `main` 고정, `libc` 랜덤, `stack` 랜덤; **PIE ON**이면 `main` 랜덤, `libc` 랜덤, `stack` 랜덤. 같은 실행 파일 내 `main - helper` 오프셋은 실행 간 **고정**. **이론상 정확한 사전 가설**.
+- 보완 조건: 이는 정상적인 Linux ASLR 활성화, PIE/Non-PIE 빌드 설정, 매번 **별도 프로세스**로 다시 실행하는 환경이란 전제. ASLR ON에서도 libc/stack의 실제 다양성은 10회 측정해 확인해야 하며, 상대 오프셋 고정은 동일 바이너리의 동일 로딩 이미지 기준.
+- 현재 상태: 학생 독립 예상만 제출됨. `measure_aslr-on.csv`/원본 출력·회수 수치는 아직 없음. 다음 `python3 measure.py --aslr on --runs 10`을 사용자 로컬에서 수행 후 `unique-values` 요약을 제출받아 가설 검증할 예정.
