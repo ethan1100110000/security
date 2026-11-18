@@ -1,4 +1,4 @@
-# Day155 / FINAL W06 3/4 — PIE × ASLR relocation measurements (in progress)
+# Day155 / FINAL W06 3/4 — PIE × ASLR relocation measurements (완료: 2026-11-18)
 
 **Authoritative plan:** FINAL XLSX `01_일일124` Day155, 2026-11-18.
 Main: **PIE ON/OFF × ASLR ON/OFF address-offset measurement (10 independent runs per viable condition)**; distinguish relocatable ELF image from system-wide ASLR mappings. Explain **without-leak attack uncertainty** with observed numbers and a plot or table. Do not infer full address entropy from only 10 trials.
@@ -157,3 +157,10 @@ pie trials=10 unique-values: {'main': 1, 'helper': 1, 'stack': 1, 'libc_puts': 1
 - 학생 **무힌트 정답**: "**a지 main은 libc 라이브러리에 있는 함수가 아니니까**" — 정확. A는 target 바이너리의 실행 가능한 `r-xp` 맵, B는 `libc.so.6`의 `r--p` 맵에 속하므로 `main` 포인터라고 볼 수 없다. 오프셋 뺄셈의 정렬만으로 후보 주소의 소속 ELF·접근 권한이 입증되지 않는다는 반례.
 - 복습 판정: Day043의 PIE leak 후보 검증 방법을 실제 매핑/파일 출처 검증으로 발전시킨 새로운 사례. 이전 Day050의 정렬 문제 반복 없이 **출처 교차확인**을 적용함.
 - 완료 대기 조건: 사용자 로컬에서 생성한 `measure_aslr-on.csv`, `measure_aslr-off.csv` 원본 40개 실행 레코드가 Git에 올라와 있지 않은 상태. 두 CSV 원본 업로드/추적 확인 시 Day155 4영역 최종 완료 기록 가능. 다른 원시 증거(4조건 unique-values 요약, 주소 샘플, nm 오프셋, 학생 독립 설명)는 제출 및 README 기록 완료.
+
+## Day155 completion — uploaded raw evidence verified
+- User commit: `b4e92fb9a8f1fc0df5878ed0b89e22354e9daac4` — `study: Day155 raw PIE ASLR measurements`.
+- Git files: [`measure_aslr-on.csv`](measure_aslr-on.csv) (**20 data rows = no_pie 10 + pie 10**) and [`measure_aslr-off.csv`](measure_aslr-off.csv) (**20 data rows = no_pie 10 + pie 10**), 40 separate executions total. All 4 configurations have trials 1~10 once each.
+- CSV recomputation matches student's unique-address summaries. All 40 rows satisfy `main - helper = main_minus_helper = 0x13`. For PIE ON, computed `main - 0x119c` base has 10 distinct values with ASLR ON and 1 with ASLR OFF.
+- [Full Day155 write-up](day155_writeup.md) updated to cite raw Git commit and original data instead of pending status.
+- **Completion verdict: PASS / Day155 FULLY COMPLETE**, with initial D+2 memory error retained and revalidated using a changed boundary condition. **Next Day156 / W06 4/4 — blind stack-analysis oral assessment**, separate planned activity; not yet started.
