@@ -48,10 +48,10 @@ git pull --ff-only
 
 - Last completed: **2026-11-17 — Day154 / FINAL W06 2/4 전체 필수 완료**. [Day154 Write-up](../Day101-160/Day154/day154_writeup.md), [Day154 증거 README](../Day101-160/Day154/README.md).
 - Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276의 124개 과제와 운영·장기복습 규칙.
-- Plan position: **Day155 / FINAL W06 3/4 진행 시작 (2026-11-18), 미완료.** 최종 계획 `01_일일124`의 PIE/ASLR 10회 반복 측정 과제 수행 예정. 마지막 전체 완료 Day154.
-- Current focus: **Day155 PIE 유무 × ASLR 유무(가능한 조건) 주소 변화·상대 오프셋·누출 없는 공격 불확실성 실측**. 교사가 교육용 `addr_probe.c`, `build.sh`, `measure.py`, 실습 README를 [Day155](../Day101-160/Day155/README.md)에 커밋. 사용자 사전 가설/WSL 실행/10회 측정 CSV는 **아직 없음**. 같은 프로그램의 main/helper/stack/libc_puts 주소를 비교하고, PIE 재배치와 운영체제 ASLR을 분리.
-- CS/review: **Day155 아직 미실시**. CS는 PIE 재배치 vs ASLR 주소 매핑과 `runtime - symbol_offset = load_base` 독립 산술. 기존 Day040~050 Git 회상→대조→새 반례. **오늘 2026-11-18은 Day153(11-16)의 D+2 장기기억 점검일**이므로 다른 조건으로 새 인출 문제 확인. 이전 답변 반복 최소화.
-- Next task: Day155 소스/빌드 확인 후 **주소 예측을 먼저 제출**하고, `bash build.sh` 및 `python3 measure.py --aslr on --runs 10`으로 PIE-OFF/ON 각 10회 실측; `readelf -hW`와 CSV 증거 확보. ASLR OFF는 `setarch -R` 권한이 허용될 때만 측정하고, 거부되면 오류를 문서화 (전역 sysctl 변경 금지). 이후 누출 부재의 주소 불확실성 수치·표, CS, D+2 복습, write-up/Git.
+- Plan position: **Day155 / FINAL W06 3/4 기록 마감 대기 (2026-11-18), 최종 완료 미선언**. 마지막 완료 Day154. PIE×ASLR 메인/CS/복습은 실행·설명 완료, 원본 40회 주소 CSV의 Git 보관 확인 후 완료 처리.
+- Current focus: **Day155** 4조건(PIE ON/OFF × ASLR ON/OFF)마다 10회씩 총 40회 사용자 실측 요약: ASLR ON PIE OFF main=1, stack/libc=10; ASLR ON PIE ON main/stack/libc=10; ASLR OFF 두 PIE 모두 모든 주소 1; relative main-helper 항상 1. PIE base `0x5f4c76b34000` 및 helper symbol offset `0x1189` 학생 무힌트 계산. no-leak에서 offset만으로 절대주소 계산 불가, 10회 다양성으로 1/10 확률 결론 불가.
+- CS/review: **Day155 CS·장기복습 완료**: PIE/ASLR 구분+nm/실행 주소 역산, Day043/050 가상 vmmap 후보 A가 target r-xp 안·B는 libc r--p 안임을 학생 무힌트 구별. Day153 D+2(2026-11-18)에서 63B 첫 바이트 경계 오답→힌트 후 `a=0x0042,b=0x4242,mode=16962,sum=3168` 정정, 이어 61B 새 조건 `a=0x003d,b=0x1242` 무힌트 통과. 검사가 오염 전 완료된 시간 순서도 독립 통과.
+- Next task: Day155 사용자 WSL의 **`measure_aslr-on.csv`와 `measure_aslr-off.csv`를 Git에 원본 그대로 추가·push**. [write-up](../Day101-160/Day155/day155_writeup.md)은 요약/계산/복습과 한계까지 교사가 작성·커밋. CSV가 Git에 올라오면 판정 갱신 후 Day156/FINAL W06 4/4로 진행. 40개 개별 주소는 미제출이라 생성·추측 금지.
 - Evidence: [Day154 write-up](../Day101-160/Day154/day154_writeup.md), [README](../Day101-160/Day154/README.md), [실험 C 소스](../Day101-160/Day154/condition_matrix.c), [빌드 스크립트](../Day101-160/Day154/build_matrix.sh); 이전 복습 [Day043](../Day040-100/Day043/write_up.txt)/[Day050](../Day040-100/Day050/write_up.txt).
 - Limits: 보호 조합 결과 중 OFF/ON, ON/OFF는 터미널 원문 제출, 나머지 두 조합 및 NX execute는 **사용자 구두 일치**; GDB의 `ret` 확인은 사용자 설명(전체 덤프 미제출); `GNU_STACK`도 RWE/RW 요약 보고. `marker` 값은 직접 보고. 실제/구두 근거를 섞어 기록하지 않는다.
 - Teaching: 사용자 독립 예측·근거를 우선하며 이미 확인한 원리의 반복 대신 새로운 반례/새 바이너리로 전이 검증.
@@ -1013,6 +1013,17 @@ git pull --ff-only
 - 교육용 로컬 주소 출력 프로그램/2종 PIE 빌드 스크립트/10회 CSV 수집기를 [Day155](../Day101-160/Day155/README.md) 경로에 작성·Git 커밋. ASLR OFF는 `setarch -R`이 OS에 의해 차단될 수 있으므로 **실패를 명시하고 거짓 측정 금지**; OS 전역 ASLR을 바꾸지 않는다.
 - **현재 사용자 실습 결과 미제출, Day155 미완료**. 2026-11-16 완료 Day153의 D+2 복습은 오늘 확인.
 - Last completed Day154 / W06 2/4.
+
+---
+
+### 2026-11-18 — Day155 메인·CS·복습 검증 및 write-up (원본 CSV Git 보관 대기)
+- 사용자 독립 예상과 4조건×10회(총 40회) 측정 요약이 전부 일치함. ASLR ON PIE OFF에서 main 고정, libc/stack 변동; ASLR ON PIE ON에서 main/libc/stack 변동; ASLR OFF 두 조건 모두 주소 고정. main-helper 상대 오프셋은 항상 고정.
+- 독립 PIE 기준 계산: `0x5f4c76b3519c - 0x119c = 0x5f4c76b34000`; helper symbol `0x1189`; 관계 `0x13` 검증.
+- 무누출 가정: 절대 base 없으면 helper offset만으로 주소 확정 불가, 10개 관찰로 1/10 성공 확률 단정 불가.
+- Day043/050: 후보 A가 target r-xp, B가 libc r--p에 있으므로 `main` 후보는 A라는 학생 독립 답변. 산술 정렬만으로 포인터의 코드 이미지 출처 확정 불가능.
+- Day153 D+2: `a=63`, `b=7`, `0x42×63` 조건에서 초기 경계 오답과 mode/sum 망각 → 교수 보정 → 정답, 새 61B 조건 독립 정답 `a=0x3d,b=0x1242`, 검사 후 오염 순서도 독립 설명. 교정 과정 분리 보존.
+- [Day155 write-up](../Day101-160/Day155/day155_writeup.md), [README](../Day101-160/Day155/README.md)에 실행 요약과 표·계산·메커니즘·한계를 작성 및 Git 커밋.
+- **미완료 게이트**: 사용자 로컬 `measure_aslr-on.csv`/`measure_aslr-off.csv`의 **원본 각 20행을 저장소에 추가한 commit 필요**. 해당 파일이 Git에서 실제 확인되면 완료 선언. 마지막 전체 완료 Day154.
 
 ---
 
