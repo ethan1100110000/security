@@ -48,10 +48,10 @@ git pull --ff-only
 
 - Last completed: **2026-11-17 — Day154 / FINAL W06 2/4 전체 필수 완료**. [Day154 Write-up](../Day101-160/Day154/day154_writeup.md), [Day154 증거 README](../Day101-160/Day154/README.md).
 - Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276의 124개 과제와 운영·장기복습 규칙.
-- Plan position: **다음 Day155 / FINAL W06 3/4**. Day153(2026-11-16), Day154(2026-11-17) 완료.
-- Current focus: Day154에 `condition_matrix.c` 하나를 같은 소스/옵션 조합 4개로 빌드해 Canary ON/OFF × NX ON/OFF 차이를 확인. 80B `A` overflow: Canary OFF = SIGSEGV (`ret`의 `[rsp]` 오염 GDB 확인), Canary ON = stack smashing detected/SIGABRT. `exec_probe`의 NX ON/OFF 스택 명령 실행 제한 사용자 구두 확인. Canary·NX 둘 다 ON에서도 `bytes[16]`에 20B 입력으로 `marker=0x1122334441414141` 변조 사용자 실측.
-- CS/review: 사용자 objdump에서 `fs:0x28` TLS Canary 저장 `[rbp-0x8]`, 비교 `sub; je`, 실패시 `__stack_chk_fail`을 독립 해석. readelf GNU_STACK NX OFF `RWE` vs NX ON `RW` 비교. Day043/050 Git 원본 대조 후 새로운 `pop rdi; ret` 진입 `RSP%16=8` → `win` 진입 `RSP%16=8`으로 별도 ret 불필요하다는 독립 정답 및 `+8`씩 계산.
-- Next task: **Day155 / FINAL W06 3/4**: 최종 엑셀 해당 일일 과제부터 확인하고 메인·CS·복습·기록을 진행. Day153/154의 이미 검증된 기초 개념을 동일 방식으로 반복시키지 말 것. 해당 날짜의 D+2/7/21/60 지연복습은 실제 앵커 기준 확인.
+- Plan position: **Day155 / FINAL W06 3/4 진행 시작 (2026-11-18), 미완료.** 최종 계획 `01_일일124`의 PIE/ASLR 10회 반복 측정 과제 수행 예정. 마지막 전체 완료 Day154.
+- Current focus: **Day155 PIE 유무 × ASLR 유무(가능한 조건) 주소 변화·상대 오프셋·누출 없는 공격 불확실성 실측**. 교사가 교육용 `addr_probe.c`, `build.sh`, `measure.py`, 실습 README를 [Day155](../Day101-160/Day155/README.md)에 커밋. 사용자 사전 가설/WSL 실행/10회 측정 CSV는 **아직 없음**. 같은 프로그램의 main/helper/stack/libc_puts 주소를 비교하고, PIE 재배치와 운영체제 ASLR을 분리.
+- CS/review: **Day155 아직 미실시**. CS는 PIE 재배치 vs ASLR 주소 매핑과 `runtime - symbol_offset = load_base` 독립 산술. 기존 Day040~050 Git 회상→대조→새 반례. **오늘 2026-11-18은 Day153(11-16)의 D+2 장기기억 점검일**이므로 다른 조건으로 새 인출 문제 확인. 이전 답변 반복 최소화.
+- Next task: Day155 소스/빌드 확인 후 **주소 예측을 먼저 제출**하고, `bash build.sh` 및 `python3 measure.py --aslr on --runs 10`으로 PIE-OFF/ON 각 10회 실측; `readelf -hW`와 CSV 증거 확보. ASLR OFF는 `setarch -R` 권한이 허용될 때만 측정하고, 거부되면 오류를 문서화 (전역 sysctl 변경 금지). 이후 누출 부재의 주소 불확실성 수치·표, CS, D+2 복습, write-up/Git.
 - Evidence: [Day154 write-up](../Day101-160/Day154/day154_writeup.md), [README](../Day101-160/Day154/README.md), [실험 C 소스](../Day101-160/Day154/condition_matrix.c), [빌드 스크립트](../Day101-160/Day154/build_matrix.sh); 이전 복습 [Day043](../Day040-100/Day043/write_up.txt)/[Day050](../Day040-100/Day050/write_up.txt).
 - Limits: 보호 조합 결과 중 OFF/ON, ON/OFF는 터미널 원문 제출, 나머지 두 조합 및 NX execute는 **사용자 구두 일치**; GDB의 `ret` 확인은 사용자 설명(전체 덤프 미제출); `GNU_STACK`도 RWE/RW 요약 보고. `marker` 값은 직접 보고. 실제/구두 근거를 섞어 기록하지 않는다.
 - Teaching: 사용자 독립 예측·근거를 우선하며 이미 확인한 원리의 반복 대신 새로운 반례/새 바이너리로 전이 검증.
@@ -1005,6 +1005,14 @@ git pull --ff-only
 - 복습: [Day043](../Day040-100/Day043/write_up.txt), [Day050](../Day040-100/Day050/write_up.txt) 원본 참조. `pop rdi; ret` 가젯 진입 `RSP%16=8`에서 두 명령 각각 +8B로 목표 `win` 진입 정렬 `8` 달성, 별도 `ret` 불필요라는 사용자 무힌트 정답.
 - 기록: [Day154 write-up](../Day101-160/Day154/day154_writeup.md), [증거 README](../Day101-160/Day154/README.md), [소스](../Day101-160/Day154/condition_matrix.c)·[빌드](../Day101-160/Day154/build_matrix.sh) Git 커밋. 일부 터미널 원문 대신 구두 결과 확인의 증거 한계 유지.
 - **판정:** Day154 메인·CS·복습·기록 필수 완료. 마지막 전체 완료 Day154, **다음 Day155 / FINAL W06 3/4**.
+
+---
+
+### 2026-11-18 — Day155 시작: PIE × ASLR 10회 측정
+- 최종 엑셀 `01_일일124` Day155 실제 내용 확인: **PIE/ASLR 켜짐/꺼짐의 주소·오프셋 10회 반복 측정, leak 부재시 공격 불확실성 수치·그림, PIE 재배치/ASLR 맵 구분과 오프셋 산술, Day040~050 복습**.
+- 교육용 로컬 주소 출력 프로그램/2종 PIE 빌드 스크립트/10회 CSV 수집기를 [Day155](../Day101-160/Day155/README.md) 경로에 작성·Git 커밋. ASLR OFF는 `setarch -R`이 OS에 의해 차단될 수 있으므로 **실패를 명시하고 거짓 측정 금지**; OS 전역 ASLR을 바꾸지 않는다.
+- **현재 사용자 실습 결과 미제출, Day155 미완료**. 2026-11-16 완료 Day153의 D+2 복습은 오늘 확인.
+- Last completed Day154 / W06 2/4.
 
 ---
 
