@@ -75,3 +75,21 @@ pie trials=10 unique-values: {'main': 10, 'helper': 10, 'stack': 10, 'libc_puts'
 - 사전 예측과 **완전히 일치**: PIE OFF 실행 파일의 main/helper 고정; PIE ON의 main/helper는 10회 중 각각 10개 주소; stack/libc_puts는 두 설정 모두 10개 주소; 동일 빌드의 main/helper 상대 차이는 1종.
 - 사용자 제출은 요약 통계이며 **CSV의 실제 주소 샘플/개별 offset 값은 아직 제출되지 않음**. 10회 주소가 서로 달랐다는 사실만으로 ASLR 총 엔트로피/무누출 익스플로잇 성공 확률을 계산할 수 없음.
 - 다음: 사용자가 PIE ON에서 측정한 `main` 절대 주소 1개와 `nm -n addr_pie`의 `main` 심볼 값 1개를 직접 가져와 `PIE_base = runtime_main - ELF_main_offset`을 독립 계산. 가능하면 다른 프로세스도 대조. 이후 ASLR OFF 권한 테스트는 실제 허용 여부에 따라 결과/거부 원문 기록.
+
+
+## Stage C — independently calculated PIE load base
+
+- 사용자 **실제 로컬 출력 원문**:
+```text
+main=0x5f4c76b3519c helper=0x5f4c76b35189 stack=0x7ffd90f0fc40 libc_puts=0x7e4177880e10 main_minus_helper=0x13
+$ nm -n addr_pie | grep ' main$'
+000000000000119c T main
+```
+- 사용자 독립 계산:
+  - runtime `main=0x5f4c76b3519c`, ELF `main` symbol value `0x119c`.
+  - `PIE_load_bias = 0x5f4c76b3519c - 0x119c = 0x5f4c76b34000`, **정확**.
+  - `helper` ELF offset = `0x5f4c76b35189 - 0x5f4c76b34000 = 0x1189`, **정확**.
+  - `main-helper = 0x119c - 0x1189 = 0x13`, 실측 `main_minus_helper=0x13`과 일치.
+- Interpretation: `nm`의 ET_DYN 심볼 값은 PIE 로딩 기준에 대한 값으로 이 샘플에서는 `runtime = load_bias + ELF_symbol_value`. 한 실행의 이 값은 다음 ASLR 재시작에서 달라질 수 있다. `main-helper` 거리는 바뀌지 않는다.
+- 학생이 중간 힌트 없이 base/offset을 직접 계산하여 CS 오프셋 산술 요건 충족.
+- 다음: `python3 measure.py --aslr off --runs 10`을 로컬에서 시도해 허용 여부 확인하고, 실패하면 오류 전문을 기록하며 정상 결과를 만들어내지 않는다. 이어 PIE ON/OFF의 address uncertainty 측정된 유니크 개수/표와 no-leak 시나리오 비교, Day153 D+2과 Day040~050 복습, write-up.
