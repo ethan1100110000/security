@@ -93,3 +93,24 @@ $ nm -n addr_pie | grep ' main$'
 - Interpretation: `nm`의 ET_DYN 심볼 값은 PIE 로딩 기준에 대한 값으로 이 샘플에서는 `runtime = load_bias + ELF_symbol_value`. 한 실행의 이 값은 다음 ASLR 재시작에서 달라질 수 있다. `main-helper` 거리는 바뀌지 않는다.
 - 학생이 중간 힌트 없이 base/offset을 직접 계산하여 CS 오프셋 산술 요건 충족.
 - 다음: `python3 measure.py --aslr off --runs 10`을 로컬에서 시도해 허용 여부 확인하고, 실패하면 오류 전문을 기록하며 정상 결과를 만들어내지 않는다. 이어 PIE ON/OFF의 address uncertainty 측정된 유니크 개수/표와 no-leak 시나리오 비교, Day153 D+2과 Day040~050 복습, write-up.
+
+
+## Stage B — user WSL ASLR-OFF 10-run measurement summary
+
+- 사용자 독립 예측: "aslr이 꺼져있으면 pie가 어떻든 싹다 고정이지" — **주소 다양성 기준으로 정확한 예측**.
+- 학생이 WSL에서 `python3 measure.py --aslr off --runs 10` 실행하여 제출한 **실제 도구 출력 요약**:
+```text
+saved: measure_aslr-off.csv
+no_pie trials=10 unique-values: {'main': 1, 'helper': 1, 'stack': 1, 'libc_puts': 1, 'main_minus_helper': 1}
+pie trials=10 unique-values: {'main': 1, 'helper': 1, 'stack': 1, 'libc_puts': 1, 'main_minus_helper': 1}
+```
+- **2×2 통제 비교, 조건마다 10회 사용자 측 반복 실행 완료**:
+  | PIE | ASLR | distinct main | distinct helper | distinct stack | distinct libc_puts | distinct main-helper |
+  |---|---|---:|---:|---:|---:|---:|
+  | OFF | ON | 1 | 1 | 10 | 10 | 1 |
+  | ON | ON | 10 | 10 | 10 | 10 | 1 |
+  | OFF | OFF | 1 | 1 | 1 | 1 | 1 |
+  | ON | OFF | 1 | 1 | 1 | 1 | 1 |
+- `measure_aslr-off.csv`는 **학생 로컬에서 실제 생성된 파일**, 원본 CSV는 아직 Git 리포지토리에 업로드되었음을 확인하지 않음. `measure_aslr-on.csv` 역시 로컬 생성되었으나 원문 전체는 아직 미제출. 40 프로세스 실행의 고유 주소 개수 결과로 한정.
+- 결론: PIE는 실행 파일이 재배치될 수 있도록 하고, ASLR 활성화가 해당 재배치를 주소 무작위화한다. ASLR OFF에서는 측정한 10회가 모두 같은 주소; 다른 환경/빌드에 일반화하지 않는다.
+- 다음: 표를 통한 10-run 표본의 address diversity 수치와 **leak 없는 조건의 불확실성** 논증. 10개 서로 다른 PIE 베이스가 보였다고 성공률이 `1/10`이라는 결론을 내릴 수 없음(모집단/엔트로피 미확정). 학생 독립 답변 후 Day153 D+2/Day043~050 복습, write-up 작성.
