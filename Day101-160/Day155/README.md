@@ -114,3 +114,12 @@ pie trials=10 unique-values: {'main': 1, 'helper': 1, 'stack': 1, 'libc_puts': 1
 - `measure_aslr-off.csv`는 **학생 로컬에서 실제 생성된 파일**, 원본 CSV는 아직 Git 리포지토리에 업로드되었음을 확인하지 않음. `measure_aslr-on.csv` 역시 로컬 생성되었으나 원문 전체는 아직 미제출. 40 프로세스 실행의 고유 주소 개수 결과로 한정.
 - 결론: PIE는 실행 파일이 재배치될 수 있도록 하고, ASLR 활성화가 해당 재배치를 주소 무작위화한다. ASLR OFF에서는 측정한 10회가 모두 같은 주소; 다른 환경/빌드에 일반화하지 않는다.
 - 다음: 표를 통한 10-run 표본의 address diversity 수치와 **leak 없는 조건의 불확실성** 논증. 10개 서로 다른 PIE 베이스가 보였다고 성공률이 `1/10`이라는 결론을 내릴 수 없음(모집단/엔트로피 미확정). 학생 독립 답변 후 Day153 D+2/Day043~050 복습, write-up 작성.
+
+
+## Stage C — no-leak address uncertainty (student answer)
+
+- 교사 조건: PIE ON, ASLR ON, `main` ELF 오프셋 `0x119c`, `helper` 오프셋 `0x1189`, 런타임 주소 출력/누출 없음. 질문 (1) helper 오프셋만으로 절대주소 산출 가능 여부, (2) 10회 PIE Base가 각기 달랐으므로 임의 추측 성공률=1/10 추정의 타당성.
+- 학생 독립 응답: **(1)** "오프셋을 알아도 base를 모르니까 base를 더한 실제 주소 유출이 필요함" — 정확. 엄밀하게는 **동일 PIE 로딩 이미지의 런타임 포인터 하나**가 유출되어 그 포인터의 알려진 오프셋을 뺄 수 있다면 base를 구할 수 있음(반드시 helper 포인터 누출일 필요는 없음). **(2)** "아니지" — 정확. 이유 설명은 아직 없으므로 심층 근거는 교사 설명을 통해 확인; 학생 독립적으로 엔트로피를 계산했다는 증거는 아님.
+- 10회씩 각 구성에서 **서로 다른 주소 1개 or 10개**가 나타났다는 것은 표본 다양성일 뿐, 가능한 전체 PIE Base 수·분포·독립적인 재시작 공격 성공률을 알려주지 않음. 관측된 10개 중 하나를 선택한다고 `P=1/10`을 결론 내릴 수 없음.
+- PIE ON/ASLR ON의 blind no-leak 가정과 이번 측정 프로그램의 실제 주소 출력(의도적인 measurement leak)을 구별해야 함.
+- Next: Day153 D+2 challenge with parser copy offsets `b=+0x3c`, `a=+0x3e` under a new length to test byte-selective local-field overwrite without saved return address corruption; then Day040~050 Git-linked altered-condition review and final write-up.
