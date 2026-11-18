@@ -63,3 +63,15 @@ If GDB also reports `Error disabling address space randomization`, mark ASLR-OFF
 - 학생이 ASLR ON 전제에서 10회 재시작 시 예상한 결과: **PIE OFF**이면 `main` 고정, `libc` 랜덤, `stack` 랜덤; **PIE ON**이면 `main` 랜덤, `libc` 랜덤, `stack` 랜덤. 같은 실행 파일 내 `main - helper` 오프셋은 실행 간 **고정**. **이론상 정확한 사전 가설**.
 - 보완 조건: 이는 정상적인 Linux ASLR 활성화, PIE/Non-PIE 빌드 설정, 매번 **별도 프로세스**로 다시 실행하는 환경이란 전제. ASLR ON에서도 libc/stack의 실제 다양성은 10회 측정해 확인해야 하며, 상대 오프셋 고정은 동일 바이너리의 동일 로딩 이미지 기준.
 - 현재 상태: 학생 독립 예상만 제출됨. `measure_aslr-on.csv`/원본 출력·회수 수치는 아직 없음. 다음 `python3 measure.py --aslr on --runs 10`을 사용자 로컬에서 수행 후 `unique-values` 요약을 제출받아 가설 검증할 예정.
+
+
+## Stage B — user WSL ASLR-ON 10-run measurement summary
+
+- 2026-11-18 사용자 WSL에서 `python3 measure.py --aslr on --runs 10` 실행 후 **직접 제출한 요약 원문**:
+```text
+no_pie trials=10 unique-values: {'main': 1, 'helper': 1, 'stack': 10, 'libc_puts': 10, 'main_minus_helper': 1}
+pie trials=10 unique-values: {'main': 10, 'helper': 10, 'stack': 10, 'libc_puts': 10, 'main_minus_helper': 1}
+```
+- 사전 예측과 **완전히 일치**: PIE OFF 실행 파일의 main/helper 고정; PIE ON의 main/helper는 10회 중 각각 10개 주소; stack/libc_puts는 두 설정 모두 10개 주소; 동일 빌드의 main/helper 상대 차이는 1종.
+- 사용자 제출은 요약 통계이며 **CSV의 실제 주소 샘플/개별 offset 값은 아직 제출되지 않음**. 10회 주소가 서로 달랐다는 사실만으로 ASLR 총 엔트로피/무누출 익스플로잇 성공 확률을 계산할 수 없음.
+- 다음: 사용자가 PIE ON에서 측정한 `main` 절대 주소 1개와 `nm -n addr_pie`의 `main` 심볼 값 1개를 직접 가져와 `PIE_base = runtime_main - ELF_main_offset`을 독립 계산. 가능하면 다른 프로세스도 대조. 이후 ASLR OFF 권한 테스트는 실제 허용 여부에 따라 결과/거부 원문 기록.
