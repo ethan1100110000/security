@@ -82,4 +82,6 @@ Day153 완료 2026-11-16 → 2026-11-18 D+2.
 - **CS 수행:** PIE/ASLR 역할 분리와 학생의 실제 주소/심볼 오프셋 계산 완료.
 - **복습 수행:** Day043/050의 PIE 주소 후보 출처 검증, Day153 D+2 초기 오답과 힌트 후 재검증 과정을 구분하여 완료.
 - **기록:** 소스·빌드·측정 스크립트·실측 요약·표·원시 출력 1개·계산 결과를 본문에 Git 기록.
-- **현재 남은 기록 요건:** 사용자 로컬에서 생성된 `measure_aslr-on.csv`, `measure_aslr-off.csv` (각 20개 프로세스 레코드)의 **원본 파일이 저장소에 올라왔는지 아직 확인되지 않음**. CSV가 확보되면 [README](README.md)와 진행 로그에 실제 commit SHA를 기록하고 Day155 완료 처리. CSV 없이 임의의 주소/실행 회차를 만들어내지 않는다.
+- **원본 증거 검증 완료:** 사용자 Git 커밋 `b4e92fb9a8f1fc0df5878ed0b89e22354e9daac4` (`study: Day155 raw PIE ASLR measurements`)에 [ASLR ON 원본 20행](measure_aslr-on.csv)과 [ASLR OFF 원본 20행](measure_aslr-off.csv) 추적됨. 각 CSV의 `no_pie` 10행, `pie` 10행 및 순번 1~10 확인.
+- **실제 CSV 검증 결과:** ON: `no_pie` main/helper 1종, stack/libc 10종; `pie` main/helper/stack/libc 10종. OFF: `no_pie`, `pie` 각 모든 주소 1종. 모든 행에서 `runtime_main-runtime_helper=main_minus_helper=0x13`. PIE ON에서 `main-0x119c`를 계산한 base 고유 개수는 ASLR ON=10종, OFF=1종. 요약 보고 내용과 원본 데이터 일치.
+- **최종 판정: Day155 완료 (2026-11-18).** 메인 실측 4조건×10회, CS 무힌트 오프셋 계산, Day040~050 변형 복습과 Day153 D+2 교정 후 독립 재검증, 원시 CSV 및 write-up Git 증거를 모두 확보함.
