@@ -123,3 +123,13 @@ pie trials=10 unique-values: {'main': 1, 'helper': 1, 'stack': 1, 'libc_puts': 1
 - 10회씩 각 구성에서 **서로 다른 주소 1개 or 10개**가 나타났다는 것은 표본 다양성일 뿐, 가능한 전체 PIE Base 수·분포·독립적인 재시작 공격 성공률을 알려주지 않음. 관측된 10개 중 하나를 선택한다고 `P=1/10`을 결론 내릴 수 없음.
 - PIE ON/ASLR ON의 blind no-leak 가정과 이번 측정 프로그램의 실제 주소 출력(의도적인 measurement leak)을 구별해야 함.
 - Next: Day153 D+2 challenge with parser copy offsets `b=+0x3c`, `a=+0x3e` under a new length to test byte-selective local-field overwrite without saved return address corruption; then Day040~050 Git-linked altered-condition review and final write-up.
+
+
+## Day153 D+2 review — byte-granular overwrite and corrected answer
+
+- **Day153 완료일 2026-11-16 → D+2 2026-11-18**, 변경 조건 입력: `a=63`, `b=7`, `0x42 × 63`; 복사 대상 시작 기준 `b:+0x3c..0x3d`, `a:+0x3e..0x3f`, saved RBP `+0x50`, return `+0x58`.
+- 학생 **최초 무노트 답변**: `a` 전부, `b` 절반 덮인다고 설명하여 **슬롯 경계 계산이 반대였음**. saved RBP/return address는 미도달이라는 답은 정답. `mode`와 `sum` 의미가 기억나지 않음을 직접 말함.
+- 교사가 `mode=b`, `sum=48`바이트 한정 누적합, 63바이트 쓰기 범위는 오프셋 `0..62`이며 `b` 2B 완전 덮기/`a` 하위 1B만 덮기임을 **힌트/정정 제공**.
+- 학생 정정 후 **독립 산술로 실제 값 계산**: `a=0x0042`, `b=0x4242`, `mode=16962`, `sum=3168`. 정답. `0x42=66`, `66×48=3168`. Saved RBP/return untouched.
+- 판정: 오프셋 경계 **초기 오답 → 도움받아 교정 후 수치 정답**. 처음부터 무힌트 숙달/완전한 D+2 통과로 기록하지 않는다. 복습 규칙에 따라 새 조건에서 오개념 재검증 필요.
+- 남은 Day155 복습: Day043/Day050의 PIE leak 후보 검증과 leak 없는 추론을 오늘 배운 PIE Base/맵 근거에 연결. 핵심은 스택 정렬 단답 재반복 아님.
