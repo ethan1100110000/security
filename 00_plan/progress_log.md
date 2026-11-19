@@ -48,12 +48,12 @@ git pull --ff-only
 
 - Last completed: **2026-11-18 — Day155 / FINAL W06 3/4 전체 필수 완료**. [Day155 Write-up](../Day101-160/Day155/day155_writeup.md), [Day155 README](../Day101-160/Day155/README.md), [ASLR ON raw CSV](../Day101-160/Day155/measure_aslr-on.csv), [ASLR OFF raw CSV](../Day101-160/Day155/measure_aslr-off.csv), user commit `b4e92fb9a8f1fc0df5878ed0b89e22354e9daac4`.
 - Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276의 124개 과제와 운영·장기복습 규칙.
-- Plan position: **Day156 / FINAL W06 4/4 시작 (2026-11-19), 독립 주차평가 진행 중.** 마지막 전체 완료 Day155.
-- Current focus: Day156 블라인드 새 ELF를 교사가 작성하고 x86-64 Linux 환경에서 실행 사전 점검. 채팅 첨부 `day156_target.elf`, SHA256은 [Day156 README](../Day101-160/Day156/README.md)에 기록. 정답/소스/보호기법 상세는 최초 독립 분석 전 비공개. 사용자 분석 결과 미제출.
-- CS/review: Day156 16B ABI 정렬 반례와 프롤로그 5문항, Day040~050 기록 대조 및 **Day154 D+2 (11-17 → 11-19)** 새 조건 회상 예정. 아직 수행 전.
-- Next task: 첨부 ELF를 WSL에서 실행하고 도구를 사용해 독립 분석. 입력의 제어권·검사·경계·보호기법·오류 원인·수정 방안, 정상/반례와 코드·런타임 근거 2종 이상을 제시. 첫 독립 분석 후 교사 채점, CS/복습/증빙 및 Git 기록. W06 통과 판정은 실제 증거 기준.
-- Evidence: [Day154 write-up](../Day101-160/Day154/day154_writeup.md), [README](../Day101-160/Day154/README.md), [실험 C 소스](../Day101-160/Day154/condition_matrix.c), [빌드 스크립트](../Day101-160/Day154/build_matrix.sh); 이전 복습 [Day043](../Day040-100/Day043/write_up.txt)/[Day050](../Day040-100/Day050/write_up.txt).
-- Limits: 보호 조합 결과 중 OFF/ON, ON/OFF는 터미널 원문 제출, 나머지 두 조합 및 NX execute는 **사용자 구두 일치**; GDB의 `ret` 확인은 사용자 설명(전체 덤프 미제출); `GNU_STACK`도 RWE/RW 요약 보고. `marker` 값은 직접 보고. 실제/구두 근거를 섞어 기록하지 않는다.
+- Plan position: **Day156 / W06 4/4 학습 수행·교정 완료, 독립 주차 심사 보류 (2026-11-19)**. 마지막 전체 완료 Day155. Day156은 계획의 무힌트·실제 증거 요건 충족 전까지 유지.
+- Current focus: Day156 새 ELF의 입력 경로, 목적지 경계 검사 누락, 보호기법의 범위, 인접 변수 오염 관찰 및 수정 설계 분석을 수행. 헤더 해석, 입력 생성 및 디버거 안내를 받음. [상세 평가 보고서](../Day101-160/Day156/day156_writeup.md).
+- CS/review: 구술 5문항 수행, 최초 정답 2/5 및 나머지 교정 기록. Day154 D+2 보호기법 한계 독립 통과. 프레임 포인터 없는 조건에서 인자 위치 초기 오답, RSP=0x1008과 sub rsp,0x38의 새 조건에서 복귀 주소 및 인자 위치를 독립 정답으로 재검증.
+- Next task: **Day156 새 미지 바이너리 재평가**. 동일 문제 반복은 하지 않음. 최초 힌트 없이 독립 분석·구술 및 원본 실행/환경/Git 증거 확보 후 W06 통과 여부 판정. 오늘의 학습 보고서까지 Git 기록 완료.
+- Evidence: [Day156 보고서](../Day101-160/Day156/day156_writeup.md), [실습·답변 기록](../Day101-160/Day156/README.md), [Day155 원본 CSV](../Day101-160/Day155/measure_aslr-on.csv).
+- Limits: Day156 전체 GDB 덤프·checksec 원문·실행 환경 및 재현 입력 파일 Git 확인 미완료. 배열 선언 크기 및 원본 빌드 명령 미확정, 실제 수정 실행 검증 미수행. 최초 도움과 교정 확인을 독립 블라인드 통과로 혼동하지 않음.
 - Teaching: 사용자 독립 예측·근거를 우선하며 이미 확인한 원리의 반복 대신 새로운 반례/새 바이너리로 전이 검증.
 
 ---
@@ -1039,6 +1039,13 @@ git pull --ff-only
 - FINAL XLSX `01_일일124` Day156 실습, CS, 복습 및 주차 통과 조건 확인.
 - 새 로컬 ELF 실습물을 별도 첨부로 제공, 교사 환경에서 빌드/동작 확인. [평가 기준과 해시](../Day101-160/Day156/README.md) Git 기록. 정답과 소스 비공개.
 - 학생 실제 분석/측정 미제출, Day156 진행 중. Day154 D+2 및 CS 구술 후 주차 통과 판정.
+
+---
+
+### 2026-11-19 — Day156 학습 수행 및 독립 평가 보류
+- 정적·동적 분석 및 근본 원인/수정 설계 수행, 오류 메시지 보고. 실제 원자료 부족과 최초 도움 범위 명시.
+- CS 5문항 교정, Day154 D+2 독립 설명, 프레임 포인터 없는 스택 위치 새 조건 재검증 정답. [보고서](../Day101-160/Day156/day156_writeup.md) 및 README 기록.
+- **W06 미통과(보류)**: 새 문제의 독립 분석 및 실제 로그가 필요. 동일 Day156 유지, 마지막 전체 완료 Day155.
 
 ---
 
