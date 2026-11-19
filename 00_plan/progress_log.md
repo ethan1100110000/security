@@ -48,10 +48,10 @@ git pull --ff-only
 
 - Last completed: **2026-11-18 — Day155 / FINAL W06 3/4 전체 필수 완료**. [Day155 Write-up](../Day101-160/Day155/day155_writeup.md), [Day155 README](../Day101-160/Day155/README.md), [ASLR ON raw CSV](../Day101-160/Day155/measure_aslr-on.csv), [ASLR OFF raw CSV](../Day101-160/Day155/measure_aslr-off.csv), user commit `b4e92fb9a8f1fc0df5878ed0b89e22354e9daac4`.
 - Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276의 124개 과제와 운영·장기복습 규칙.
-- Plan position: **다음 Day156 / FINAL W06 4/4** (예정일 2026-11-19, 강제 마감 아님). Day153/154/155 완료. Day156 새 바이너리 블라인드 스택 심사/10분 발표는 아직 진행하지 않음.
-- Current focus: **Day155 2×2 PIE/ASLR 총 40회 측정 및 원본 Git 증거 검증 완료.** ASLR ON/PIE OFF에서 main 1, stack/libc 10; ASLR ON/PIE ON에서 main/stack/libc 10; ASLR OFF 모든 조건 주소 1종. 동일 바이너리 `main-helper=0x13` 전체 40행 성립, PIE ON 베이스 고유 10/1. load bias `0x5f4c76b34000`, helper offset `0x1189` 학생 무힌트 계산. no-leak 시 base 불명/10 샘플 다양성≠1/10 성공 확률 확인.
-- CS/review: **Day155 CS·장기복습 완료**: PIE/ASLR 구분+nm/실행 주소 역산, Day043/050 가상 vmmap 후보 A가 target r-xp 안·B는 libc r--p 안임을 학생 무힌트 구별. Day153 D+2(2026-11-18)에서 63B 첫 바이트 경계 오답→힌트 후 `a=0x0042,b=0x4242,mode=16962,sum=3168` 정정, 이어 61B 새 조건 `a=0x003d,b=0x1242` 무힌트 통과. 검사가 오염 전 완료된 시간 순서도 독립 통과.
-- Next task: **Day156 FINAL W06 4/4** 계획 고지: 처음 보는 새로운 스택 바이너리에 대해 입력 제어권·경계·보호기법·실제 오류 원인·수정 방안을 **힌트 없는 10분 분석 발표**. CS: 16B ABI 정렬 반례와 함수 프롤로그 5문항 구술. 이전 Day040~050 스택/ROP/ABI 연결, 독립 실행·어셈블리·GDB 증거, 최종 보고서/Git. 준비된 실습 바이너리/과제 제시 전에는 완료 선언 금지.
+- Plan position: **Day156 / FINAL W06 4/4 시작 (2026-11-19), 독립 주차평가 진행 중.** 마지막 전체 완료 Day155.
+- Current focus: Day156 블라인드 새 ELF를 교사가 작성하고 x86-64 Linux 환경에서 실행 사전 점검. 채팅 첨부 `day156_target.elf`, SHA256은 [Day156 README](../Day101-160/Day156/README.md)에 기록. 정답/소스/보호기법 상세는 최초 독립 분석 전 비공개. 사용자 분석 결과 미제출.
+- CS/review: Day156 16B ABI 정렬 반례와 프롤로그 5문항, Day040~050 기록 대조 및 **Day154 D+2 (11-17 → 11-19)** 새 조건 회상 예정. 아직 수행 전.
+- Next task: 첨부 ELF를 WSL에서 실행하고 도구를 사용해 독립 분석. 입력의 제어권·검사·경계·보호기법·오류 원인·수정 방안, 정상/반례와 코드·런타임 근거 2종 이상을 제시. 첫 독립 분석 후 교사 채점, CS/복습/증빙 및 Git 기록. W06 통과 판정은 실제 증거 기준.
 - Evidence: [Day154 write-up](../Day101-160/Day154/day154_writeup.md), [README](../Day101-160/Day154/README.md), [실험 C 소스](../Day101-160/Day154/condition_matrix.c), [빌드 스크립트](../Day101-160/Day154/build_matrix.sh); 이전 복습 [Day043](../Day040-100/Day043/write_up.txt)/[Day050](../Day040-100/Day050/write_up.txt).
 - Limits: 보호 조합 결과 중 OFF/ON, ON/OFF는 터미널 원문 제출, 나머지 두 조합 및 NX execute는 **사용자 구두 일치**; GDB의 `ret` 확인은 사용자 설명(전체 덤프 미제출); `GNU_STACK`도 RWE/RW 요약 보고. `marker` 값은 직접 보고. 실제/구두 근거를 섞어 기록하지 않는다.
 - Teaching: 사용자 독립 예측·근거를 우선하며 이미 확인한 원리의 반복 대신 새로운 반례/새 바이너리로 전이 검증.
@@ -1032,6 +1032,13 @@ git pull --ff-only
 - 원본 40행을 재집계해 사용자 고유 주소 개수 요약과 일치 확인. 모든 행의 `main-helper=0x13` 일치; PIE ON 베이스 `main-0x119c`는 ASLR ON 10종 / OFF 1종.
 - [Day155 write-up](../Day101-160/Day155/day155_writeup.md), [README](../Day101-160/Day155/README.md) 완료로 갱신. 메인·CS·Day040~050 변경 복습·Day153 D+2 교정+새 조건 무힌트 재검증·raw logs+Git 근거 모두 충족.
 - **Day155 최종 완료 판정. 마지막 완료 Day155. Next Day156 / FINAL W06 4/4.** Day156은 새로운 스택 ELF 블라인드 심사(10분 설명), CS 16B 정렬/프롤로그 5문항, 독립 Git 증거 조건.
+
+---
+
+### 2026-11-19 — Day156 블라인드 주차 종합평가 시작
+- FINAL XLSX `01_일일124` Day156 실습, CS, 복습 및 주차 통과 조건 확인.
+- 새 로컬 ELF 실습물을 별도 첨부로 제공, 교사 환경에서 빌드/동작 확인. [평가 기준과 해시](../Day101-160/Day156/README.md) Git 기록. 정답과 소스 비공개.
+- 학생 실제 분석/측정 미제출, Day156 진행 중. Day154 D+2 및 CS 구술 후 주차 통과 판정.
 
 ---
 
