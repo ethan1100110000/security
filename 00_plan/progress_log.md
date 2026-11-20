@@ -48,10 +48,10 @@ git pull --ff-only
 
 - Last completed: **2026-11-18 — Day155 / FINAL W06 3/4 전체 필수 완료**. [Day155 Write-up](../Day101-160/Day155/day155_writeup.md), [Day155 README](../Day101-160/Day155/README.md), [ASLR ON raw CSV](../Day101-160/Day155/measure_aslr-on.csv), [ASLR OFF raw CSV](../Day101-160/Day155/measure_aslr-off.csv), user commit `b4e92fb9a8f1fc0df5878ed0b89e22354e9daac4`.
 - Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276의 124개 과제와 운영·장기복습 규칙.
-- Plan position: **Day156 / W06 4/4 학습 수행·교정 완료, 독립 주차 심사 보류 (2026-11-19)**. 마지막 전체 완료 Day155. Day156은 계획의 무힌트·실제 증거 요건 충족 전까지 유지.
+- Plan position: **Day156 / W06 4/4 독립 재평가 시작 (2026-11-20)**. 마지막 전체 완료 Day155. 이전 학습·구술·복습 완료 및 오답 교정 기록 유지.
 - Current focus: Day156 새 ELF의 입력 경로, 목적지 경계 검사 누락, 보호기법의 범위, 인접 변수 오염 관찰 및 수정 설계 분석을 수행. 헤더 해석, 입력 생성 및 디버거 안내를 받음. [상세 평가 보고서](../Day101-160/Day156/day156_writeup.md).
 - CS/review: 구술 5문항 수행, 최초 정답 2/5 및 나머지 교정 기록. Day154 D+2 보호기법 한계 독립 통과. 프레임 포인터 없는 조건에서 인자 위치 초기 오답, RSP=0x1008과 sub rsp,0x38의 새 조건에서 복귀 주소 및 인자 위치를 독립 정답으로 재검증.
-- Next task: **Day156 새 미지 바이너리 재평가**. 동일 문제 반복은 하지 않음. 최초 힌트 없이 독립 분석·구술 및 원본 실행/환경/Git 증거 확보 후 W06 통과 여부 판정. 오늘의 학습 보고서까지 Git 기록 완료.
+- Next task: [새 미지 바이너리 재평가](../Day101-160/Day156/retest/README.md). `Day101-160/Day156/retest/unpack.sh`로 교사 제작 ELF 복원·SHA256 검증, 첫 독립 분석 답안과 실제 환경·재현 입력/로그·코드/메모리 근거 제출. 소스/풀이 비공개, 학생 실측 아직 없음. 이전 문제 반복 없이 독립 판정 후 수정 검증 및 Git 증거 마감. 개별 복습 운영상 Day155 D+2도 확인 예정.
 - Evidence: [Day156 보고서](../Day101-160/Day156/day156_writeup.md), [실습·답변 기록](../Day101-160/Day156/README.md), [Day155 원본 CSV](../Day101-160/Day155/measure_aslr-on.csv).
 - Limits: Day156 전체 GDB 덤프·checksec 원문·실행 환경 및 재현 입력 파일 Git 확인 미완료. 배열 선언 크기 및 원본 빌드 명령 미확정, 실제 수정 실행 검증 미수행. 최초 도움과 교정 확인을 독립 블라인드 통과로 혼동하지 않음.
 - Teaching: 사용자 독립 예측·근거를 우선하며 이미 확인한 원리의 반복 대신 새로운 반례/새 바이너리로 전이 검증.
@@ -1046,6 +1046,12 @@ git pull --ff-only
 - 정적·동적 분석 및 근본 원인/수정 설계 수행, 오류 메시지 보고. 실제 원자료 부족과 최초 도움 범위 명시.
 - CS 5문항 교정, Day154 D+2 독립 설명, 프레임 포인터 없는 스택 위치 새 조건 재검증 정답. [보고서](../Day101-160/Day156/day156_writeup.md) 및 README 기록.
 - **W06 미통과(보류)**: 새 문제의 독립 분석 및 실제 로그가 필요. 동일 Day156 유지, 마지막 전체 완료 Day155.
+
+---
+
+### 2026-11-20 — Day156 독립 재평가 시작
+- FINAL Day156 및 W06 게이트, R05/R07/R21과 앞선 평가 보고서를 다시 확인. 학생이 어제 도움받은 문제 대신 새 로컬 ELF를 교사 제작 및 정상/경계 동작 사전 점검. [재평가 자료](../Day101-160/Day156/retest/README.md), 복원 스크립트 및 압축 ELF Git 반영. 첫 답안 전 풀이·소스 비공개.
+- 학생 분석/실행 증거는 아직 없음. 기존 Day156 CS·복습 완료와 W06 평가 보류를 구분해 유지.
 
 ---
 
