@@ -48,12 +48,12 @@ git pull --ff-only
 
 - Last completed: **2026-11-18 — Day155 / FINAL W06 3/4 전체 필수 완료**. [Day155 Write-up](../Day101-160/Day155/day155_writeup.md), [Day155 README](../Day101-160/Day155/README.md), [ASLR ON raw CSV](../Day101-160/Day155/measure_aslr-on.csv), [ASLR OFF raw CSV](../Day101-160/Day155/measure_aslr-off.csv), user commit `b4e92fb9a8f1fc0df5878ed0b89e22354e9daac4`.
 - Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276의 124개 과제와 운영·장기복습 규칙.
-- Plan position: **Day156 / W06 4/4 독립 재평가 시작 (2026-11-20)**. 마지막 전체 완료 Day155. 이전 학습·구술·복습 완료 및 오답 교정 기록 유지.
-- Current focus: Day156 새 ELF의 입력 경로, 목적지 경계 검사 누락, 보호기법의 범위, 인접 변수 오염 관찰 및 수정 설계 분석을 수행. 헤더 해석, 입력 생성 및 디버거 안내를 받음. [상세 평가 보고서](../Day101-160/Day156/day156_writeup.md).
-- CS/review: 구술 5문항 수행, 최초 정답 2/5 및 나머지 교정 기록. Day154 D+2 보호기법 한계 독립 통과. 프레임 포인터 없는 조건에서 인자 위치 초기 오답, RSP=0x1008과 sub rsp,0x38의 새 조건에서 복귀 주소 및 인자 위치를 독립 정답으로 재검증.
-- Next task: [새 미지 바이너리 재평가](../Day101-160/Day156/retest/README.md). `Day101-160/Day156/retest/unpack.sh`로 교사 제작 ELF 복원·SHA256 검증, 첫 독립 분석 답안과 실제 환경·재현 입력/로그·코드/메모리 근거 제출. 소스/풀이 비공개, 학생 실측 아직 없음. 이전 문제 반복 없이 독립 판정 후 수정 검증 및 Git 증거 마감. 개별 복습 운영상 Day155 D+2도 확인 예정.
-- Evidence: [Day156 보고서](../Day101-160/Day156/day156_writeup.md), [실습·답변 기록](../Day101-160/Day156/README.md), [Day155 원본 CSV](../Day101-160/Day155/measure_aslr-on.csv).
-- Limits: Day156 전체 GDB 덤프·checksec 원문·실행 환경 및 재현 입력 파일 Git 확인 미완료. 배열 선언 크기 및 원본 빌드 명령 미확정, 실제 수정 실행 검증 미수행. 최초 도움과 교정 확인을 독립 블라인드 통과로 혼동하지 않음.
+- Plan position: **Day156 / W06 독립 분석·동적 검증 통과, 로컬 증거 마감 대기 (2026-11-20)**. 마지막 전체 완료 Day155. 별도 재시험은 불필요.
+- Current focus: 새 미지 ELF의 경계 오류와 원인을 무힌트로 분석하고, 학생이 제출한 실제 프로그램 출력/GDB 관찰로 검증. 수정 설계는 교정 후 통과, 복원 모델 수정 실행은 학생 보고. [재평가 기록](../Day101-160/Day156/retest/README.md).
+- CS/review: 기존 Day156 구술 5문항 및 누적 복습 교정 완료, Day154 D+2 독립 통과. Day155 D+2 절대주소/상대 오프셋 혼동 후 새 조건에서 재검증 통과.
+- Next task: **로컬 증거 마감만**. `Day101-160/Day156/retest`에서 `bash replay.sh | tee boundary_results.txt` 실행 후 로그 커밋/푸시, 원격 확인. W06 마감 전 추가 문제 없음. 마감 후 Day157/W07 진행.
+- Evidence: [Day156 종합 보고서](../Day101-160/Day156/day156_writeup.md), [재평가 로그](../Day101-160/Day156/retest/README.md), [학생 채팅 제출 수정 코드](../Day101-160/Day156/retest/fixed_submitted.c), [재현 스크립트](../Day101-160/Day156/retest/replay.sh).
+- Limits: 학생 WSL 환경·glibc·경계값 수정 전후 실제 출력 및 종료 상태 로그 미확인. 원본 C는 미확인으로 복원 모델 사용; 학생 측 실제 실행 요약과 원문을 구분. 10분 발표 시간 미측정. R07 증거 게이트 유지.
 - Teaching: 사용자 독립 예측·근거를 우선하며 이미 확인한 원리의 반복 대신 새로운 반례/새 바이너리로 전이 검증.
 
 ---
@@ -1077,3 +1077,7 @@ git pull --ff-only
 - Verified commit: 사용자 commit 확인 후 기입
 - Problems:
 - Next: 다음 Day / 계획 주차 / 첫 작업
+
+
+### 2026-11-20 — Day156 독립 재평가 결과
+- 새 문제 최초 독립 분석 및 동적 검증 통과. 수정 설계는 교정 후 통과, 코드 제출 및 실행 결과 구두 보고. Day155 D+2 교정 후 통과. 보고서·채팅 증거·제출 코드와 재현 스크립트 Git 기록. 최종 로컬 재현 로그 확인 전 W06 마감 보류. 개념 재시험 없음.
