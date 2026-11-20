@@ -46,14 +46,14 @@ git pull --ff-only
 
 > 2026-11-15 확정된 FINAL 엑셀만 현행 계획으로 사용한다. 학습 완료와 미완료는 날짜가 아니라 제출된 증거로 판정한다.
 
-- Last completed: **2026-11-18 — Day155 / FINAL W06 3/4 전체 필수 완료**. [Day155 Write-up](../Day101-160/Day155/day155_writeup.md), [Day155 README](../Day101-160/Day155/README.md), [ASLR ON raw CSV](../Day101-160/Day155/measure_aslr-on.csv), [ASLR OFF raw CSV](../Day101-160/Day155/measure_aslr-off.csv), user commit `b4e92fb9a8f1fc0df5878ed0b89e22354e9daac4`.
+- Last completed: **2026-11-20 — Day156 / FINAL W06 4/4 완료, 재평가 통과**. [종합 보고서](../Day101-160/Day156/day156_writeup.md), [원본 재현 로그](../Day101-160/Day156/retest/boundary_results.txt).
 - Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276의 124개 과제와 운영·장기복습 규칙.
-- Plan position: **Day156 / W06 독립 분석·동적 검증 통과, 로컬 증거 마감 대기 (2026-11-20)**. 마지막 전체 완료 Day155. 별도 재시험은 불필요.
-- Current focus: 새 미지 ELF의 경계 오류와 원인을 무힌트로 분석하고, 학생이 제출한 실제 프로그램 출력/GDB 관찰로 검증. 수정 설계는 교정 후 통과, 복원 모델 수정 실행은 학생 보고. [재평가 기록](../Day101-160/Day156/retest/README.md).
+- Plan position: **W06 완료. 다음 Day157 / W07 (미시작)**.
+- Current focus: Day156 새 문제 독립 분석·동적 검증 통과, 수정 설계 교정 후 통과 및 로컬 경계 테스트 원문 확인. Day157 시작 전 FINAL 일일 계획 확인.
 - CS/review: 기존 Day156 구술 5문항 및 누적 복습 교정 완료, Day154 D+2 독립 통과. Day155 D+2 절대주소/상대 오프셋 혼동 후 새 조건에서 재검증 통과.
-- Next task: **로컬 증거 마감만**. `Day101-160/Day156/retest`에서 `bash replay.sh | tee boundary_results.txt` 실행 후 로그 커밋/푸시, 원격 확인. W06 마감 전 추가 문제 없음. 마감 후 Day157/W07 진행.
-- Evidence: [Day156 종합 보고서](../Day101-160/Day156/day156_writeup.md), [재평가 로그](../Day101-160/Day156/retest/README.md), [학생 채팅 제출 수정 코드](../Day101-160/Day156/retest/fixed_submitted.c), [재현 스크립트](../Day101-160/Day156/retest/replay.sh).
-- Limits: 학생 WSL 환경·glibc·경계값 수정 전후 실제 출력 및 종료 상태 로그 미확인. 원본 C는 미확인으로 복원 모델 사용; 학생 측 실제 실행 요약과 원문을 구분. 10분 발표 시간 미측정. R07 증거 게이트 유지.
+- Next task: **Day157 / W07 시작**. FINAL 엑셀 및 만기 복습 확인 후 진행.
+- Evidence: [Day156 종합 보고서](../Day101-160/Day156/day156_writeup.md), [재평가](../Day101-160/Day156/retest/README.md), [학생 원본 로그](../Day101-160/Day156/retest/boundary_results.txt).
+- Limits: 원본 C 소스 미확인, 복원 모델 수정 검증. 25바이트 오류 메시지/종료코드 차이 및 최초 도움 기록 유지. 10분 발표 시간 미측정.
 - Teaching: 사용자 독립 예측·근거를 우선하며 이미 확인한 원리의 반복 대신 새로운 반례/새 바이너리로 전이 검증.
 
 ---
@@ -1081,3 +1081,8 @@ git pull --ff-only
 
 ### 2026-11-20 — Day156 독립 재평가 결과
 - 새 문제 최초 독립 분석 및 동적 검증 통과. 수정 설계는 교정 후 통과, 코드 제출 및 실행 결과 구두 보고. Day155 D+2 교정 후 통과. 보고서·채팅 증거·제출 코드와 재현 스크립트 Git 기록. 최종 로컬 재현 로그 확인 전 W06 마감 보류. 개념 재시험 없음.
+
+## 2026-11-20 — 최종 증거 확인 및 완료
+- 학생이 푸시한 [경계값 원본 실행 로그](../Day101-160/Day156/retest/boundary_results.txt)의 Git blob `1d82c9be2e7597cf4b60438a0f9d89164264456a` 확인. WSL2 x86_64, GCC 11.4.0, glibc 2.35, ELF 및 제출 수정 소스 해시, 빌드 명령, 입력, 출력 및 종료값 기록 확보.
+- 23바이트: 양쪽 정상(category=3, exit=0). 24바이트: 기존 ELF category=0, 수정 모델 category=3, 양쪽 exit=0. 25바이트: 양쪽 거부(기존 exit=2, 수정 모델 exit=4). 허용 범위와 경계 데이터 보존을 확인함. 오류 메시지/종료 코드 차이는 남아 있음.
+- **Day156 / W06 완료(재평가 통과)**. 최초 시험의 도움 기록과 수정 설계의 교정 기록은 유지. 새 문제 독립 분석 및 동적 증거, 수정 모델 회귀 검증, CS/복습, Git 증거 마감을 근거로 판정. 원본 C 소스 확인 및 실제 원본 ELF 패치는 수행하지 않았으며 10분 발표 시간은 미측정. 다음 Day157 / W07.
