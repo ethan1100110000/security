@@ -120,3 +120,11 @@ pwndbg> x/gx $rebase(0x3fc0)
 ```
 
 이는 `printf@plt+6`의 런타임 주소를 가리키던 슬롯이, 바인딩 이후 libc `__printf` 함수 주소로 갱신됨을 뒷받침. 따라서 **두 번째 외부 함수 printf의 지연 바인딩 동적 검증 통과**. 실측 줄은 사용자가 채팅으로 전사한 그대로이며 Pwndbg 전체 원본 세션 로그 파일은 아직 미제출. 추가 개념 시험은 요구하지 않는다.
+
+
+## 10. 2026-11-23 — 사용자 원본 세션 Git 확인 및 완료
+- 사용자 커밋 `627c41b8325e48dea91b70b57159057dbf490abc`, Git blob `d474349f01a707252a0aa3f9c97108cde76afcea`에서 `day157_session.log` (script 원본 터미널 기록)을 직접 확인.
+- `checksec`, `readelf -r`, Pwndbg의 `starti`→ELF `_start`→`printf@plt` 브레이크, `echo hello` 입력, GOT 최초 `0x0000555555555086`, 호출 이후 `0x00007ffff7c606f0`, 그리고 `vmmap`의 libc `r-xp` 및 GOT `rw-p` 페이지를 확인.
+- `tbreak *$rebase(0x12a6)` 반환 지점의 임시 브레이크와 `x/gx $rebase(0x4028)` 전후 출력이 원자료로 남아 있음. 종료 시 Pwndbg의 `No selected thread` Python 예외 메시지는 디버거 종료 시점 발생, 로그는 `COMMAND_EXIT_CODE=0`로 닫힘.
+- `puts`의 첫 호출 결과는 별도 채팅 제출값에 기초했고 `printf`의 별도 GDB 실행은 Git 로그로 검증되었음을 구별.
+- **Day157 W07 1/5 완료 판정.** 마지막 완료 Day157, 다음 Day158 미시작. 이전 섹션의 '미완료' 표기는 해당 시점 기록이며 최종 판정은 본 절을 따른다.
