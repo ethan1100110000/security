@@ -44,17 +44,16 @@ git pull --ff-only
 
 ## Current Pointer
 
-> 2026-11-15 확정된 FINAL 엑셀만 현행 계획으로 사용한다. 학습 완료와 미완료는 날짜가 아니라 제출된 증거로 판정한다.
+> 2026-11-15 확정 FINAL 엑셀만 현행 계획으로 사용. 학습 완료는 날짜가 아닌 실측과 Git 증거로 판정한다.
 
-- Last completed: **2026-11-20 — Day156 / FINAL W06 4/4 완료, 재평가 통과**. [종합 보고서](../Day101-160/Day156/day156_writeup.md), [원본 재현 로그](../Day101-160/Day156/retest/boundary_results.txt).
-- Active plan: [Binary Exploitation 대학원 연구 준비 FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276의 124개 과제와 운영·장기복습 규칙.
-- Plan position: **W06 완료. 다음 Day157 / W07 (미시작)**.
-- Current focus: Day156 새 문제 독립 분석·동적 검증 통과, 수정 설계 교정 후 통과 및 로컬 경계 테스트 원문 확인. Day157 시작 전 FINAL 일일 계획 확인.
-- CS/review: 기존 Day156 구술 5문항 및 누적 복습 교정 완료, Day154 D+2 독립 통과. Day155 D+2 절대주소/상대 오프셋 혼동 후 새 조건에서 재검증 통과.
-- Next task: **Day157 / W07 시작**. FINAL 엑셀 및 만기 복습 확인 후 진행.
-- Evidence: [Day156 종합 보고서](../Day101-160/Day156/day156_writeup.md), [재평가](../Day101-160/Day156/retest/README.md), [학생 원본 로그](../Day101-160/Day156/retest/boundary_results.txt).
-- Limits: 원본 C 소스 미확인, 복원 모델 수정 검증. 25바이트 오류 메시지/종료코드 차이 및 최초 도움 기록 유지. 10분 발표 시간 미측정.
-- Teaching: 사용자 독립 예측·근거를 우선하며 이미 확인한 원리의 반복 대신 새로운 반례/새 바이너리로 전이 검증.
+- Last completed: **2026-11-23 — Day157 / FINAL W07 1/5 완료**. [실습 Write-up](../Day101-160/Day157/day157_writeup.md), [사용자 원본 세션 로그](../Day101-160/Day157/day157_session.log).
+- Active plan: [Binary Exploitation FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276 (124개 일일 과제).
+- Plan position: **Day157 완료, 다음 Day158 / FINAL W07 2/5 미시작**.
+- Current focus: PLT/GOT와 Lazy Binding, JUMP_SLOT/GLOB_DAT, Partial RELRO 실제 매핑/권한의 정적·동적 교차검증. puts와 printf 두 외부 함수를 조사했고 printf GOT가 첫 PLT 진입 전후 `0x555555555086 → 0x7ffff7c606f0`로 전환되는 원본 로그 확인.
+- CS/review: Full RELRO/BIND_NOW 사전 주소 결정과 RELRO 보호 순서 설명(교사 도움 후); Day156 D+2 지연 복습 새 조건 4/4 무힌트 통과; Day043/050 RSP 정렬 회상 통과, Git 원본 교사 대조 완료.
+- Evidence: 사용자 커밋 `627c41b8325e48dea91b70b57159057dbf490abc`에 `day157_session.log` 보존. `checksec`, `readelf -r`, GDB breakpoints, 호출 전후 GOT 원문, `vmmap` 확인. 실행 종료 시 Pwndbg Python 예외가 있었으나 실습 증거에는 영향 없음.
+- Next task: **FINAL Day158 / W07 2/5**; 다음 학습 시작 전 엑셀 세부 과제와 만기 복습 확인.
+- Teaching: 완료한 원리를 반복 설명하지 않고 새 조건에서 독립 분석을 우선한다. 교사의 정리 문서와 사용자 실행 자료를 구분한다.
 
 ---
 
@@ -1101,3 +1100,10 @@ git pull --ff-only
 - 최초 `printf` 심볼 브레이크에서는 libc `__printf`에 도착해 이미 해결된 GOT 주소 `0x7ffff7c606f0`를 보았으나, PLT 진입과 libc 진입의 차이를 구분함.
 - 이후 학생의 첫 호출 시 `printf@got.plt(0x555555558028)=0x555555555086`, 호출 이후 `0x7ffff7c606f0` 원문 제출. **printf 첫 호출 전후 동적 검증 완료**; `puts`와 비교 확인. [Day157 write-up](../Day101-160/Day157/day157_writeup.md) 갱신.
 - **추가 개념 문제 없이 Git 증거 마감만 남음.** 사용자의 로컬 세션 원본/환경/명령 로그와 Git 커밋 확인 전에는 Day157 전체 완료 판정을 내리지 않음. Last completed Day156 유지.
+
+
+### 2026-11-23 — Day157 W07 1/5 최종 증거 확인 및 완료
+- 원격 main에서 사용자 커밋 `627c41b8325e48dea91b70b57159057dbf490abc`와 [원본 세션 로그](../Day101-160/Day157/day157_session.log) Git blob `d474349f01a707252a0aa3f9c97108cde76afcea` 확인.
+- 원본 명령 및 출력: `checksec` Partial RELRO/Canary/NX/PIE, `readelf -r`, `gdb starti`, 실행 파일 _start 진입, `break *$rebase(0x1080)` 후 입력 `echo hello`, printf@plt 첫 진입에서 GOT=`0x555555555086`, `tbreak *$rebase(0x12a6)` 후 반환 지점에서 GOT=`0x7ffff7c606f0`. `vmmap`으로 libc 실행 매핑과 GOT 쓰기 가능 매핑 검증. 원본 script 종료코드 0.
+- 메인/CS/복습/장기복습/원자료 기록과 사용자 Git 증거 마감 충족. `puts` 세부 출력 일부는 이전 사용자 채팅 원문에 근거하며 이번 raw log의 직접 재현 대상은 `printf`임을 구분.
+- **Day157 / FINAL W07 1/5 완료 판정. Last completed Day157. Next Day158 / W07 2/5 (미시작).**
