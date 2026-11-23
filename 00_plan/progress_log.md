@@ -1094,3 +1094,10 @@ git pull --ff-only
 - Partial RELRO에서 `0x555555558000~0x555555559000 rw-p` 매핑 확인. 지연 바인딩 슬롯과 RELRO 보호 슬롯의 차이 구술 설명. CS Full RELRO/BIND_NOW 선해결 설명 통과(교사 설명 후).
 - Day156 D+2 지연복습: 새 label[12]/category 경계 조건 무힌트 4/4 정답. Day043·050 정렬: RSP%16=8 정상 진입, 추가 ret 하나로 0으로 변경(초기값 8인 조건) 정답. 원문 대조 및 독립 조건 전이는 추가 기록 필요.
 - [Day157 진행 Write-up](../Day101-160/Day157/day157_writeup.md) 교사 Git 커밋. **원본 전체 실행 로그/환경, printf 2번째 함수 실제 동적 확인, 사용자 Git push 증거는 아직 미제출**; Day157 전체 완료 보류. **Last completed Day156 유지.**
+
+
+### 2026-11-23 — Day157 printf 두 번째 함수 Lazy Binding 실측 보완
+- 학생이 입력 접두사 `"echo "` 검사를 스스로 정적 분석해 `printf` 진입 경로를 확인.
+- 최초 `printf` 심볼 브레이크에서는 libc `__printf`에 도착해 이미 해결된 GOT 주소 `0x7ffff7c606f0`를 보았으나, PLT 진입과 libc 진입의 차이를 구분함.
+- 이후 학생의 첫 호출 시 `printf@got.plt(0x555555558028)=0x555555555086`, 호출 이후 `0x7ffff7c606f0` 원문 제출. **printf 첫 호출 전후 동적 검증 완료**; `puts`와 비교 확인. [Day157 write-up](../Day101-160/Day157/day157_writeup.md) 갱신.
+- **추가 개념 문제 없이 Git 증거 마감만 남음.** 사용자의 로컬 세션 원본/환경/명령 로그와 Git 커밋 확인 전에는 Day157 전체 완료 판정을 내리지 않음. Last completed Day156 유지.
