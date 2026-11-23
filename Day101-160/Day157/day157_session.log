@@ -1,0 +1,304 @@
+Script started on 2026-11-23 15:48:31+09:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="133" LINES="40"]
+[?2004h]0;ethan@ddengyoon: /mnt/d/security-roadmap/Day101-160/Day157[01;32methan@ddengyoon[00m:[01;34m/mnt/d/security-roadmap/Day101-160/Day157[00m$ [7mchecksec --file=./day157_relay.elf[27mchecksec --file=./day157_relay.elf
+[?2004l[[1m[34m*[m] '/mnt/d/security-roadmap/Day101-160/Day157/day157_relay.elf'
+    Arch:       amd64-64-little
+    RELRO:      [33mPartial RELRO[m
+    Stack:      [32mCanary found[m
+    NX:         [32mNX enabled[m
+    PIE:        [32mPIE enabled[m
+[?2004h]0;ethan@ddengyoon: /mnt/d/security-roadmap/Day101-160/Day157[01;32methan@ddengyoon[00m:[01;34m/mnt/d/security-roadmap/Day101-160/Day157[00m$ [7mreadelf -r ./day157_relay.elf[27mreadelf -r ./day157_relay.elf
+[?2004l
+Relocation section '.rela.dyn' at offset 0x698 contains 9 entries:
+  Offset          Info           Type           Sym. Value    Sym. Name + Addend
+000000003dd0  000000000008 R_X86_64_RELATIVE                    11b0
+000000003dd8  000000000008 R_X86_64_RELATIVE                    1170
+000000004050  000000000008 R_X86_64_RELATIVE                    4050
+000000003fc0  000100000006 R_X86_64_GLOB_DAT 0000000000000000 __libc_start_main@GLIBC_2.34 + 0
+000000003fc8  000300000006 R_X86_64_GLOB_DAT 0000000000000000 _ITM_deregisterTM[...] + 0
+000000003fd0  000c00000006 R_X86_64_GLOB_DAT 0000000000000000 __gmon_start__ + 0
+000000003fd8  000d00000006 R_X86_64_GLOB_DAT 0000000000000000 _ITM_registerTMCl[...] + 0
+000000003fe0  000e00000006 R_X86_64_GLOB_DAT 0000000000000000 __cxa_finalize@GLIBC_2.2.5 + 0
+000000004060  000f00000005 R_X86_64_COPY     0000000000004060 stdin@GLIBC_2.2.5 + 0
+
+Relocation section '.rela.plt' at offset 0x770 contains 9 entries:
+  Offset          Info           Type           Sym. Value    Sym. Name + Addend
+000000004000  000200000007 R_X86_64_JUMP_SLO 0000000000000000 strncmp@GLIBC_2.2.5 + 0
+000000004008  000400000007 R_X86_64_JUMP_SLO 0000000000000000 puts@GLIBC_2.2.5 + 0
+000000004010  000500000007 R_X86_64_JUMP_SLO 0000000000000000 write@GLIBC_2.2.5 + 0
+000000004018  000600000007 R_X86_64_JUMP_SLO 0000000000000000 strlen@GLIBC_2.2.5 + 0
+000000004020  000700000007 R_X86_64_JUMP_SLO 0000000000000000 __stack_chk_fail@GLIBC_2.4 + 0
+000000004028  000800000007 R_X86_64_JUMP_SLO 0000000000000000 printf@GLIBC_2.2.5 + 0
+000000004030  000900000007 R_X86_64_JUMP_SLO 0000000000000000 strcspn@GLIBC_2.2.5 + 0
+000000004038  000a00000007 R_X86_64_JUMP_SLO 0000000000000000 fgets@GLIBC_2.2.5 + 0
+000000004040  000b00000007 R_X86_64_JUMP_SLO 0000000000000000 strcmp@GLIBC_2.2.5 + 0
+[?2004h]0;ethan@ddengyoon: /mnt/d/security-roadmap/Day101-160/Day157[01;32methan@ddengyoon[00m:[01;34m/mnt/d/security-roadmap/Day101-160/Day157[00m$ [7mgdb -q ./day157_relay.elf[27mgdb -q ./day157_relay.elf
+[?2004l[31m[1mpwndbg: [0m[31m[0m[91mloaded 194 pwndbg commands. Type [35mpwndbg [filter][0m[91m for a list.[0m
+[31m[1mpwndbg: [0m[31m[0m[91mcreated 11 GDB functions (can be used with print/break). Type [35mhelp function[0m[91m to see them.[0m
+Reading symbols from [32m./day157_relay.elf[m...
+(No debugging symbols found in [32m./day157_relay.elf[m)
+[31m[1m------- tip of the day[0m[31m[0m[91m (disable with [35mset show-tips off[0m[91m)[0m[31m[1m -------[0m[31m[0m
+Use the [33mvmmap[0m command for a better & colored memory maps display (than the GDB's [33minfo proc mappings[0m)
+[?2004h[31m[1mpwndbg> [0m[31m[0m[7mstarti[27mstarti
+[?2004lStarting program: [32m/mnt/d/security-roadmap/Day101-160/Day157/day157_relay.elf[m 
+
+Program stopped.
+[34m0x00007ffff7fe3290[m in [33m_start[m () from [32m/lib64/ld-linux-x86-64.so.2[m
+[?2004hLEGEND: [33mSTACK[0m | [34mHEAP[0m | [31mCODE[0m | [35mDATA[0m | [4m[31mWX[0m[4m[0m | [0mRODATA[0m
+[34m───────────────────────────────────────[ REGISTERS / show-flags off / show-compact-regs off ]────────────────────────────────────────[0m
+ [1mRAX [0m 0
+ [1mRBX [0m 0
+ [1mRCX [0m 0
+ [1mRDX [0m 0
+ [1mRDI [0m 0
+ [1mRSI [0m 0
+ [1mR8  [0m 0
+ [1mR9  [0m 0
+ [1mR10 [0m 0
+ [1mR11 [0m 0
+ [1mR12 [0m 0
+ [1mR13 [0m 0
+ [1mR14 [0m 0
+ [1mR15 [0m 0
+ [1mRBP [0m 0
+ [1mRSP [0m [33m0x7fffffffe0c0[0m[0m ◂— [0m1
+ [1mRIP [0m [31m0x7ffff7fe3290 (_start)[0m[0m ◂— [0m[38;5;148mmov[39m[38;5;15m [39m[38;5;81mrdi[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mrsp[39m
+[34m────────────────────────────────────────────────[ DISASM / x86-64 / set emulate on ]─────────────────────────────────────────────────[0m
+ ► [1m[32m0x7ffff7fe3290[0m[1m[0m [1m[32m<_start>            [0m[1m[0m   [1m[32m[38;5;148mmov[39m[38;5;15m    [39m[38;5;81mrdi[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mrsp[39m[0m[1m[0m     [31m[1mRDI[0m[31m[0m => [33m0x7fffffffe0c0[0m[0m ◂— [0m1
+   [0m0x7ffff7fe3293[0m [0m<_start+3>          [0m   [38;5;148m[1mcall[0m[39m[38;5;15m   [39m[38;5;141m[31m_dl_start[0m[39m                   <[31m_dl_start[0m>
+ 
+   [0m0x7ffff7fe3298[0m [0m<_dl_start_user>    [0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mr12[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mrax[39m
+   [0m0x7ffff7fe329b[0m [0m<_dl_start_user+3>  [0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81meax[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mdword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrip[39m[38;5;15m [39m[38;5;15m+[39m[38;5;15m [39m[38;5;141m0x19817[39m[38;5;15m][39m     [31m[1mEAX[0m[31m[0m, [[35m_dl_skip_args[0m]
+   [0m0x7ffff7fe32a1[0m [0m<_dl_start_user+9>  [0m   [38;5;148mpop[39m[38;5;15m    [39m[38;5;81mrdx[39m
+   [0m0x7ffff7fe32a2[0m [0m<_dl_start_user+10> [0m   [38;5;148mlea[39m[38;5;15m    [39m[38;5;81mrsp[39m[38;5;15m,[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrsp[39m[38;5;15m [39m[38;5;15m+[39m[38;5;15m [39m[38;5;81mrax[39m[38;5;15m*[39m[38;5;141m8[39m[38;5;15m][39m
+   [0m0x7ffff7fe32a6[0m [0m<_dl_start_user+14> [0m   [38;5;148msub[39m[38;5;15m    [39m[38;5;81medx[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81meax[39m
+   [0m0x7ffff7fe32a8[0m [0m<_dl_start_user+16> [0m   [38;5;148mpush[39m[38;5;15m   [39m[38;5;81mrdx[39m
+   [0m0x7ffff7fe32a9[0m [0m<_dl_start_user+17> [0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mrsi[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mrdx[39m
+   [0m0x7ffff7fe32ac[0m [0m<_dl_start_user+20> [0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mr13[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mrsp[39m
+   [0m0x7ffff7fe32af[0m [0m<_dl_start_user+23> [0m   [38;5;148mand[39m[38;5;15m    [39m[38;5;81mrsp[39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m0xfffffffffffffff0[39m
+[34m──────────────────────────────────────────────────────────────[ STACK ]──────────────────────────────────────────────────────────────[0m
+[0m00[0m[0m:[0m[0m0000[0m[0m│[0m[0m[0m [1mrsp[0m [33m0x7fffffffe0c0[0m[0m ◂— [0m1
+[0m01[0m[0m:[0m[0m0008[0m[0m│[0m[0m[0m [1m   [0m [33m0x7fffffffe0c8[0m[0m —▸ [0m[33m0x7fffffffe349[0m[0m ◂— [0m'/mnt/d/security-roadmap/Day101-160/Day157/day157_relay.elf'
+[0m02[0m[0m:[0m[0m0010[0m[0m│[0m[0m[0m [1m   [0m [33m0x7fffffffe0d0[0m[0m ◂— [0m0
+[0m03[0m[0m:[0m[0m0018[0m[0m│[0m[0m[0m [1m   [0m [33m0x7fffffffe0d8[0m[0m —▸ [0m[33m0x7fffffffe384[0m[0m ◂— [0m'SHELL=/bin/bash'
+[0m04[0m[0m:[0m[0m0020[0m[0m│[0m[0m[0m [1m   [0m [33m0x7fffffffe0e0[0m[0m —▸ [0m[33m0x7fffffffe394[0m[0m ◂— [0m'WSL2_GUI_APPS_ENABLED=1'
+[0m05[0m[0m:[0m[0m0028[0m[0m│[0m[0m[0m [1m   [0m [33m0x7fffffffe0e8[0m[0m —▸ [0m[33m0x7fffffffe3ac[0m[0m ◂— [0m'WSL_DISTRO_NAME=Ubuntu'
+[0m06[0m[0m:[0m[0m0030[0m[0m│[0m[0m[0m [1m   [0m [33m0x7fffffffe0f0[0m[0m —▸ [0m[33m0x7fffffffe3c3[0m[0m ◂— [0m'NAME=ddengyoon'
+[0m07[0m[0m:[0m[0m0038[0m[0m│[0m[0m[0m [1m   [0m [33m0x7fffffffe0f8[0m[0m —▸ [0m[33m0x7fffffffe3d2[0m[0m ◂— [0m'PWD=/mnt/d/security-roadmap/Day101-160/Day157'
+[34m────────────────────────────────────────────────────────────[ BACKTRACE ]────────────────────────────────────────────────────────────[0m
+ ► 0   0x7ffff7fe3290 _start
+   1              0x1 None
+   2   0x7fffffffe349 None
+   3              0x0 None
+[34m─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[?2004l[?2004h[32m[1mpwndbg> [0m[32m[0m[7mbreak *$rebase(0x10d0)[27m[C[C[C[C[C[C[C[Cbreak *$rebase(0x10d0)
+[?2004lBreakpoint 1 at [34m0x5555555550d0[m
+[?2004h[32m[1mpwndbg> [0m[32m[0m[7mcontinue[27mcontinue
+[?2004lContinuing.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "[32m/lib/x86_64-linux-gnu/libthread_db.so.1[m".
+
+Breakpoint 1, [34m0x00005555555550d0[m in [33m??[m ()
+[?2004hLEGEND: [33mSTACK[0m | [34mHEAP[0m | [31mCODE[0m | [35mDATA[0m | [4m[31mWX[0m[4m[0m | [0mRODATA[0m
+[34m───────────────────────────────────────────────────────────[ LAST SIGNAL ]───────────────────────────────────────────────────────────[0m
+[33mBreakpoint hit at 0x5555555550d0[0m
+[34m───────────────────────────────────────[ REGISTERS / show-flags off / show-compact-regs off ]────────────────────────────────────────[0m
+[31m*[0m[31m[1mRAX [0m[31m[0m 0x1c
+ [1mRBX [0m 0
+[31m*[0m[31m[1mRCX [0m[31m[0m [33m0x7fffffffe0d8[0m[0m —▸ [0m[33m0x7fffffffe384[0m[0m ◂— [0m'SHELL=/bin/bash'
+[31m*[0m[31m[1mRDX [0m[31m[0m [31m0x7ffff7fc9040 (_dl_fini)[0m[0m ◂— [0m[38;5;148mendbr64[39m
+[31m*[0m[31m[1mRDI [0m[31m[0m [35m0x7ffff7ffe2e0[0m[0m —▸ [0m[0m0x555555554000[0m[0m ◂— [0m0x10102464c457f
+[31m*[0m[31m[1mRSI [0m[31m[0m [35m0x7ffff7ffe888[0m[0m ◂— [0m0
+[31m*[0m[31m[1mR8  [0m[31m[0m 0xf
+[31m*[0m[31m[1mR9  [0m[31m[0m 0xf
+[31m*[0m[31m[1mR10 [0m[31m[0m [0m0x7ffff7fc3860[0m[0m ◂— [0m0xd0012000000c1
+[31m*[0m[31m[1mR11 [0m[31m[0m 0x202
+[31m*[0m[31m[1mR12 [0m[31m[0m [31m0x5555555550d0[0m[0m ◂— [0m[38;5;148mxor[39m[38;5;15m [39m[38;5;81mebp[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mebp[39m
+[31m*[0m[31m[1mR13 [0m[31m[0m [33m0x7fffffffe0c0[0m[0m ◂— [0m1
+ [1mR14 [0m 0
+ [1mR15 [0m 0
+ [1mRBP [0m 0
+ [1mRSP [0m [33m0x7fffffffe0c0[0m[0m ◂— [0m1
+[31m*[0m[31m[1mRIP [0m[31m[0m [31m0x5555555550d0[0m[0m ◂— [0m[38;5;148mxor[39m[38;5;15m [39m[38;5;81mebp[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mebp[39m
+[34m────────────────────────────────────────────────[ DISASM / x86-64 / set emulate on ]─────────────────────────────────────────────────[0m
+[31mb►[0m [1m[32m0x5555555550d0[0m[1m[0m [1m[32m[0m[1m[0m   [1m[32m[38;5;148mxor[39m[38;5;15m    [39m[38;5;81mebp[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mebp[39m[0m[1m[0m                    [1mEBP[0m => 0
+   [0m0x5555555550d2[0m [0m[0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mr9[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mrdx[39m                     [31m[1mR9[0m[31m[0m => [31m0x7ffff7fc9040 (_dl_fini)[0m[0m ◂— [0m[38;5;148mendbr64[39m[38;5;15m [39m
+   [0m0x5555555550d5[0m [0m[0m   [38;5;148mpop[39m[38;5;15m    [39m[38;5;81mrsi[39m                         [31m[1mRSI[0m[31m[0m => [0m1[0m
+   [0m0x5555555550d6[0m [0m[0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mrdx[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mrsp[39m                    [31m[1mRDX[0m[31m[0m => [33m0x7fffffffe0c8[0m[0m —▸ [0m[33m0x7fffffffe349[0m[0m ◂— [0m'/mnt/d/security-roadmap/Day101-160/Day157/day157_r...'
+   [0m0x5555555550d9[0m [0m[0m   [38;5;148mand[39m[38;5;15m    [39m[38;5;81mrsp[39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m0xfffffffffffffff0[39m     [31m[1mRSP[0m[31m[0m => [33m0x7fffffffe0c0[0m (0x7fffffffe0c8 & -0x10)
+   [0m0x5555555550dd[0m [0m[0m   [38;5;148mpush[39m[38;5;15m   [39m[38;5;81mrax[39m
+   [0m0x5555555550de[0m [0m[0m   [38;5;148mpush[39m[38;5;15m   [39m[38;5;81mrsp[39m
+   [0m0x5555555550df[0m [0m[0m   [38;5;148mxor[39m[38;5;15m    [39m[38;5;81mr8d[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mr8d[39m                    [31m[1mR8D[0m[31m[0m => 0
+   [0m0x5555555550e2[0m [0m[0m   [38;5;148mxor[39m[38;5;15m    [39m[38;5;81mecx[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mecx[39m                    [31m[1mECX[0m[31m[0m => 0
+   [0m0x5555555550e4[0m [0m[0m   [38;5;148mlea[39m[38;5;15m    [39m[38;5;81mrdi[39m[38;5;15m,[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrip[39m[38;5;15m [39m[38;5;15m+[39m[38;5;15m [39m[38;5;141m0x25f[39m[38;5;15m][39m          [31m[1mRDI[0m[31m[0m => [31m0x55555555534a[0m[0m ◂— [0m[38;5;148mpush[39m[38;5;15m [39m[38;5;81mrbp[39m
+   [0m0x5555555550eb[0m [0m[0m   [38;5;148m[1mcall[0m[39m[38;5;15m   [39m[38;5;81mqword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrip[39m[38;5;15m [39m[38;5;15m+[39m[38;5;15m [39m[38;5;141m0x2ecf[39m[38;5;15m][39m    <[31m__libc_start_main[0m>
+[34m──────────────────────────────────────────────────────────────[ STACK ]──────────────────────────────────────────────────────────────[0m
+[0m00[0m[0m:[0m[0m0000[0m[0m│[0m[0m[0m [1mr13 rsp[0m [33m0x7fffffffe0c0[0m[0m ◂— [0m1
+[0m01[0m[0m:[0m[0m0008[0m[0m│[0m[0m[0m [1m       [0m [33m0x7fffffffe0c8[0m[0m —▸ [0m[33m0x7fffffffe349[0m[0m ◂— [0m'/mnt/d/security-roadmap/Day101-160/Day157/day157_relay.elf'
+[0m02[0m[0m:[0m[0m0010[0m[0m│[0m[0m[0m [1m       [0m [33m0x7fffffffe0d0[0m[0m ◂— [0m0
+[0m03[0m[0m:[0m[0m0018[0m[0m│[0m[0m[0m [1mrcx    [0m [33m0x7fffffffe0d8[0m[0m —▸ [0m[33m0x7fffffffe384[0m[0m ◂— [0m'SHELL=/bin/bash'
+[0m04[0m[0m:[0m[0m0020[0m[0m│[0m[0m[0m [1m       [0m [33m0x7fffffffe0e0[0m[0m —▸ [0m[33m0x7fffffffe394[0m[0m ◂— [0m'WSL2_GUI_APPS_ENABLED=1'
+[0m05[0m[0m:[0m[0m0028[0m[0m│[0m[0m[0m [1m       [0m [33m0x7fffffffe0e8[0m[0m —▸ [0m[33m0x7fffffffe3ac[0m[0m ◂— [0m'WSL_DISTRO_NAME=Ubuntu'
+[0m06[0m[0m:[0m[0m0030[0m[0m│[0m[0m[0m [1m       [0m [33m0x7fffffffe0f0[0m[0m —▸ [0m[33m0x7fffffffe3c3[0m[0m ◂— [0m'NAME=ddengyoon'
+[0m07[0m[0m:[0m[0m0038[0m[0m│[0m[0m[0m [1m       [0m [33m0x7fffffffe0f8[0m[0m —▸ [0m[33m0x7fffffffe3d2[0m[0m ◂— [0m'PWD=/mnt/d/security-roadmap/Day101-160/Day157'
+[34m────────────────────────────────────────────────────────────[ BACKTRACE ]────────────────────────────────────────────────────────────[0m
+ ► 0   0x5555555550d0 None
+[34m─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[?2004l[?2004h[32m[1mpwndbg> [0m[32m[0m[7mbreak *$rebase(0x1080)[27m[C[C[C[C[C[C[C[Cbreak *$rebase(0x1080)
+[?2004lBreakpoint 2 at [34m0x555555555080[m
+[?2004h[32m[1mpwndbg> [0m[32m[0m[7mcontinue[27mcontinue
+[?2004lContinuing.
+relay> echo hello
+
+Breakpoint 2, [34m0x0000555555555080[m in [33mprintf@plt[m ()
+[?2004hLEGEND: [33mSTACK[0m | [34mHEAP[0m | [31mCODE[0m | [35mDATA[0m | [4m[31mWX[0m[4m[0m | [0mRODATA[0m
+[34m───────────────────────────────────────────────────────────[ LAST SIGNAL ]───────────────────────────────────────────────────────────[0m
+[33mBreakpoint hit at 0x555555555080[0m
+[34m───────────────────────────────────────[ REGISTERS / show-flags off / show-compact-regs off ]────────────────────────────────────────[0m
+[31m*[0m[31m[1mRAX [0m[31m[0m 0
+ [1mRBX [0m 0
+[31m*[0m[31m[1mRCX [0m[31m[0m 5
+[31m*[0m[31m[1mRDX [0m[31m[0m [33m0x7fffffffdf35[0m[0m ◂— [0m0x6f6c6c6568 /* 'hello' */
+[31m*[0m[31m[1mRDI [0m[31m[0m [0m0x55555555602a[0m[0m ◂— [0m'echo[%zu]: %s\n'
+[31m*[0m[31m[1mRSI [0m[31m[0m 5
+[31m*[0m[31m[1mR8  [0m[31m[0m [0m0x555555556060[0m[0m ◂— [0m0xa0d00646e616d /* 'mand' */
+[31m*[0m[31m[1mR9  [0m[31m[0m [34m0x5555555592a0[0m[0m ◂— [0m'echo hello\n'
+[31m*[0m[31m[1mR10 [0m[31m[0m [0m0x7ffff7c0e940[0m[0m ◂— [0m0xf001a00007035 /* '5p' */
+[31m*[0m[31m[1mR11 [0m[31m[0m [31m0x7ffff7daab80 (__strlen_avx2_rtm)[0m[0m ◂— [0m[38;5;148mendbr64[39m
+[31m*[0m[31m[1mR12 [0m[31m[0m [33m0x7fffffffe0c8[0m[0m —▸ [0m[33m0x7fffffffe349[0m[0m ◂— [0m'/mnt/d/security-roadmap/Day101-160/Day157/day157_relay.elf'
+[31m*[0m[31m[1mR13 [0m[31m[0m [31m0x55555555534a[0m[0m ◂— [0m[38;5;148mpush[39m[38;5;15m [39m[38;5;81mrbp[39m
+[31m*[0m[31m[1mR14 [0m[31m[0m [0m0x555555557dd8[0m[0m —▸ [0m[31m0x555555555170[0m[0m ◂— [0m[38;5;148mendbr64[39m
+[31m*[0m[31m[1mR15 [0m[31m[0m [35m0x7ffff7ffd040 (_rtld_global)[0m[0m —▸ [0m[35m0x7ffff7ffe2e0[0m[0m —▸ [0m[0m0x555555554000[0m[0m ◂— [0m0x10102464c457f
+[31m*[0m[31m[1mRBP [0m[31m[0m [33m0x7fffffffdf20[0m[0m —▸ [0m[33m0x7fffffffdfb0[0m[0m ◂— [0m1
+[31m*[0m[31m[1mRSP [0m[31m[0m [33m0x7fffffffdef8[0m[0m —▸ [0m[31m0x5555555552a6[0m[0m ◂— [0m[38;5;148mmov[39m[38;5;15m [39m[38;5;81meax[39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m0[39m
+[31m*[0m[31m[1mRIP [0m[31m[0m [31m0x555555555080 (printf@plt)[0m[0m ◂— [0m[38;5;148mjmp[39m[38;5;15m [39m[38;5;81mqword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrip[39m[38;5;15m [39m[38;5;15m+[39m[38;5;15m [39m[38;5;141m0x2fa2[39m[38;5;15m][39m
+[34m────────────────────────────────────────────────[ DISASM / x86-64 / set emulate on ]─────────────────────────────────────────────────[0m
+[31mb►[0m [1m[32m0x555555555080[0m[1m[0m [1m[32m<printf@plt>                   [0m[1m[0m   [1m[32m[38;5;148m[1mjmp[0m[39m[38;5;15m    [39m[38;5;81mqword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrip[39m[38;5;15m [39m[38;5;15m+[39m[38;5;15m [39m[38;5;141m0x2fa2[39m[38;5;15m][39m[0m[1m[0m    <[31mprintf@plt+6[0m>
+[0m    ↓[0m
+   [0m0x555555555086[0m [0m<printf@plt+6>                 [0m   [38;5;148mpush[39m[38;5;15m   [39m[38;5;141m5[39m
+   [0m0x55555555508b[0m [0m<printf@plt+11>                [0m   [38;5;148m[1mjmp[0m[39m[38;5;15m    [39m[38;5;141m0x555555555020[39m              <[31m0x555555555020[0m>
+[0m    ↓[0m
+   [0m0x555555555020[0m [0m                               [0m   [38;5;148mpush[39m[38;5;15m   [39m[38;5;81mqword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrip[39m[38;5;15m [39m[38;5;15m+[39m[38;5;15m [39m[38;5;141m0x2fca[39m[38;5;15m][39m
+   [0m0x555555555026[0m [0m                               [0m   [38;5;148m[1mjmp[0m[39m[38;5;15m    [39m[38;5;81mqword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrip[39m[38;5;15m [39m[38;5;15m+[39m[38;5;15m [39m[38;5;141m0x2fcc[39m[38;5;15m][39m    <[31m_dl_runtime_resolve_xsave[0m>
+[0m    ↓[0m
+   [0m0x7ffff7fd8c60[0m [0m<_dl_runtime_resolve_xsave>    [0m   [38;5;148mendbr64[39m
+   [0m0x7ffff7fd8c64[0m [0m<_dl_runtime_resolve_xsave+4>  [0m   [38;5;148mpush[39m[38;5;15m   [39m[38;5;81mrbx[39m
+   [0m0x7ffff7fd8c65[0m [0m<_dl_runtime_resolve_xsave+5>  [0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mrbx[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mrsp[39m                           [31m[1mRBX[0m[31m[0m => [33m0x7fffffffdee0[0m[0m ◂— [0m0
+   [0m0x7ffff7fd8c68[0m [0m<_dl_runtime_resolve_xsave+8>  [0m   [38;5;148mand[39m[38;5;15m    [39m[38;5;81mrsp[39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m0xffffffffffffffc0[39m            [31m[1mRSP[0m[31m[0m => [33m0x7fffffffdec0[0m (0x7fffffffdee0 & -0x40)
+   [0m0x7ffff7fd8c6c[0m [0m<_dl_runtime_resolve_xsave+12> [0m   [38;5;148msub[39m[38;5;15m    [39m[38;5;81mrsp[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mqword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrip[39m[38;5;15m [39m[38;5;15m+[39m[38;5;15m [39m[38;5;141m0x2401d[39m[38;5;15m][39m     [31m[1mRSP[0m[31m[0m => [33m0x7fffffffdb40[0m (0x7fffffffdec0 - 0x380)
+   [0m0x7ffff7fd8c73[0m [0m<_dl_runtime_resolve_xsave+19> [0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mqword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrsp[39m[38;5;15m][39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mrax[39m               [[33m0x7fffffffdb40[0m] <= 0
+[34m──────────────────────────────────────────────────────────────[ STACK ]──────────────────────────────────────────────────────────────[0m
+[0m00[0m[0m:[0m[0m0000[0m[0m│[0m[0m[0m [1mrsp  [0m [33m0x7fffffffdef8[0m[0m —▸ [0m[31m0x5555555552a6[0m[0m ◂— [0m[38;5;148mmov[39m[38;5;15m [39m[38;5;81meax[39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m0[39m
+[0m01[0m[0m:[0m[0m0008[0m[0m│[0m[0m[0m-020   [33m0x7fffffffdf00[0m[0m ◂— [0m0
+[0m02[0m[0m:[0m[0m0010[0m[0m│[0m[0m[0m-018   [33m0x7fffffffdf08[0m[0m —▸ [0m[33m0x7fffffffdf30[0m[0m ◂— [0m'echo hello'
+[0m03[0m[0m:[0m[0m0018[0m[0m│[0m[0m[0m-010   [33m0x7fffffffdf10[0m[0m ◂— [0m0
+[0m04[0m[0m:[0m[0m0020[0m[0m│[0m[0m[0m-008   [33m0x7fffffffdf18[0m[0m —▸ [0m[33m0x7fffffffdf35[0m[0m ◂— [0m0x6f6c6c6568 /* 'hello' */
+[0m05[0m[0m:[0m[0m0028[0m[0m│[0m[0m[0m [1mrbp  [0m [33m0x7fffffffdf20[0m[0m —▸ [0m[33m0x7fffffffdfb0[0m[0m ◂— [0m1
+[0m06[0m[0m:[0m[0m0030[0m[0m│[0m[0m[0m+008   [33m0x7fffffffdf28[0m[0m —▸ [0m[31m0x5555555553c5[0m[0m ◂— [0m[38;5;148mtest[39m[38;5;15m [39m[38;5;81meax[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81meax[39m
+[0m07[0m[0m:[0m[0m0038[0m[0m│[0m[0m[0m [1mrdx-5[0m [33m0x7fffffffdf30[0m[0m ◂— [0m'echo hello'
+[34m────────────────────────────────────────────────────────────[ BACKTRACE ]────────────────────────────────────────────────────────────[0m
+ ► 0   0x555555555080 printf@plt
+   1   0x5555555552a6 None
+   2   0x5555555553c5 None
+   3   0x7ffff7c29d90 __libc_start_call_main+128
+   4   0x7ffff7c29e40 __libc_start_main+128
+   5   0x5555555550f1 None
+[34m─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[?2004l[?2004h[32m[1mpwndbg> [0m[32m[0m[7mx/gx $rebase(0x4028)[27m[C[C[C[C[C[C[C[Cx/gx $rebase(0x4028)
+[?2004l[34m0x555555558028[m <[33mprintf@got.plt[m>:	0x0000555555555086
+[?2004h[32m[1mpwndbg> [0m[32m[0m[7mtbreak *$rebase(0x12a6)[27m[C[C[C[C[C[C[C[Ctbreak *$rebase(0x12a6)
+[?2004lTemporary breakpoint 3 at [34m0x5555555552a6[m
+[?2004h[32m[1mpwndbg> [0m[32m[0m[7mcontinue[27mcontinue
+[?2004lContinuing.
+echo[5]: hello
+
+Temporary breakpoint 3, [34m0x00005555555552a6[m in [33m??[m ()
+[?2004hLEGEND: [33mSTACK[0m | [34mHEAP[0m | [31mCODE[0m | [35mDATA[0m | [4m[31mWX[0m[4m[0m | [0mRODATA[0m
+[34m───────────────────────────────────────────────────────────[ LAST SIGNAL ]───────────────────────────────────────────────────────────[0m
+[33mBreakpoint hit at 0x5555555552a6[0m
+[34m───────────────────────────────────────[ REGISTERS / show-flags off / show-compact-regs off ]────────────────────────────────────────[0m
+[31m*[0m[31m[1mRAX [0m[31m[0m 0xf
+ [1mRBX [0m 0
+[31m*[0m[31m[1mRCX [0m[31m[0m 1
+[31m*[0m[31m[1mRDX [0m[31m[0m 0
+[31m*[0m[31m[1mRDI [0m[31m[0m [33m0x7fffffffd9a0[0m[0m —▸ [0m[31m0x7ffff7c62050 (funlockfile)[0m[0m ◂— [0m[38;5;148mendbr64[39m
+[31m*[0m[31m[1mRSI [0m[31m[0m [34m0x5555555596b0[0m[0m ◂— [0m'echo[5]: hello\n'
+[31m*[0m[31m[1mR8  [0m[31m[0m 0
+[31m*[0m[31m[1mR9  [0m[31m[0m 0x7fffffff
+[31m*[0m[31m[1mR10 [0m[31m[0m 0
+[31m*[0m[31m[1mR11 [0m[31m[0m 0x246
+ [1mR12 [0m [33m0x7fffffffe0c8[0m[0m —▸ [0m[33m0x7fffffffe349[0m[0m ◂— [0m'/mnt/d/security-roadmap/Day101-160/Day157/day157_relay.elf'
+ [1mR13 [0m [31m0x55555555534a[0m[0m ◂— [0m[38;5;148mpush[39m[38;5;15m [39m[38;5;81mrbp[39m
+ [1mR14 [0m [0m0x555555557dd8[0m[0m —▸ [0m[31m0x555555555170[0m[0m ◂— [0m[38;5;148mendbr64[39m
+ [1mR15 [0m [35m0x7ffff7ffd040 (_rtld_global)[0m[0m —▸ [0m[35m0x7ffff7ffe2e0[0m[0m —▸ [0m[0m0x555555554000[0m[0m ◂— [0m0x10102464c457f
+ [1mRBP [0m [33m0x7fffffffdf20[0m[0m —▸ [0m[33m0x7fffffffdfb0[0m[0m ◂— [0m1
+[31m*[0m[31m[1mRSP [0m[31m[0m [33m0x7fffffffdf00[0m[0m ◂— [0m0
+[31m*[0m[31m[1mRIP [0m[31m[0m [31m0x5555555552a6[0m[0m ◂— [0m[38;5;148mmov[39m[38;5;15m [39m[38;5;81meax[39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m0[39m
+[34m────────────────────────────────────────────────[ DISASM / x86-64 / set emulate on ]─────────────────────────────────────────────────[0m
+ ► [1m[32m0x5555555552a6[0m[1m[0m [1m[32m[0m[1m[0m   [1m[32m[38;5;148mmov[39m[38;5;15m    [39m[38;5;81meax[39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m0[39m[0m[1m[0m     [31m[1mEAX[0m[31m[0m => 0
+   [0m0x5555555552ab[0m [0m[0m   [38;5;148m[1mjmp[0m[39m[38;5;15m    [39m[38;5;141m0x555555555348[39m              <[31m0x555555555348[0m>
+[0m    ↓[0m
+   [0m0x555555555348[0m [0m[0m   [38;5;148mleave[39m[38;5;15m [39m
+   [0m0x555555555349[0m [0m[0m   [38;5;148m[1mret[0m[39m[38;5;15m   [39m                             <[31m0x5555555553c5[0m>
+[0m    ↓[0m
+   [0m0x5555555553c5[0m [0m[0m   [38;5;148mtest[39m[38;5;15m   [39m[38;5;81meax[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81meax[39m     0 & 0     EFLAGS => 0x246 [ [31mcf[0m [1m[32mPF[0m[1m[0m [31maf[0m [1m[32mZF[0m[1m[0m [31msf[0m [1m[32mIF[0m[1m[0m [31mdf[0m [31mof[0m [31miopl:00[0m [31mac[0m ]
+   [0m0x5555555553c7[0m [0m[0m [31m✘ [0m[38;5;148m[1mjne[0m[39m[38;5;15m    [39m[38;5;141m0x5555555553cb[39m              <[31m0x5555555553cb[0m>
+ 
+   [0m0x5555555553c9[0m [0m[0m   [38;5;148m[1mjmp[0m[39m[38;5;15m    [39m[38;5;141m0x555555555361[39m              <[31m0x555555555361[0m>
+[0m    ↓[0m
+   [0m0x555555555361[0m [0m[0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81medx[39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m7[39m                 [31m[1mEDX[0m[31m[0m => 7
+   [0m0x555555555366[0m [0m[0m   [38;5;148mlea[39m[38;5;15m    [39m[38;5;81mrax[39m[38;5;15m,[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrip[39m[38;5;15m [39m[38;5;15m+[39m[38;5;15m [39m[38;5;141m0xcfb[39m[38;5;15m][39m     [31m[1mRAX[0m[31m[0m => [0m0x555555556068[0m[0m ◂— [0m0x203e79616c6572 /* 'relay> ' */
+   [0m0x55555555536d[0m [0m[0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mrsi[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mrax[39m               [31m[1mRSI[0m[31m[0m => [0m0x555555556068[0m[0m ◂— [0m0x203e79616c6572 /* 'relay> ' */
+   [0m0x555555555370[0m [0m[0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81medi[39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m1[39m                 [31m[1mEDI[0m[31m[0m => 1
+[34m──────────────────────────────────────────────────────────────[ STACK ]──────────────────────────────────────────────────────────────[0m
+[0m00[0m[0m:[0m[0m0000[0m[0m│[0m[0m[0m [1mrsp[0m [33m0x7fffffffdf00[0m[0m ◂— [0m0
+[0m01[0m[0m:[0m[0m0008[0m[0m│[0m[0m[0m-018 [33m0x7fffffffdf08[0m[0m —▸ [0m[33m0x7fffffffdf30[0m[0m ◂— [0m'echo hello'
+[0m02[0m[0m:[0m[0m0010[0m[0m│[0m[0m[0m-010 [33m0x7fffffffdf10[0m[0m ◂— [0m0
+[0m03[0m[0m:[0m[0m0018[0m[0m│[0m[0m[0m-008 [33m0x7fffffffdf18[0m[0m —▸ [0m[33m0x7fffffffdf35[0m[0m ◂— [0m0x6f6c6c6568 /* 'hello' */
+[0m04[0m[0m:[0m[0m0020[0m[0m│[0m[0m[0m [1mrbp[0m [33m0x7fffffffdf20[0m[0m —▸ [0m[33m0x7fffffffdfb0[0m[0m ◂— [0m1
+[0m05[0m[0m:[0m[0m0028[0m[0m│[0m[0m[0m+008 [33m0x7fffffffdf28[0m[0m —▸ [0m[31m0x5555555553c5[0m[0m ◂— [0m[38;5;148mtest[39m[38;5;15m [39m[38;5;81meax[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81meax[39m
+[0m06[0m[0m:[0m[0m0030[0m[0m│[0m[0m[0m+010 [33m0x7fffffffdf30[0m[0m ◂— [0m'echo hello'
+[0m07[0m[0m:[0m[0m0038[0m[0m│[0m[0m[0m+018 [33m0x7fffffffdf38[0m[0m ◂— [0m0x6f6c /* 'lo' */
+[34m────────────────────────────────────────────────────────────[ BACKTRACE ]────────────────────────────────────────────────────────────[0m
+ ► 0   0x5555555552a6 None
+   1   0x5555555553c5 None
+   2   0x7ffff7c29d90 __libc_start_call_main+128
+   3   0x7ffff7c29e40 __libc_start_main+128
+   4   0x5555555550f1 None
+[34m─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[?2004l[?2004h[32m[1mpwndbg> [0m[32m[0m[7mx/gx $rebase(0x4028)[27m[C[C[C[C[C[C[C[Cx/gx $rebase(0x4028)
+[?2004l[34m0x555555558028[m <[33mprintf@got.plt[m>:	0x00007ffff7c606f0
+[?2004h[32m[1mpwndbg> [0m[32m[0m[7mvmmap[27mvmmap
+[?2004lLEGEND: [33mSTACK[0m | [34mHEAP[0m | [31mCODE[0m | [35mDATA[0m | [4m[31mWX[0m[4m[0m | [0mRODATA[0m
+             Start                End Perm     Size  Offset File (set vmmap-prefer-relpaths on)
+[0m    0x555555554000     0x555555555000 r--p     1000       0 day157_relay.elf[0m
+[31m    0x555555555000     0x555555556000 r-xp     1000    1000 day157_relay.elf[0m
+[0m    0x555555556000     0x555555557000 r--p     1000    2000 day157_relay.elf[0m
+[0m    0x555555557000     0x555555558000 r--p     1000    2000 day157_relay.elf[0m
+[35m    0x555555558000     0x555555559000 rw-p     1000    3000 day157_relay.elf[0m
+[34m    0x555555559000     0x55555557a000 rw-p    21000       0 [heap][0m
+[0m    0x7ffff7c00000     0x7ffff7c28000 r--p    28000       0 /usr/lib/x86_64-linux-gnu/libc.so.6[0m
+[31m    0x7ffff7c28000     0x7ffff7dbd000 r-xp   195000   28000 /usr/lib/x86_64-linux-gnu/libc.so.6[0m
+[0m    0x7ffff7dbd000     0x7ffff7e15000 r--p    58000  1bd000 /usr/lib/x86_64-linux-gnu/libc.so.6[0m
+[0m    0x7ffff7e15000     0x7ffff7e16000 ---p     1000  215000 /usr/lib/x86_64-linux-gnu/libc.so.6[0m
+[0m    0x7ffff7e16000     0x7ffff7e1a000 r--p     4000  215000 /usr/lib/x86_64-linux-gnu/libc.so.6[0m
+[35m    0x7ffff7e1a000     0x7ffff7e1c000 rw-p     2000  219000 /usr/lib/x86_64-linux-gnu/libc.so.6[0m
+[35m    0x7ffff7e1c000     0x7ffff7e29000 rw-p     d000       0 [anon_7ffff7e1c][0m
+[35m    0x7ffff7fb1000     0x7ffff7fb4000 rw-p     3000       0 [anon_7ffff7fb1][0m
+[35m    0x7ffff7fbb000     0x7ffff7fbd000 rw-p     2000       0 [anon_7ffff7fbb][0m
+[0m    0x7ffff7fbd000     0x7ffff7fc1000 r--p     4000       0 [vvar][0m
+[31m    0x7ffff7fc1000     0x7ffff7fc3000 r-xp     2000       0 [vdso][0m
+[0m    0x7ffff7fc3000     0x7ffff7fc5000 r--p     2000       0 /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2[0m
+[31m    0x7ffff7fc5000     0x7ffff7fef000 r-xp    2a000    2000 /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2[0m
+[0m    0x7ffff7fef000     0x7ffff7ffa000 r--p     b000   2c000 /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2[0m
+[0m    0x7ffff7ffb000     0x7ffff7ffd000 r--p     2000   37000 /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2[0m
+[35m    0x7ffff7ffd000     0x7ffff7fff000 rw-p     2000   39000 /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2[0m
+[33m    0x7ffffffde000     0x7ffffffff000 rw-p    21000       0 [stack][0m
+[?2004h[32m[1mpwndbg> [0m[32m[0m[7mquit[27mquit
+[?2004l[31mException occurred: Error: No selected thread. (<class 'gdb.error'>)[0m
+[35mFor more info invoke `[0m[33mset exception-verbose on[0m[35m` and rerun the command
+or debug it by yourself with `[0m[33mset exception-debugger on[0m[35m`[0m
+Python Exception <class 'gdb.error'>: No selected thread.
+[?2004h]0;ethan@ddengyoon: /mnt/d/security-roadmap/Day101-160/Day157[01;32methan@ddengyoon[00m:[01;34m/mnt/d/security-roadmap/Day101-160/Day157[00m$ [7mexit[27mexit
+[?2004lexit
+
+Script done on 2026-11-23 15:49:47+09:00 [COMMAND_EXIT_CODE="0"]
