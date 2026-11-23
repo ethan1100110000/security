@@ -1086,3 +1086,11 @@ git pull --ff-only
 - 학생이 푸시한 [경계값 원본 실행 로그](../Day101-160/Day156/retest/boundary_results.txt)의 Git blob `1d82c9be2e7597cf4b60438a0f9d89164264456a` 확인. WSL2 x86_64, GCC 11.4.0, glibc 2.35, ELF 및 제출 수정 소스 해시, 빌드 명령, 입력, 출력 및 종료값 기록 확보.
 - 23바이트: 양쪽 정상(category=3, exit=0). 24바이트: 기존 ELF category=0, 수정 모델 category=3, 양쪽 exit=0. 25바이트: 양쪽 거부(기존 exit=2, 수정 모델 exit=4). 허용 범위와 경계 데이터 보존을 확인함. 오류 메시지/종료 코드 차이는 남아 있음.
 - **Day156 / W06 완료(재평가 통과)**. 최초 시험의 도움 기록과 수정 설계의 교정 기록은 유지. 새 문제 독립 분석 및 동적 증거, 수정 모델 회귀 검증, CS/복습, Git 증거 마감을 근거로 판정. 원본 C 소스 확인 및 실제 원본 ELF 패치는 수행하지 않았으며 10분 발표 시간은 미측정. 다음 Day157 / W07.
+
+
+### 2026-11-23 — Day157 / FINAL W07 1/5 시작, 동적 링킹 분석·복습 진행 (미완료)
+- 사용자 최초 보호기법 분류: Canary/NX/PIE ON, Partial RELRO. `readelf -r`에서 puts/printf JUMP_SLOT과 __libc_start_main GLOB_DAT를 확인하고, objdump의 `_start`에서 GOT 간접 호출 및 main offset 0x134a 복원.
+- Pwndbg 사용자 직접 출력: puts GOT `0x555555558008`의 초기 값 `0x555555555046`(puts@plt+6). 첫 호출 뒤 `0x7ffff7c80e10` libc 주소로 변경됐다고 보고. __libc_start_main GOT `0x555555557fc0`의 값 `0x7ffff7c29dc0` 확인.
+- Partial RELRO에서 `0x555555558000~0x555555559000 rw-p` 매핑 확인. 지연 바인딩 슬롯과 RELRO 보호 슬롯의 차이 구술 설명. CS Full RELRO/BIND_NOW 선해결 설명 통과(교사 설명 후).
+- Day156 D+2 지연복습: 새 label[12]/category 경계 조건 무힌트 4/4 정답. Day043·050 정렬: RSP%16=8 정상 진입, 추가 ret 하나로 0으로 변경(초기값 8인 조건) 정답. 원문 대조 및 독립 조건 전이는 추가 기록 필요.
+- [Day157 진행 Write-up](../Day101-160/Day157/day157_writeup.md) 교사 Git 커밋. **원본 전체 실행 로그/환경, printf 2번째 함수 실제 동적 확인, 사용자 Git push 증거는 아직 미제출**; Day157 전체 완료 보류. **Last completed Day156 유지.**
