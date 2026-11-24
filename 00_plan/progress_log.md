@@ -1120,3 +1120,11 @@ git pull --ff-only
 - 사용자 WSL에서 최초 `day158_probe.elf` 실행 시 `GLIBC_2.38 not found` 발생. 교사 빌드 환경에서 `__isoc23_strtol@GLIBC_2.38`가 들어간 호환성 실수임을 확인. 사용자 과제로 간주하지 않음.
 - 같은 명령 1~5/입력 로직을 유지한 바이너리를 `strtol@GLIBC_2.2.5` 참조로 재빌드. `readelf --version-info` 상 필요한 최고 버전 GLIBC_2.34, 교사 환경 실행 성공. Git의 `day158_probe.elf.xz.b64`, `unpack.sh` 검증 SHA, `README.md` 갱신.
 - 수정 ELF SHA256: `009e49ee78b794c9345ca51912823b86ebd97b387c951da2cfac171355ed7146`. 학생은 `git pull --ff-only`, `bash unpack.sh` 재실행 후 기본 출력부터 분석. **Day158 미완료, 마지막 완료 Day157 유지.**
+
+
+### 2026-11-24 — Day158 메인·CS·복습·D+7 구술 검증 완료 (Git 증거 대기)
+- 메인: 주소로 오인하기 쉬운 5개 출력 중 1번 PIE 함수 오프셋 `0x1189`, 4번 libc puts 심볼 `0x80e10` 기반 base `0x7ffff7c00000`, 2번 하위 16비트 단독 leak의 불충분성, 5번 미매핑 고정값 분류. 오프셋 0x100 오류 시 base 비정렬 반례를 스스로 제시. 정적 objdump/pwndbg 및 `readelf` 사용 구두 증거 확인.
+- CS: RIP 기준은 다음 명령어 `0x5555555551a7`, `lea` 유효주소 계산 `0x555555555170`, signed disp32 `-0x37` 해석. 초기에 RIP와 LEA의 의미에 교사 힌트 필요.
+- Day043/050: `pop rdi;ret`에서 `RSP%16:8→0→8` 정답이지만 ret 추가 필요하다는 **최초 오답** 교정. 다른 조건에서는 추가/제거 모두 가능함을 비교.
+- Day153/154 D+7: 구조체 `name[16]`에 20B 'A' 복사로 `marker=0x1122334441414141` 정답, Canary/NX 제한 이해. ASan 최초 설명 중 'writable이므로 미탐지' 오개념 교정; 독립 구조체 멤버 경계와 전체 객체 redzone의 차이를 최종 독립 설명. **D+7 인출 및 교정 후 전이 통과**.
+- [Day158 교사 작성 관찰 정리](../Day101-160/Day158/day158_writeup.md) 커밋. **원본 실행 로그와 사용자 commit/push 아직 미확인**; Day158 전체 완료 보류, Last completed Day157 유지.
