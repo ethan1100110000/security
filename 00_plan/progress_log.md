@@ -1107,3 +1107,10 @@ git pull --ff-only
 - 원본 명령 및 출력: `checksec` Partial RELRO/Canary/NX/PIE, `readelf -r`, `gdb starti`, 실행 파일 _start 진입, `break *$rebase(0x1080)` 후 입력 `echo hello`, printf@plt 첫 진입에서 GOT=`0x555555555086`, `tbreak *$rebase(0x12a6)` 후 반환 지점에서 GOT=`0x7ffff7c606f0`. `vmmap`으로 libc 실행 매핑과 GOT 쓰기 가능 매핑 검증. 원본 script 종료코드 0.
 - 메인/CS/복습/장기복습/원자료 기록과 사용자 Git 증거 마감 충족. `puts` 세부 출력 일부는 이전 사용자 채팅 원문에 근거하며 이번 raw log의 직접 재현 대상은 `printf`임을 구분.
 - **Day157 / FINAL W07 1/5 완료 판정. Last completed Day157. Next Day158 / W07 2/5 (미시작).**
+
+
+### 2026-11-24 — FINAL Day158 / W07 2/5 시작 (미완료)
+- 최종 계획표 `01_일일124` Day158 확인: 서로 다른 leak 형태(포인터/부분주소/문자열)의 신뢰도 비교, PIE/libc base 계산의 반례 3개, CS RIP 상대주소·부호확장·ASLR 오프셋, Day043·050 ROP 실패 복습, 사용자 실제 로그와 Git 증거.
+- 교사가 새 허가된 로컬 교육용 stripped PIE ELF를 `Day101-160/Day158/day158_probe.elf.xz.b64`에 생성하고 `unpack.sh`, `README.md`를 Git에 추가. 바이너리 SHA256 `75ba0e98ba5bf01486c6726d4bd297d47af64eda70477c666526dffab6371735`. 소스·출력의 의미·풀이 공개 없이 최초 독립 관찰을 받는다.
+- 만기 복습 확인: Day153 D+7 예정 2026-11-23, Day154 D+7 2026-11-24. 기존 완료 과제 단순 반복 없이 새 조건으로 인출 예정.
+- **학생 실습 출력/최초 답안 미제출, Day158 미완료. Last completed Day157 유지.**
