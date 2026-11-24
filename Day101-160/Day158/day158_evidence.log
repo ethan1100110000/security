@@ -1,0 +1,36 @@
+===== PROTECTIONS =====
+[*] '/mnt/d/security-roadmap/Day101-160/Day158/day158_probe.elf'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+===== LIBC PUTS OFFSET =====
+  1429: 0000000000080e10   409 FUNC    WEAK   DEFAULT   15 puts@@GLIBC_2.2.5
+===== ELF SEGMENTS =====
+  LOAD           0x000000 0x0000000000000000 0x0000000000000000 0x000820 0x000820 R   0x1000
+  LOAD           0x001000 0x0000000000001000 0x0000000000001000 0x00040d 0x00040d R E 0x1000
+  LOAD           0x002000 0x0000000000002000 0x0000000000002000 0x000214 0x000214 R   0x1000
+  LOAD           0x002dc8 0x0000000000003dc8 0x0000000000003dc8 0x000278 0x000298 RW  0x1000
+===== RUN 1 =====
+audit console: commands 1..5, 0 to quit
+audit> observation=0x5c5471ae4189
+audit> observation=0e10
+audit> observation=read the evidence, not the label
+audit> observation=0x7edb91080e10
+audit> observation=0x7ffff7abcdef
+audit> ===== RUN 2 =====
+audit console: commands 1..5, 0 to quit
+audit> observation=0x56b1ed750189
+audit> observation=0e10
+audit> observation=read the evidence, not the label
+audit> observation=0x76645bc80e10
+audit> observation=0x7ffff7abcdef
+audit> ===== RUN 3 =====
+audit console: commands 1..5, 0 to quit
+audit> observation=0x55942ca06189
+audit> observation=0e10
+audit> observation=read the evidence, not the label
+audit> observation=0x72a11be80e10
+audit> observation=0x7ffff7abcdef
+audit> 
