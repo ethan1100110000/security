@@ -1114,3 +1114,9 @@ git pull --ff-only
 - 교사가 새 허가된 로컬 교육용 stripped PIE ELF를 `Day101-160/Day158/day158_probe.elf.xz.b64`에 생성하고 `unpack.sh`, `README.md`를 Git에 추가. 바이너리 SHA256 `75ba0e98ba5bf01486c6726d4bd297d47af64eda70477c666526dffab6371735`. 소스·출력의 의미·풀이 공개 없이 최초 독립 관찰을 받는다.
 - 만기 복습 확인: Day153 D+7 예정 2026-11-23, Day154 D+7 2026-11-24. 기존 완료 과제 단순 반복 없이 새 조건으로 인출 예정.
 - **학생 실습 출력/최초 답안 미제출, Day158 미완료. Last completed Day157 유지.**
+
+
+### 2026-11-24 — Day158 실습물 glibc 호환성 수정 (사용자 분석 전)
+- 사용자 WSL에서 최초 `day158_probe.elf` 실행 시 `GLIBC_2.38 not found` 발생. 교사 빌드 환경에서 `__isoc23_strtol@GLIBC_2.38`가 들어간 호환성 실수임을 확인. 사용자 과제로 간주하지 않음.
+- 같은 명령 1~5/입력 로직을 유지한 바이너리를 `strtol@GLIBC_2.2.5` 참조로 재빌드. `readelf --version-info` 상 필요한 최고 버전 GLIBC_2.34, 교사 환경 실행 성공. Git의 `day158_probe.elf.xz.b64`, `unpack.sh` 검증 SHA, `README.md` 갱신.
+- 수정 ELF SHA256: `009e49ee78b794c9345ca51912823b86ebd97b387c951da2cfac171355ed7146`. 학생은 `git pull --ff-only`, `bash unpack.sh` 재실행 후 기본 출력부터 분석. **Day158 미완료, 마지막 완료 Day157 유지.**
