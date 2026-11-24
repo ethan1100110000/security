@@ -46,14 +46,14 @@ git pull --ff-only
 
 > 2026-11-15 확정 FINAL 엑셀만 현행 계획으로 사용. 학습 완료는 날짜가 아닌 실측과 Git 증거로 판정한다.
 
-- Last completed: **2026-11-23 — Day157 / FINAL W07 1/5 완료**. [실습 Write-up](../Day101-160/Day157/day157_writeup.md), [사용자 원본 세션 로그](../Day101-160/Day157/day157_session.log).
+- Last completed: **2026-11-24 — Day158 / FINAL W07 2/5 완료**. [Day158 Write-up](../Day101-160/Day158/day158_writeup.md), [학생 원본 실행 로그](../Day101-160/Day158/day158_evidence.log).
 - Active plan: [Binary Exploitation FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276 (124개 일일 과제).
-- Plan position: **Day157 완료, 다음 Day158 / FINAL W07 2/5 미시작**.
-- Current focus: PLT/GOT와 Lazy Binding, JUMP_SLOT/GLOB_DAT, Partial RELRO 실제 매핑/권한의 정적·동적 교차검증. puts와 printf 두 외부 함수를 조사했고 printf GOT가 첫 PLT 진입 전후 `0x555555555086 → 0x7ffff7c606f0`로 전환되는 원본 로그 확인.
-- CS/review: Full RELRO/BIND_NOW 사전 주소 결정과 RELRO 보호 순서 설명(교사 도움 후); Day156 D+2 지연 복습 새 조건 4/4 무힌트 통과; Day043/050 RSP 정렬 회상 통과, Git 원본 교사 대조 완료.
-- Evidence: 사용자 커밋 `627c41b8325e48dea91b70b57159057dbf490abc`에 `day157_session.log` 보존. `checksec`, `readelf -r`, GDB breakpoints, 호출 전후 GOT 원문, `vmmap` 확인. 실행 종료 시 Pwndbg Python 예외가 있었으나 실습 증거에는 영향 없음.
-- Next task: **FINAL Day158 / W07 2/5**; 다음 학습 시작 전 엑셀 세부 과제와 만기 복습 확인.
-- Teaching: 완료한 원리를 반복 설명하지 않고 새 조건에서 독립 분석을 우선한다. 교사의 정리 문서와 사용자 실행 자료를 구분한다.
+- Plan position: **Day158 완료, 다음 Day159 / FINAL W07 3/5 미시작**.
+- Current focus: leak 신뢰도·PIE/libc base 검증; 1번 PIE 함수 offset 0x1189 및 4번 libc puts offset 0x80e10, 2번 하위 16비트의 한계, 5번 미매핑 가짜 주소, 잘못된 offset/page 정렬 반례 3개.
+- CS/review: RIP-relative RIP 다음 명령 기준 및 signed disp32 교정 후 통과; Day043/050 ROP pop/ret 정렬에서 추가 ret 필요 여부 오답 교정; Day153·154 D+7 ASan 객체 경계 복습 교정 후 통과.
+- Evidence: 학생 커밋 `9bf64d869c7406cb9fbbdeba8be90d0e971200f5`: `Day101-160/Day158/day158_evidence.log`; Git 원문은 3회 실행 1/2/3/4/5 출력, `checksec`, libc puts 심볼, ELF LOAD 매핑. GDB vmmap/주소 검사 결과와 분석 논리는 **채팅 제출 증거**로만 남아 있으며 별도 GDB 원본 세션 로그는 없음; 추가 재실행 요구 없이 근거 수준 구분.
+- Next task: **FINAL Day159 / W07 3/5**; 시작 전 엑셀 세부 과제 및 지연복습 점검.
+- Teaching: 가르친 내용과 학생의 최초 무힌트 답변 및 뒤따른 교정 결과를 구분; 완료한 개념을 의미 없이 반복하지 않는다.
 
 ---
 
@@ -1128,3 +1128,10 @@ git pull --ff-only
 - Day043/050: `pop rdi;ret`에서 `RSP%16:8→0→8` 정답이지만 ret 추가 필요하다는 **최초 오답** 교정. 다른 조건에서는 추가/제거 모두 가능함을 비교.
 - Day153/154 D+7: 구조체 `name[16]`에 20B 'A' 복사로 `marker=0x1122334441414141` 정답, Canary/NX 제한 이해. ASan 최초 설명 중 'writable이므로 미탐지' 오개념 교정; 독립 구조체 멤버 경계와 전체 객체 redzone의 차이를 최종 독립 설명. **D+7 인출 및 교정 후 전이 통과**.
 - [Day158 교사 작성 관찰 정리](../Day101-160/Day158/day158_writeup.md) 커밋. **원본 실행 로그와 사용자 commit/push 아직 미확인**; Day158 전체 완료 보류, Last completed Day157 유지.
+
+
+### 2026-11-24 — Day158 / FINAL W07 2/5 완료 판정 (학생 커밋 검증)
+- 학생 원격 커밋 `9bf64d869c7406cb9fbbdeba8be90d0e971200f5`에서 `Day101-160/Day158/day158_evidence.log` Git blob `fe70fb3b6a00d77eac1322654480e2054a2a75fe` 직접 확인. 로그에는 3회 별도 프로세스 실행, readelf ELF LOAD와 libc puts `0x80e10`, checksec Partial RELRO/Canary/NX/PIE 출력 포함.
+- 실행 3회에서 1번은 `0x5c5471ae4189` / `0x56b1ed750189` / `0x55942ca06189`로 변하고 하위 `0x1189` 일정; 2번은 매번 `0e10`, 4번은 `0x7edb91080e10` / `0x76645bc80e10` / `0x72a11be80e10`로 변하며 하위 `0e10` 일치; 5번은 `0x7ffff7abcdef` 고정. 원자료가 대화 중 최초 관찰과 일치함.
+- GDB vmmap/주소 검사 원문은 사용자가 채팅으로 제시한 부분만 확인됨; Git 로그에 전체 GDB 세션은 없음. 메인 분석·CS·Day043/050 복습·Day153/154 D+7의 최초 답변 및 교정 기록은 연결된 Day158 write-up으로 확인. 정확히 어떤 근거가 Git에 있고 채팅에 있는지 구분하여 기재.
+- **Day158 완료. Last completed Day158. Next Day159 / FINAL W07 3/5 (미시작).**
