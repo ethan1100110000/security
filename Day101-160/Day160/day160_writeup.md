@@ -154,6 +154,14 @@ stack_probe: exit 0
 
 CS 질문 "Full RELRO인데 스택 반환 주소를 덮을 취약점이 있으면 ROP가 불가능해지는가?"에 학생이 "Full RELRO여도 스택의 반환주소는 덮을 수 있음; Full RELRO는 GOT 테이블만 read only로 보호"라고 답함. **반환 주소와 GOT 보호 대상 구분은 정답.** 다만 Full RELRO는 GOT만이 아니라 `PT_GNU_RELRO`로 지정된 여러 데이터 영역을 relocation 후 읽기 전용으로 만들 수 있으므로 "GOT만"이라는 표현은 교정 필요. ROP는 별도의 반환주소 덮어쓰기 취약점과 실행 가능한 코드 조각을 활용한다는 구분 유지.
 
+### Day158 D+2 지연복습 — GOT 누출 출처 판별 (학생 무힌트 답변, 2026-11-26)
+
+변경 조건: Partial RELRO 빌드의 `puts@got.plt` 호출 전 `0x555555555050`(ELF PLT 스텁), 호출 후 `0x7ffff7c80e10`(libc puts) 중 어떤 것을 libc leak으로 쓸지 판단. 가정한 libc `puts` 심볼 오프셋 `0x80e10`.
+
+학생의 최초 답변(원문): `1. 두번째 2. 0x7ffff7c00000 3. 첫번째주소로 구한 libc base로 한 모든 주소 계산이 잘못된거니까 다 망함`.
+
+판정: 세 가지 정답. `0x7ffff7c80e10 - 0x80e10 = 0x7ffff7c00000`. 첫 GOT 값은 본 ELF의 PLT 스텁이므로 libc 베이스 계산에 사용할 수 없고, 이를 libc 주소로 오해할 경우 해당 베이스로부터 파생한 libc 심볼 주소 전체가 잘못됨. 이는 기존 Day158의 누출 출처/매핑 신뢰도 학습을 새 조건에 적용한 것으로 **독립 회상 통과**. 단, 해당 libc puts offset은 이번 문제에서 주어진 가정이며 별도의 실제 libc 심볼 표 확인을 학생에게 요구하지 않음.
+
 ## 4. 다음 작업
 
 사용자는 `bash build.sh; bash record.sh` 이후 정적 ELF 특성으로 각 파일의 설정을 확인하고, 먼저 기본형의 `file`/`checksec`와 `readelf` 결과를 수집한다. 이후 4개 조건의 3회 주소 관측, 동일값 GOT 슬롯 쓰기, 스택에서 1바이트 RET 실행을 비교하고 사전 가설과 대조한다. 이전 Day043/050 정렬, Day158 D+2 주소 누출 신뢰도, CS Full/Partial RELRO 복습 후 원본 로그·커밋을 확인한다.
