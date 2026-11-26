@@ -148,6 +148,12 @@ stack_probe: exit 0
 - 동일 C 소스의 스택 1바이트 `0xc3`(x86-64 `ret`) 실행 시도. NX ON은 자식 프로세스의 `SIGSEGV`(11), execstack 빌드에서는 정상 종료(exit 0). 학생은 실행 전에 NX OFF에서 스택 코드 실행이 가능하다고 예측했고 결과가 부합함을 보고.
 - 차이는 `-Wl,-z,noexecstack` vs `-Wl,-z,execstack` 조건에 의한 스택 실행 권한 변화와 일관됨. **exe stack 변형의 `GNU_STACK` 헤더 출력 원문은 아직 확인되지 않았으므로, 추가 정적 근거 확인 예정**. 실측은 스택 실행 페이지 권한을 시험한 것이며 ROP 가능/불가능, 취약점의 존재나 exploit 완성을 입증한 것은 아님.
 
+### NX 정적 근거 및 Full RELRO CS 이해 점검 (학생 보고)
+
+학생은 `readelf -lW` 명령으로 기본 `lab_full_pie_nx`의 `GNU_STACK` 권한이 `RW`, `lab_full_pie_execstack`의 권한이 `RWE`임을 확인했다고 보고함 (숫자와 전체 명령 출력 원문은 미제출). 실제 NX ON에서 `signal 11`, execstack에서는 `exit 0`와 일치하므로 **정적 플래그와 동적 실행 결과 교차 비교**됨.
+
+CS 질문 "Full RELRO인데 스택 반환 주소를 덮을 취약점이 있으면 ROP가 불가능해지는가?"에 학생이 "Full RELRO여도 스택의 반환주소는 덮을 수 있음; Full RELRO는 GOT 테이블만 read only로 보호"라고 답함. **반환 주소와 GOT 보호 대상 구분은 정답.** 다만 Full RELRO는 GOT만이 아니라 `PT_GNU_RELRO`로 지정된 여러 데이터 영역을 relocation 후 읽기 전용으로 만들 수 있으므로 "GOT만"이라는 표현은 교정 필요. ROP는 별도의 반환주소 덮어쓰기 취약점과 실행 가능한 코드 조각을 활용한다는 구분 유지.
+
 ## 4. 다음 작업
 
 사용자는 `bash build.sh; bash record.sh` 이후 정적 ELF 특성으로 각 파일의 설정을 확인하고, 먼저 기본형의 `file`/`checksec`와 `readelf` 결과를 수집한다. 이후 4개 조건의 3회 주소 관측, 동일값 GOT 슬롯 쓰기, 스택에서 1바이트 RET 실행을 비교하고 사전 가설과 대조한다. 이전 Day043/050 정렬, Day158 D+2 주소 누출 신뢰도, CS Full/Partial RELRO 복습 후 원본 로그·커밋을 확인한다.
