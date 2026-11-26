@@ -48,12 +48,12 @@ git pull --ff-only
 
 - Last completed: **2026-11-24 — Day158 / FINAL W07 2/5 완료**. [Day158 Write-up](../Day101-160/Day158/day158_writeup.md), [학생 원본 실행 로그](../Day101-160/Day158/day158_evidence.log).
 - Active plan: [Binary Exploitation FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276 (124개 일일 과제).
-- Plan position: **Day158 완료, 다음 Day159 / FINAL W07 3/5 미시작**.
-- Current focus: leak 신뢰도·PIE/libc base 검증; 1번 PIE 함수 offset 0x1189 및 4번 libc puts offset 0x80e10, 2번 하위 16비트의 한계, 5번 미매핑 가짜 주소, 잘못된 offset/page 정렬 반례 3개.
-- CS/review: RIP-relative RIP 다음 명령 기준 및 signed disp32 교정 후 통과; Day043/050 ROP pop/ret 정렬에서 추가 ret 필요 여부 오답 교정; Day153·154 D+7 ASan 객체 경계 복습 교정 후 통과.
-- Evidence: 학생 커밋 `9bf64d869c7406cb9fbbdeba8be90d0e971200f5`: `Day101-160/Day158/day158_evidence.log`; Git 원문은 3회 실행 1/2/3/4/5 출력, `checksec`, libc puts 심볼, ELF LOAD 매핑. GDB vmmap/주소 검사 결과와 분석 논리는 **채팅 제출 증거**로만 남아 있으며 별도 GDB 원본 세션 로그는 없음; 추가 재실행 요구 없이 근거 수준 구분.
-- Next task: **FINAL Day159 / W07 3/5**; 시작 전 엑셀 세부 과제 및 지연복습 점검.
-- Teaching: 가르친 내용과 학생의 최초 무힌트 답변 및 뒤따른 교정 결과를 구분; 완료한 개념을 의미 없이 반복하지 않는다.
+- Plan position: **Day159 / FINAL W07 3/5 진행 중 (2026-11-25 시작, 11-26 계속); 완료 보류.**
+- Main: 허가된 로컬 CTF ELF에서 saved RIP offset 0x58, 동일 프로세스 telemetry PIE leak (ELF offset 0x1199), ROP 두 인자 및 스택 정렬 게이트 복원. 사용자 Python exploit 136B로 `CTF_OK`, exit 0 성공 보고. 최초 `CTF_FAIL: argument register values` 원인은 `pop rsi;ret` 대신 `pop rdi;ret`을 두 번 배치한 오타로 사용자 직접 진단.
+- CS/review: SysV AMD64 RBX callee-saved, RDI caller-saved 및 call/ret RSP 변화에 대한 질문·GDB 실습 보고 통과. NX·Full RELRO·PIE/ASLR 기본 복습 답변 통과. 교정: PIE가 켜져 있어도 ASLR이 반드시 매 실행 서로 다른 베이스를 보장하지 않음.
+- Evidence: [Day159 교사 작성 진행 write-up](../Day101-160/Day159/day159_writeup.md) (교사 커밋 `fc49b588bbf21adb992ebad47bd98ce4404e5229`). 학생 `exploit.py` 및 `day159_session.log` 원본은 아직 Git 커밋·검증 전이므로 Day 완료 증거로 인정하지 않음.
+- Next task: **Day159 남은 보안 복습** Day043/050의 ret 추가/제거 변형 조건 독립 슬롯 추적, **지연 복습** Day157 D+2(PLT/GOT)·Day155 D+7(PIE/ASLR) 변경조건 검증. 이후 학생 로컬 `exploit.py` 및 `day159_session.log`를 직접 commit/push하고 SHA 확인 → 포인터 갱신. 실험 재실행으로 원본 로그를 억지로 새로 만들지 말 것.
+- Teaching: 최초 무힌트 답변, 힌트·도구 문법 도움, 실제 학생 관찰, 교사 작성 요약을 구분. 완료한 부분을 의미 없이 반복시키지 않는다.
 
 ---
 
