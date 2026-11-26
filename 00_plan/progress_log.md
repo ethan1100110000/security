@@ -46,14 +46,14 @@ git pull --ff-only
 
 > 2026-11-15 확정 FINAL 엑셀만 현행 계획으로 사용. 학습 완료는 날짜가 아닌 실측과 Git 증거로 판정한다.
 
-- Last completed: **2026-11-24 — Day158 / FINAL W07 2/5 완료**. [Day158 Write-up](../Day101-160/Day158/day158_writeup.md), [학생 원본 실행 로그](../Day101-160/Day158/day158_evidence.log).
+- Last completed: **2026-11-26 — Day159 / FINAL W07 3/5 완료 (채팅 제출 증거로 대체, 원본 녹화 중단 예외 명시)**. [Day159 write-up](../Day101-160/Day159/day159_writeup.md), [학생이 채팅에 직접 제출한 실패/성공 출력](../Day101-160/Day159/day159_chat_evidence.md).
 - Active plan: [Binary Exploitation FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276 (124개 일일 과제).
-- Plan position: **Day159 / FINAL W07 3/5 진행 중 (2026-11-25 시작, 11-26 계속); 완료 보류.**
-- Main: 허가된 로컬 CTF ELF에서 saved RIP offset 0x58, 동일 프로세스 telemetry PIE leak (ELF offset 0x1199), ROP 두 인자 및 스택 정렬 게이트 복원. 사용자 Python exploit 136B로 `CTF_OK`, exit 0 성공 보고. 최초 `CTF_FAIL: argument register values` 원인은 `pop rsi;ret` 대신 `pop rdi;ret`을 두 번 배치한 오타로 사용자 직접 진단.
-- CS/review: SysV AMD64 RBX callee-saved, RDI caller-saved 및 call/ret RSP 변화 질문·GDB 실습 보고 통과. NX·Full RELRO·PIE/ASLR 기본 답변 통과. Day043/050 변형 가젯 정렬(+24B, 추가 ret)은 학생 결론 정답, 구체 산술은 교사 설명. Day157 D+2 lazy binding/BIND_NOW 조건변경 통과. Day155 D+7 PIE base 두 주소 0x555555556000 계산 통과; 같은 프로세스라는 전제상 '서로 다른 실행' 가설은 제외되어야 함. PIE는 ASLR 주소 차이를 매 실행 보장하지 않음.
-- Evidence: [Day159 교사 작성 진행 write-up](../Day101-160/Day159/day159_writeup.md) (교사 커밋 `fc49b588bbf21adb992ebad47bd98ce4404e5229`). 학생 `exploit.py` 및 `day159_session.log` 원본은 아직 Git 커밋·검증 전이므로 Day 완료 증거로 인정하지 않음.
-- Next task: **Day159 학생 원본 증거 제출**: 로컬 기록 쉘 종료로 `day159_session.log` 저장 확인 → 충돌 없는 상태에서 최신 원격 pull → `exploit.py`, 원본 로그 commit/push. 교사는 원격 파일의 페이로드 제약, 실패/성공 쌍, 기록 완전성 확인 후 Day159 완료·포인터 갱신. 복습 내용을 기계적으로 재질문하거나 실험 재실행을 강요하지 않을 것.
-- Teaching: 최초 무힌트 답변, 힌트·도구 문법 도움, 실제 학생 관찰, 교사 작성 요약을 구분. 완료한 부분을 의미 없이 반복시키지 않는다.
+- Plan position: **Day159 완료. 다음 Day160 / FINAL W07 4/5 미시작**.
+- Main: 로컬 CTF ELF에서 saved RIP `0x58`, PIE telemetry leak `-0x1199`, 두 레지스터 인자/ABI 정렬 게이트, 136B ROP 페이로드. 사용자 원본 채팅 제출 출력 `CTF_FAIL: argument register values` (원인: 두 번째 `pop rdi` 오타) → 수정 후 `CTF_OK: two-argument control-flow proof accepted`, exit 0. 초기 실패 원인 사용자 스스로 식별함.
+- CS/review: SysV AMD64 RBX callee-saved/RDI caller-saved의 예제·GDB 보고, call/ret RSP 변화, NX/Full RELRO/PIE 개념 확인. Day043/050 변경 정렬 가젯 추가 ret 결론 정답(구체 24B 산술은 교사 도움). Day157 D+2 lazy binding vs BIND_NOW, Day155 D+7 두 주소의 PIE base `0x555555556000` 계산 및 주소 출처 논리 확인. 일부 교정 과정은 write-up에 구분함.
+- Evidence exception: 사용자가 `record.sh` 원본 세션이 중간에 끊겼다고 보고하고 **교사에게 기록·커밋을 위임**. 원시 터미널 로그와 학생 실제 최종 `exploit.py` 전체 바이트는 직접 확인 불가. 교사는 채팅 제출 출력을 **원본 터미널 로그라고 가장하지 않고** `day159_chat_evidence.md`로 명시하고, `exploit_reconstructed.py`는 **교사 작성 복원 참고 코드**로 구분하여 커밋함. 이런 제한 속에서 대화의 학생 직접 실행 및 동적 증거, 분석·질문 수행과 교차되는 상태 메시지를 근거로 이번 학습을 예외 승인; 독립 원본 검증을 마쳤다고 주장하지 않음.
+- Next task: **Day160 / FINAL W07 4/5** 시작 시 FINAL 엑셀의 구체 일일 과제 확인. Day159 실험을 증거 때문에 다시 시키지 않음. 원본 `exploit.py`나 미완 녹화가 보존돼 있다면 자발적으로 추가 제출 가능.
+- Teacher rule: 최초 무힌트 학생 답·교사 힌트·사용자 실측 채팅·교사 작성 내용을 구분하며, 기록 유실을 감추거나 가짜 raw log를 만들지 않는다.
 
 ---
 
@@ -1150,3 +1150,11 @@ git pull --ff-only
 - Day157 D+2: 첫 GOT가 PLT 내부이면 lazy binding, `BIND_NOW` 시 `main` 이전 GOT 해결 설명 학생 통과.
 - Day155 D+7: 두 leak에서 `pie_base = 0x555555556000` 일치 계산 학생 통과. 불일치하면 다른 이미지/누출 출처 오류를 의심한다는 답변; 단 '같은 프로세스' 전제하 다른 실행은 이 문제에서 배제.
 - 교사 진행 [Day159 write-up](../Day101-160/Day159/day159_writeup.md) 보완. 학생 `exploit.py`·`day159_session.log` Git 원본 확인 전까지 Day159 **진행 중**.
+
+
+### 2026-11-26 — Day159 / FINAL W07 3/5 완료 판정 (원시 세션 기록 일부 유실 예외)
+- 학생이 직접 제출한 실패/성공 실행 원문, 지표, 가젯 주소 및 실패 원인 설명은 [Day159 채팅 증거](../Day101-160/Day159/day159_chat_evidence.md)와 [Day159 write-up](../Day101-160/Day159/day159_writeup.md)에 인용·분리 기록.
+- 사용자가 로그 중단을 알리고 교사에게 기록·커밋을 요청. 원본 `day159_session.log` 및 학생의 실제 `exploit.py`는 **원격 Git으로 확인하지 못함**. 교사가 별도 `exploit_reconstructed.py`를 기록 기반 재구성했으나 학생 원본으로 간주하지 않고 교사 측 재현 성공도 주장하지 않음.
+- 예외 판정: 학생이 이미 목표 출력을 실제 실행했고 실패 원인과 학습 요소를 직접 설명했으므로, 원시 세션의 누락 부분을 가짜로 채우거나 재실행을 강요하지 않고 **채팅에서 제시된 원본 콘솔 출력**을 증거로 보존하고 당일 학습 완료 승인. 단, 원본 세션 명령의 완전성·실제 최종 페이로드 바이트·스크립트 원본 무결성은 미검증으로 명시.
+- 교사 Git 커밋: `bab32211b871fe8d022020949a2938ce922663dc` (재구성 참고 스크립트), `6f79bc6d5d074499a3fc1aaae36ed122e98827df` (학생 채팅 증거), `615641eb378312b97a5af0bc1dfdfee98b025965` (완료 판정 write-up). 학생 로컬 커밋이 있었다고 기재하지 않음.
+- **Last completed Day159, next Day160 / FINAL W07 4/5.**
