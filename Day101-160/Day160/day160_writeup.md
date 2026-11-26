@@ -86,6 +86,22 @@ pwndbg> x/gx $rebase(0x4028)
 
 학생 해석: "이제는 got 슬롯에 puts의 주소가 있음". 주소가 실행 파일 내의 PLT 스텁에서 libc 주소 범위로 변화한 것으로 설명됨. 사용자는 전후 값과 동일 슬롯을 제시했으며 실제 `call marker()` 출력은 별도로 공유하지 않았으므로, **호출 전후 차이와 사용자의 실행 설명에 근거한 판정**이고 다른 메모리 맵의 독립 `vmmap` 원문은 아직 없음. 이 관찰은 lazy binding의 GOT 갱신을 뒷받침하지만 **GOT 슬롯의 쓰기 가능성 자체를 측정한 것은 아니며** 다음 `got` 프로브로 따로 검증해야 함.
 
+### Full/Partial GOT relocation offset 비교 (학생 정적 관찰)
+
+학생 직접 제출 `nm -n` 및 `readelf -rW` 원문:
+
+```text
+# bin/lab_full_pie_nx
+0000000000001629 T main
+0000000000003f78  0000000500000007 R_X86_64_JUMP_SLOT     0000000000000000 puts@GLIBC_2.2.5 + 0
+
+# bin/lab_partial_pie_nx
+0000000000001629 T main
+0000000000004028  0000000500000007 R_X86_64_JUMP_SLOT     0000000000000000 puts@GLIBC_2.2.5 + 0
+```
+
+두 빌드 모두 `main` ELF 심볼 값은 `0x1629`, `puts`의 JUMP_SLOT 오프셋은 각각 Full=`0x3f78`, Partial=`0x4028`로 달랐다. 학생이 "둘이 달라"라고 **독립 발견**. 이는 링킹 결과의 GOT 슬롯 배치가 달라졌음을 입증하지만, 오프셋 차이만으로 Full의 읽기 전용 보호를 확정할 수 없다. `got 0x1629 0x3f78` / `got 0x1629 0x4028` 실행의 실측 결과 대기.
+
 ## 4. 다음 작업
 
 사용자는 `bash build.sh; bash record.sh` 이후 정적 ELF 특성으로 각 파일의 설정을 확인하고, 먼저 기본형의 `file`/`checksec`와 `readelf` 결과를 수집한다. 이후 4개 조건의 3회 주소 관측, 동일값 GOT 슬롯 쓰기, 스택에서 1바이트 RET 실행을 비교하고 사전 가설과 대조한다. 이전 Day043/050 정렬, Day158 D+2 주소 누출 신뢰도, CS Full/Partial RELRO 복습 후 원본 로그·커밋을 확인한다.
