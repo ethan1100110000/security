@@ -134,6 +134,20 @@ main=0x4015d8 marker=0x4012d6
 - PIE OFF `main=0x4015d8`, `marker=0x4012d6`이 3회 고정이며 `main-marker=0x302`. **두 빌드 간 상대 오프셋 자체는 `0x340` vs `0x302`로 다르다.** 이 차이는 서로 다른 빌드의 code layout 차이로, 같은 빌드 내 오프셋 불변과 모순되지 않는다.
 - 이 출력은 3회 실행에서의 관측이지, 모든 실행에서 반드시 주소 변화 또는 불변을 보장한다고 일반화하지 않는다. PIE OFF여도 libc·stack ASLR까지 꺼지는 것은 아님.
 
+### NX ON/OFF 스택 RET 실행 실측 (학생 직접 제출, 2026-11-26)
+
+실행과 제출된 결과:
+
+```text
+bash-5.1$ ./bin/lab_full_pie_nx stack
+stack_probe: signal 11 (Segmentation fault)
+bash-5.1$ ./bin/lab_full_pie_execstack stack
+stack_probe: exit 0
+```
+
+- 동일 C 소스의 스택 1바이트 `0xc3`(x86-64 `ret`) 실행 시도. NX ON은 자식 프로세스의 `SIGSEGV`(11), execstack 빌드에서는 정상 종료(exit 0). 학생은 실행 전에 NX OFF에서 스택 코드 실행이 가능하다고 예측했고 결과가 부합함을 보고.
+- 차이는 `-Wl,-z,noexecstack` vs `-Wl,-z,execstack` 조건에 의한 스택 실행 권한 변화와 일관됨. **exe stack 변형의 `GNU_STACK` 헤더 출력 원문은 아직 확인되지 않았으므로, 추가 정적 근거 확인 예정**. 실측은 스택 실행 페이지 권한을 시험한 것이며 ROP 가능/불가능, 취약점의 존재나 exploit 완성을 입증한 것은 아님.
+
 ## 4. 다음 작업
 
 사용자는 `bash build.sh; bash record.sh` 이후 정적 ELF 특성으로 각 파일의 설정을 확인하고, 먼저 기본형의 `file`/`checksec`와 `readelf` 결과를 수집한다. 이후 4개 조건의 3회 주소 관측, 동일값 GOT 슬롯 쓰기, 스택에서 1바이트 RET 실행을 비교하고 사전 가설과 대조한다. 이전 Day043/050 정렬, Day158 D+2 주소 누출 신뢰도, CS Full/Partial RELRO 복습 후 원본 로그·커밋을 확인한다.
