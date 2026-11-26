@@ -48,11 +48,11 @@ git pull --ff-only
 
 - Last completed: **2026-11-26 — Day159 / FINAL W07 3/5 완료 (채팅 제출 증거로 대체, 원본 녹화 중단 예외 명시)**. [Day159 write-up](../Day101-160/Day159/day159_writeup.md), [학생이 채팅에 직접 제출한 실패/성공 출력](../Day101-160/Day159/day159_chat_evidence.md).
 - Active plan: [Binary Exploitation FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276 (124개 일일 과제).
-- Plan position: **Day159 완료. 다음 Day160 / FINAL W07 4/5 미시작**.
+- Plan position: **Day160 / FINAL W07 4/5 시작 (2026-11-26); 아직 미완료**.
 - Main: 로컬 CTF ELF에서 saved RIP `0x58`, PIE telemetry leak `-0x1199`, 두 레지스터 인자/ABI 정렬 게이트, 136B ROP 페이로드. 사용자 원본 채팅 제출 출력 `CTF_FAIL: argument register values` (원인: 두 번째 `pop rdi` 오타) → 수정 후 `CTF_OK: two-argument control-flow proof accepted`, exit 0. 초기 실패 원인 사용자 스스로 식별함.
 - CS/review: SysV AMD64 RBX callee-saved/RDI caller-saved의 예제·GDB 보고, call/ret RSP 변화, NX/Full RELRO/PIE 개념 확인. Day043/050 변경 정렬 가젯 추가 ret 결론 정답(구체 24B 산술은 교사 도움). Day157 D+2 lazy binding vs BIND_NOW, Day155 D+7 두 주소의 PIE base `0x555555556000` 계산 및 주소 출처 논리 확인. 일부 교정 과정은 write-up에 구분함.
 - Evidence exception: 사용자가 `record.sh` 원본 세션이 중간에 끊겼다고 보고하고 **교사에게 기록·커밋을 위임**. 원시 터미널 로그와 학생 실제 최종 `exploit.py` 전체 바이트는 직접 확인 불가. 교사는 채팅 제출 출력을 **원본 터미널 로그라고 가장하지 않고** `day159_chat_evidence.md`로 명시하고, `exploit_reconstructed.py`는 **교사 작성 복원 참고 코드**로 구분하여 커밋함. 이런 제한 속에서 대화의 학생 직접 실행 및 동적 증거, 분석·질문 수행과 교차되는 상태 메시지를 근거로 이번 학습을 예외 승인; 독립 원본 검증을 마쳤다고 주장하지 않음.
-- Next task: **Day160 / FINAL W07 4/5** 시작 시 FINAL 엑셀의 구체 일일 과제 확인. Day159 실험을 증거 때문에 다시 시키지 않음. 원본 `exploit.py`나 미완 녹화가 보존돼 있다면 자발적으로 추가 제출 가능.
+- Next task: **Day160 / FINAL W07 4/5** 본격 학습. [Day160 통제 실험 안내](../Day101-160/Day160/README.md): 동일 소스로 Full/Partial RELRO, PIE ON/OFF, NX ON/OFF 중 한 변수만 바꾼 4종 바이너리 구축; 첫 학생 가설(실행 전) 수집 후 3회 주소 측정, GOT 자기값 쓰기, 스택 1B RET 실행의 정적/동적 비교. CS Full/Partial GOT, Day043/050 새 정렬 반례, Day158 완료일 11-24 기준 D+2 누출 신뢰도 지연복습. 학생 로그/writeup과 Git 증빙 후 완료. Day159 반복 강요 금지.
 - Teacher rule: 최초 무힌트 학생 답·교사 힌트·사용자 실측 채팅·교사 작성 내용을 구분하며, 기록 유실을 감추거나 가짜 raw log를 만들지 않는다.
 
 ---
@@ -1158,3 +1158,9 @@ git pull --ff-only
 - 예외 판정: 학생이 이미 목표 출력을 실제 실행했고 실패 원인과 학습 요소를 직접 설명했으므로, 원시 세션의 누락 부분을 가짜로 채우거나 재실행을 강요하지 않고 **채팅에서 제시된 원본 콘솔 출력**을 증거로 보존하고 당일 학습 완료 승인. 단, 원본 세션 명령의 완전성·실제 최종 페이로드 바이트·스크립트 원본 무결성은 미검증으로 명시.
 - 교사 Git 커밋: `bab32211b871fe8d022020949a2938ce922663dc` (재구성 참고 스크립트), `6f79bc6d5d074499a3fc1aaae36ed122e98827df` (학생 채팅 증거), `615641eb378312b97a5af0bc1dfdfee98b025965` (완료 판정 write-up). 학생 로컬 커밋이 있었다고 기재하지 않음.
 - **Last completed Day159, next Day160 / FINAL W07 4/5.**
+
+
+### 2026-11-26 — Day160 / FINAL W07 4/5 시작 (미완료)
+- 최종 계획 `01_일일124` Day160 직접 확인: RELRO·PIE·NX 3가지 보호 옵션을 하나씩 바꾸어 가능한/불가능한 경로 분류, 근거 2종 이상 및 반례. CS는 Full/Partial RELRO와 GOT 쓰기 반례, 이전 Day043/050 ROP 정렬 비교. Day158 완료일 11/24 기준 D+2 지연복습 오늘 만기.
+- 교사가 [Day160 안내서](../Day101-160/Day160/README.md), [동일 소스 실험](../Day101-160/Day160/lab160.c), [빌드 스크립트](../Day101-160/Day160/build.sh), [기록 스크립트](../Day101-160/Day160/record.sh)를 준비. 비교 4조건: baseline Full+PIE+NX, Partial 변경, no-PIE 변경, execstack 변경. 교사 로컬 유사 환경에서 각각 빌드/동작을 시험했지만 **학생 원본 실습 근거는 아님**.
+- 다음: 학생의 실행 전 예측을 먼저 받고 실측 진행. raw transcript가 중간에 끊길 경우 덧붙이는 `script -a -f` 사용. 학생 실행/보고·독립 숙달 확인 전 Day160 완료 처리 금지.
