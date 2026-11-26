@@ -117,6 +117,23 @@ pwndbg> x/gx $rebase(0x4028)
 - Partial: GOT 동일값 write 성공 및 정상 종료를 보고.
 - 두 결과는 사전 가설과 부합한다. 다만 이 실험은 쓰기 접근성만 검사하며 임의 쓰기 취약점 존재 여부와 무관하다. 추후 로컬 원본 로그가 있으면 종료 상태를 직접 대조할 것.
 
+### PIE ON/OFF 동적 주소 비교 — 학생 원문 6회 (2026-11-26)
+
+실행 명령: `for binary in lab_full_pie_nx lab_full_nopie_nx; do for i in 1 2 3; do ./bin/$binary addr; done; done`.
+
+```text
+main=0x58334fb16629 marker=0x58334fb162e9
+main=0x5d63de6c7629 marker=0x5d63de6c72e9
+main=0x654a22817629 marker=0x654a228172e9
+main=0x4015d8 marker=0x4012d6
+main=0x4015d8 marker=0x4012d6
+main=0x4015d8 marker=0x4012d6
+```
+
+- PIE ON `main` 값 3개가 모두 다르며 `main - marker = 0x340`은 3회 일정. `main` ELF 오프셋 `0x1629`를 적용한 각 실행 PIE base는 `0x58334fb15000`, `0x5d63de6c6000`, `0x654a22816000`이다.
+- PIE OFF `main=0x4015d8`, `marker=0x4012d6`이 3회 고정이며 `main-marker=0x302`. **두 빌드 간 상대 오프셋 자체는 `0x340` vs `0x302`로 다르다.** 이 차이는 서로 다른 빌드의 code layout 차이로, 같은 빌드 내 오프셋 불변과 모순되지 않는다.
+- 이 출력은 3회 실행에서의 관측이지, 모든 실행에서 반드시 주소 변화 또는 불변을 보장한다고 일반화하지 않는다. PIE OFF여도 libc·stack ASLR까지 꺼지는 것은 아님.
+
 ## 4. 다음 작업
 
 사용자는 `bash build.sh; bash record.sh` 이후 정적 ELF 특성으로 각 파일의 설정을 확인하고, 먼저 기본형의 `file`/`checksec`와 `readelf` 결과를 수집한다. 이후 4개 조건의 3회 주소 관측, 동일값 GOT 슬롯 쓰기, 스택에서 1바이트 RET 실행을 비교하고 사전 가설과 대조한다. 이전 Day043/050 정렬, Day158 D+2 주소 누출 신뢰도, CS Full/Partial RELRO 복습 후 원본 로그·커밋을 확인한다.
