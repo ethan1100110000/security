@@ -26,6 +26,27 @@
 
 `DT_FLAGS`의 `BIND_NOW` 및 `DT_FLAGS_1`의 `NOW`는 함수 재배치의 즉시 해결을 뜻하고, `PIE` 비트는 PIE 실행 파일이라는 동적 플래그다. 이는 Full RELRO 동작과 일관되지만 **해당 두 줄만으로 GOT 페이지의 읽기 전용 매핑을 직접 관찰한 것은 아님**. 다음으로 `GNU_RELRO` 세그먼트 존재와 Partial 비교 및 동적 GOT 자기값 쓰기를 확인한다.
 
-## 2. 다음 작업
+## 3. Partial RELRO와 puts@plt 관찰 — 학생 원문
+
+학생이 제출한 `readelf -dW bin/lab_partial_pie_nx | grep -E 'BIND_NOW|FLAGS'`:
+
+```text
+0x000000006ffffffb (FLAGS_1)            Flags: PIE
+```
+
+따라서 Full 변형에서 나타났던 `BIND_NOW`/`NOW`가 없고, 즉시 바인딩 요구가 관찰되지 않음.
+
+학생이 제출한 `objdump -d -M intel bin/lab_partial_pie_nx | grep -A 5 '<puts@plt>:'`:
+
+```asm
+0000000000001140 <puts@plt>:
+    1140: f3 0f 1e fa           endbr64
+    1144: f2 ff 25 dd 2e 00 00 bnd jmp QWORD PTR [rip+0x2edd] # 4028 <puts@GLIBC_2.2.5>
+    114b: 0f 1f 44 00 00     nop DWORD PTR [rax+rax*1+0x0]
+```
+
+`0x4028`은 `puts`의 GOT 슬롯 **ELF 이미지 상대 주소**로, 이 명령은 런타임 해당 슬롯 안의 8바이트 포인터로 간접 점프한다. 이 PLT 엔트리에는 직접 `push`가 보이지 않으므로 예전 Day157의 전형적인 `puts@plt+6` 형태를 이 바이너리에 기계적으로 대입할 수 없음. 별도 `.plt` 해석 스텁과 `R_X86_64_JUMP_SLOT` 및 실제 첫 호출 전 GOT 값을 추적할 예정; 아직 런타임 GOT 값·메모리 권한은 관측하지 않았음.
+
+## 4. 다음 작업
 
 사용자는 `bash build.sh; bash record.sh` 이후 정적 ELF 특성으로 각 파일의 설정을 확인하고, 먼저 기본형의 `file`/`checksec`와 `readelf` 결과를 수집한다. 이후 4개 조건의 3회 주소 관측, 동일값 GOT 슬롯 쓰기, 스택에서 1바이트 RET 실행을 비교하고 사전 가설과 대조한다. 이전 Day043/050 정렬, Day158 D+2 주소 누출 신뢰도, CS Full/Partial RELRO 복습 후 원본 로그·커밋을 확인한다.
