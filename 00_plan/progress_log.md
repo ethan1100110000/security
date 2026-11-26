@@ -50,9 +50,9 @@ git pull --ff-only
 - Active plan: [Binary Exploitation FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276 (124개 일일 과제).
 - Plan position: **Day159 / FINAL W07 3/5 진행 중 (2026-11-25 시작, 11-26 계속); 완료 보류.**
 - Main: 허가된 로컬 CTF ELF에서 saved RIP offset 0x58, 동일 프로세스 telemetry PIE leak (ELF offset 0x1199), ROP 두 인자 및 스택 정렬 게이트 복원. 사용자 Python exploit 136B로 `CTF_OK`, exit 0 성공 보고. 최초 `CTF_FAIL: argument register values` 원인은 `pop rsi;ret` 대신 `pop rdi;ret`을 두 번 배치한 오타로 사용자 직접 진단.
-- CS/review: SysV AMD64 RBX callee-saved, RDI caller-saved 및 call/ret RSP 변화에 대한 질문·GDB 실습 보고 통과. NX·Full RELRO·PIE/ASLR 기본 복습 답변 통과. 교정: PIE가 켜져 있어도 ASLR이 반드시 매 실행 서로 다른 베이스를 보장하지 않음.
+- CS/review: SysV AMD64 RBX callee-saved, RDI caller-saved 및 call/ret RSP 변화 질문·GDB 실습 보고 통과. NX·Full RELRO·PIE/ASLR 기본 답변 통과. Day043/050 변형 가젯 정렬(+24B, 추가 ret)은 학생 결론 정답, 구체 산술은 교사 설명. Day157 D+2 lazy binding/BIND_NOW 조건변경 통과. Day155 D+7 PIE base 두 주소 0x555555556000 계산 통과; 같은 프로세스라는 전제상 '서로 다른 실행' 가설은 제외되어야 함. PIE는 ASLR 주소 차이를 매 실행 보장하지 않음.
 - Evidence: [Day159 교사 작성 진행 write-up](../Day101-160/Day159/day159_writeup.md) (교사 커밋 `fc49b588bbf21adb992ebad47bd98ce4404e5229`). 학생 `exploit.py` 및 `day159_session.log` 원본은 아직 Git 커밋·검증 전이므로 Day 완료 증거로 인정하지 않음.
-- Next task: **Day159 남은 보안 복습** Day043/050의 ret 추가/제거 변형 조건 독립 슬롯 추적, **지연 복습** Day157 D+2(PLT/GOT)·Day155 D+7(PIE/ASLR) 변경조건 검증. 이후 학생 로컬 `exploit.py` 및 `day159_session.log`를 직접 commit/push하고 SHA 확인 → 포인터 갱신. 실험 재실행으로 원본 로그를 억지로 새로 만들지 말 것.
+- Next task: **Day159 학생 원본 증거 제출**: 로컬 기록 쉘 종료로 `day159_session.log` 저장 확인 → 충돌 없는 상태에서 최신 원격 pull → `exploit.py`, 원본 로그 commit/push. 교사는 원격 파일의 페이로드 제약, 실패/성공 쌍, 기록 완전성 확인 후 Day159 완료·포인터 갱신. 복습 내용을 기계적으로 재질문하거나 실험 재실행을 강요하지 않을 것.
 - Teaching: 최초 무힌트 답변, 힌트·도구 문법 도움, 실제 학생 관찰, 교사 작성 요약을 구분. 완료한 부분을 의미 없이 반복시키지 않는다.
 
 ---
@@ -1143,3 +1143,10 @@ git pull --ff-only
 - 교사 제작 로컬 전용 stripped PIE ELF `Day101-160/Day159/day159_stack.elf.xz.b64` 신규 업로드, `unpack.sh` 및 `record.sh`로 복원/세션 원본 로깅 준비. 바이너리 SHA256 `3512168bf96fd11b8337dc37e22b20257374eabeda5ab95ba612d0578a81452e`. 교사 컨테이너에서 ELF 실행과 제약/ABI 성공·실패 경로 구분 시험했으나 **사용자 측 성공 증거로 간주하지 않음**.
 - 바이너리 요구 최고 버전 `GLIBC_2.34` 검증. 당일 세션 시작부터 `script` 로그를 남겨 전날처럼 실습 종료 뒤 증거 제출용 재실행을 요구하지 않음.
 - **학생 최초 관찰/가설 미제출; Day159 미완료, Last completed Day158 유지.**
+
+
+### 2026-11-26 — Day159 보안·지연복습 실시 (원본 증거 제출 전)
+- Day043/050 변형 `pop rdi; pop rsi; ret`, 첫 RSP%16=8 조건에서 학생은 정렬용 `ret` 추가 필요를 맞혔으나 24B 소비 및 모듈러 계산은 교사가 제시. 독립 산술 완전 숙달 증거는 아님.
+- Day157 D+2: 첫 GOT가 PLT 내부이면 lazy binding, `BIND_NOW` 시 `main` 이전 GOT 해결 설명 학생 통과.
+- Day155 D+7: 두 leak에서 `pie_base = 0x555555556000` 일치 계산 학생 통과. 불일치하면 다른 이미지/누출 출처 오류를 의심한다는 답변; 단 '같은 프로세스' 전제하 다른 실행은 이 문제에서 배제.
+- 교사 진행 [Day159 write-up](../Day101-160/Day159/day159_writeup.md) 보완. 학생 `exploit.py`·`day159_session.log` Git 원본 확인 전까지 Day159 **진행 중**.
