@@ -1,7 +1,7 @@
 # Day160 — FINAL W07 4/5 — 보호기법 통제 실험 (진행 중)
 
 - 학습 시작: 2026-11-26 (KST)
-- 상태: 초기 가설 제출, 실측·CS·복습·학생 로그 미완료.
+- **최종 상태: Day160 / FINAL W07 4/5 완료 (2026-11-26).** 4변형 보호기법 대조, ELF 정적 근거, 학생 로컬 원본 실행 로그, CS·보안·Day158 D+2 복습 확인.
 - 실험 설계: 동일 `lab160.c`에서 기본 Full RELRO/PIE ON/NX ON과 각각 한 설정만 바꾼 Partial RELRO, PIE OFF, NX OFF 변형을 비교. 세부 과제는 [README](README.md)를 따른다.
 
 ## 1. 실행 전 학생의 초기 가설 — 채팅 원문
@@ -11,11 +11,11 @@
 학생 답변 원문: `1. write 가능 2. 안바뀜 3. 실행은 가능 rop필요할 수 있음`.
 
 - 잠정 평가: 세 방향 모두 타당하나 ①에서 모든 GOT 슬롯이 writable인 것은 아니며 일반적으로 lazy binding을 사용하는 `.got.plt`와 RELRO 보호된 `.got`를 구별해야 함. ②는 일반적인 Linux non-PIE main 코드에 대한 예측으로, libc/stack ASLR 비활성화를 뜻하지 않음. ③은 스택 실행 권한이라는 한 조건만 바뀐 것이며, 임의 분기 제어나 제약 조건을 해결했다고 뜻하지 않음.
-- **아직 빌드·readelf·GOT 쓰기·주소 반복·스택 명령 실행의 학생 측 실측 출력 미제출.** 예상 결과를 측정 결과처럼 기록하지 않는다.
+- 사전 예측 시점에는 실측을 제출하지 않았고, 아래 본문에 이후 실제 학생 측 관찰 및 최종 Git 원본 검증을 시간순으로 구분하여 기록했다.
 
 ## 2. 첫 번째 학생 측 정적 관찰 (2026-11-26)
 
-학생은 기본형 `bin/lab_full_pie_nx`에 대하여 `checksec`의 보호기법이 모두 예상대로 나왔고, `GNU_STACK`이 `RW`이며 실행 권한이 없다고 **요약 보고**했다 (checksec/프로그램 헤더 전체 원문은 아직 제출 안 됨).
+학생은 기본형 `bin/lab_full_pie_nx`에 대하여 `checksec`의 보호기법이 모두 예상대로 나왔고, `GNU_STACK`이 `RW`이며 실행 권한이 없다고 **요약 보고**했다. **이후 Git 원본 로그**에서 `Full RELRO`, `Canary found`, `NX enabled`, `PIE enabled`, `GNU_STACK RW`가 직접 검증됐다.
 
 학생이 직접 제출한 `readelf -dW bin/lab_full_pie_nx | grep -E 'BIND_NOW|FLAGS'` 출력:
 
@@ -113,7 +113,7 @@ pwndbg> x/gx $rebase(0x4028)
 
 학생 원문: `예상이 맞아 full 에서는 오류가 발생 partial에선 write가 성공하고 정상종료`.
 
-- Full: GOT 동일값 write 시 오류를 관찰했다고 보고. **실제 자식 signal 번호/원시 출력은 미제출**이므로 `SIGSEGV` 확정 관측으로 기록하지 않음.
+- Full: GOT 동일값 write 시 오류를 관찰했다고 보고. 당시 **실제 자식 signal 번호/원시 출력은 미제출**이었으나, 이후 Git 원본에서 `got_same_value_write: signal 11 (Segmentation fault)`로 직접 확인.
 - Partial: GOT 동일값 write 성공 및 정상 종료를 보고.
 - 두 결과는 사전 가설과 부합한다. 다만 이 실험은 쓰기 접근성만 검사하며 임의 쓰기 취약점 존재 여부와 무관하다. 추후 로컬 원본 로그가 있으면 종료 상태를 직접 대조할 것.
 
@@ -146,11 +146,11 @@ stack_probe: exit 0
 ```
 
 - 동일 C 소스의 스택 1바이트 `0xc3`(x86-64 `ret`) 실행 시도. NX ON은 자식 프로세스의 `SIGSEGV`(11), execstack 빌드에서는 정상 종료(exit 0). 학생은 실행 전에 NX OFF에서 스택 코드 실행이 가능하다고 예측했고 결과가 부합함을 보고.
-- 차이는 `-Wl,-z,noexecstack` vs `-Wl,-z,execstack` 조건에 의한 스택 실행 권한 변화와 일관됨. **exe stack 변형의 `GNU_STACK` 헤더 출력 원문은 아직 확인되지 않았으므로, 추가 정적 근거 확인 예정**. 실측은 스택 실행 페이지 권한을 시험한 것이며 ROP 가능/불가능, 취약점의 존재나 exploit 완성을 입증한 것은 아님.
+- 차이는 `-Wl,-z,noexecstack` vs `-Wl,-z,execstack` 조건에 의한 스택 실행 권한 변화와 일관됨. Git 원본 로그에서 해당 빌드의 `GNU_STACK RWE`와 NX ON 기본형 `GNU_STACK RW`가 직접 확인됨. 실측은 스택 실행 페이지 권한을 시험한 것이며 ROP 가능/불가능, 취약점의 존재나 exploit 완성을 입증한 것은 아님.
 
 ### NX 정적 근거 및 Full RELRO CS 이해 점검 (학생 보고)
 
-학생은 `readelf -lW` 명령으로 기본 `lab_full_pie_nx`의 `GNU_STACK` 권한이 `RW`, `lab_full_pie_execstack`의 권한이 `RWE`임을 확인했다고 보고함 (숫자와 전체 명령 출력 원문은 미제출). 실제 NX ON에서 `signal 11`, execstack에서는 `exit 0`와 일치하므로 **정적 플래그와 동적 실행 결과 교차 비교**됨.
+학생은 `readelf -lW` 명령으로 기본 `lab_full_pie_nx`의 `GNU_STACK` 권한이 `RW`, `lab_full_pie_execstack`의 권한이 `RWE`임을 확인했다고 보고함. **이후 Git 원본에서도 두 명령과 출력의 일치를 확인함**. 실제 NX ON에서 `signal 11`, execstack에서는 `exit 0`와 일치하므로 **정적 플래그와 동적 실행 결과 교차 비교**됨.
 
 CS 질문 "Full RELRO인데 스택 반환 주소를 덮을 취약점이 있으면 ROP가 불가능해지는가?"에 학생이 "Full RELRO여도 스택의 반환주소는 덮을 수 있음; Full RELRO는 GOT 테이블만 read only로 보호"라고 답함. **반환 주소와 GOT 보호 대상 구분은 정답.** 다만 Full RELRO는 GOT만이 아니라 `PT_GNU_RELRO`로 지정된 여러 데이터 영역을 relocation 후 읽기 전용으로 만들 수 있으므로 "GOT만"이라는 표현은 교정 필요. ROP는 별도의 반환주소 덮어쓰기 취약점과 실행 가능한 코드 조각을 활용한다는 구분 유지.
 
@@ -168,6 +168,49 @@ CS 질문 "Full RELRO인데 스택 반환 주소를 덮을 취약점이 있으�
 
 사용자 **힌트 없는 최초 답** 원문: `1. 8 2. 8 3. 필요없음`. 세 답 모두 정확함. 첫 가젯 종료 후 `(0+24)%16=8`, 두 번째 종료 후 `(8+16)%16=8`. 따라서 별도 정렬용 `ret`을 추가하면 도리어 `RSP%16=0`이 되어 조건을 어기게 됨. Day159 복습 당시에는 정렬 변화의 숫자 계산에 교사의 도움이 필요했으나, 이번 변경조건에서는 무힌트로 최종 모듈러 결과와 추가 ret 불필요를 맞힘. **Day043·050 변경 복습 통과**.
 
-## 4. 다음 작업
+## 4. 학생 원본 실행 로그 Git 검증 및 완료 판정 (2026-11-26)
 
-사용자는 `bash build.sh; bash record.sh` 이후 정적 ELF 특성으로 각 파일의 설정을 확인하고, 먼저 기본형의 `file`/`checksec`와 `readelf` 결과를 수집한다. 이후 4개 조건의 3회 주소 관측, 동일값 GOT 슬롯 쓰기, 스택에서 1바이트 RET 실행을 비교하고 사전 가설과 대조한다. 이전 Day043/050 정렬, Day158 D+2 주소 누출 신뢰도, CS Full/Partial RELRO 복습 후 원본 로그·커밋을 확인한다.
+학생 직접 Git 커밋: `31380fde92d53b855ddb06ae55cb67a2b6906139` (`study: Day160 protection comparison evidence`), 파일 [day160_session.log](day160_session.log), Git blob `64ad52375320ddd10f9adffa89a3a2051ee05346`. 로그는 `script` 원시 터미널 기록이며 ANSI escape sequence를 포함한다. 시작 `2026-11-26 15:56:01+09:00`, 종료 `16:38:01+09:00`, `COMMAND_EXIT_CODE=0`. 채팅 답과 구별되는 **학생 실행 기록**으로 검토함.
+
+원시 로그에서 직접 확인한 핵심 출력:
+
+```text
+# Full RELRO ELF
+RELRO: Full RELRO
+Stack: Canary found
+NX: NX enabled
+PIE: PIE enabled
+GNU_STACK ... RW
+(FLAGS) BIND_NOW
+(FLAGS_1) Flags: NOW PIE
+GNU_RELRO ... R
+
+# Partial RELRO: lazy puts binding
+(FLAGS_1) Flags: PIE
+puts@got.plt before call marker(): 0x0000555555555050
+(gdb) call (void) marker()
+LOCAL_MARKER
+puts@got.plt after call: 0x00007ffff7c80e10
+
+# GOT same-value write probes
+./bin/lab_full_pie_nx got 0x1629 0x3f78
+got_same_value_write: signal 11 (Segmentation fault)
+./bin/lab_partial_pie_nx got 0x1629 0x4028
+got_same_value_write: exit 0
+
+# NX probes
+./bin/lab_full_pie_nx stack
+stack_probe: signal 11 (Segmentation fault)
+./bin/lab_full_pie_execstack stack
+stack_probe: exit 0
+
+# GNU_STACK program headers
+lab_full_pie_nx: RW
+lab_full_pie_execstack: RWE
+```
+
+GDB 원본에는 `start`, `x/gx $rebase(0x4028)`, `x/6i 0x555555555050`, `call (void) marker()`, 호출 후 GOT 재확인까지 기록됨. GDB 종료 시 `No selected thread` Python 예외가 출력되었지만 **그 이전의 GOT 관찰을 무효화하는 증거는 아니며**, 전체 세션 로그는 정상적으로 닫힘. PIE ON 3회와 OFF 3회 관찰이 최소 두 세트 기록됐고, 3회 실행값 및 함수 간 차이는 위 절과 일치함.
+
+**증거 구분:** 메인 통제 실험의 정적·동적 관찰은 Git 원본으로 교차 검증. CS·Day043/050 변경 조건 및 Day158 D+2 무힌트 답변은 사용자와의 **채팅 답변 근거**로 남아 있고 원본 터미널 로그의 수치 실험으로 간주하지 않음. 본 lab은 제공된 교육용 소스 사용 통제 실험이며, 새로운 취약점을 독립 발견하거나 실전 exploit을 완성한 것으로 기록하지 않는다.
+
+**최종 판정: Day160 / FINAL W07 4/5 완료.** 다음은 **Day161 / FINAL W07 5/5**. 같은 실험의 불필요한 재실행 요구 없이 새 일일 과제로 이동한다.
