@@ -1,0 +1,258 @@
+Script started on 2026-11-26 15:56:01+09:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="162" LINES="38"]
+[?2004hbash-5.1$ [7mchecksec --file=bin/lab_full_pie_nx[27m[C[C[C[C[C[C[C[C[C[Cchecksec --file=bin/lab_full_pie_nx
+[?2004l[[1m[34m*[m] '/mnt/d/security-roadmap/Day101-160/Day160/bin/lab_full_pie_nx'
+    Arch:       amd64-64-little
+    RELRO:      [32mFull RELRO[m
+    Stack:      [32mCanary found[m
+    NX:         [32mNX enabled[m
+    PIE:        [32mPIE enabled[m
+    SHSTK:      [32mEnabled[m
+    IBT:        [32mEnabled[m
+    Stripped:   [31mNo[m
+    Debuginfo:  [31mYes[m
+[?2004hbash-5.1$ [7mreadelf -lW bin/lab_full_pie_nx | grep GNU_STACK[27m[C[C[C[C[C[C[C[C[C[Creadelf -lW bin/lab_full_pie_nx | grep GNU_STACK
+[?2004l  GNU_STACK      0x000000 0x0000000000000000 0x0000000000000000 0x000000 0x000000 RW  0x10
+[?2004hbash-5.1$ [7mreadelf -dW bin/lab_full_pie_nx | grep -E 'BIND_NOW|FLAGS'[27m[C[C[C[C[C[C[C[C[C[Creadelf -dW bin/lab_full_pie_nx | grep -E 'BIND_NOW|FLAGS'
+[?2004l 0x000000000000001e (FLAGS)              BIND_NOW
+ 0x000000006ffffffb (FLAGS_1)            Flags: NOW PIE
+[?2004hbash-5.1$ [7mreadelf -lW bin/lab_full_pie_nx | grep GNU_RELRO[27m[C[C[C[C[C[C[C[C[C[Creadelf -lW bin/lab_full_pie_nx | grep GNU_RELRO
+[?2004l  GNU_RELRO      0x002d50 0x0000000000003d50 0x0000000000003d50 0x0002b0 0x0002b0 R   0x1
+[?2004hbash-5.1$ [7mreadelf -dW bin/lab_full_pie_nx | grep -E 'BIND_NOW|FLAGS'[27m[C[C[C[C[C[C[C[C[C[Creadelf -dW bin/lab_full_pie_nx | grep -E 'BIND_NOW|FLAGS'
+[?2004l 0x000000000000001e (FLAGS)              BIND_NOW
+ 0x000000006ffffffb (FLAGS_1)            Flags: NOW PIE
+[?2004hbash-5.1$ [7mreadelf -dW bin/lab_partial_pie_nx | grep -E 'BIND_NOW|FLAGS'[27m[C[C[C[C[C[C[C[C[C[Creadelf -dW bin/lab_partial_pie_nx | grep -E 'BIND_NOW|FLAGS'
+[?2004l 0x000000006ffffffb (FLAGS_1)            Flags: PIE
+[?2004hbash-5.1$ [7mreadelf -dW bin/lab_partial_pie_nx | grep -E 'BIND_NOW|FLAGS'[27m[C[C[C[C[C[C[C[C[C[Creadelf -dW bin/lab_partial_pie_nx | grep -E 'BIND_NOW|FLAGS'
+[?2004l 0x000000006ffffffb (FLAGS_1)            Flags: PIE
+[?2004hbash-5.1$ [7mobjdump -d -M intel bin/lab_partial_pie_nx | grep -A 5 '<puts@plt>:'[27m[C[C[C[C[C[C[C[C[C[Cobjdump -d -M intel bin/lab_partial_pie_nx | grep -A 5 '<puts@plt>:'
+[?2004l0000000000001140 <puts@plt>:
+    1140:	f3 0f 1e fa          	endbr64 
+    1144:	f2 ff 25 dd 2e 00 00 	bnd jmp QWORD PTR [rip+0x2edd]        # 4028 <puts@GLIBC_2.2.5>
+    114b:	0f 1f 44 00 00       	nop    DWORD PTR [rax+rax*1+0x0]
+
+0000000000001150 <__stack_chk_fail@plt>:
+[?2004hbash-5.1$ [7mreadelf -rW bin/lab_partial_pie_nx | grep puts[27m[C[C[C[C[C[C[C[C[C[Creadelf -rW bin/lab_partial_pie_nx | grep puts
+[?2004l0000000000004028  0000000500000007 R_X86_64_JUMP_SLOT     0000000000000000 puts@GLIBC_2.2.5 + 0
+[?2004hbash-5.1$ [7mobjdump -d -j .plt -M intel bin/lab_partial_pie_nx[27m[C[C[C[C[C[C[C[C[C[Cobjdump -d -j .plt -M intel bin/lab_partial_pie_nx
+[?2004l
+bin/lab_partial_pie_nx:     file format elf64-x86-64
+
+
+Disassembly of section .plt:
+
+0000000000001020 <.plt>:
+    1020:	ff 35 e2 2f 00 00    	push   QWORD PTR [rip+0x2fe2]        # 4008 <_GLOBAL_OFFSET_TABLE_+0x8>
+    1026:	f2 ff 25 e3 2f 00 00 	bnd jmp QWORD PTR [rip+0x2fe3]        # 4010 <_GLOBAL_OFFSET_TABLE_+0x10>
+    102d:	0f 1f 00             	nop    DWORD PTR [rax]
+    1030:	f3 0f 1e fa          	endbr64 
+    1034:	68 00 00 00 00       	push   0x0
+    1039:	f2 e9 e1 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    103f:	90                   	nop
+    1040:	f3 0f 1e fa          	endbr64 
+    1044:	68 01 00 00 00       	push   0x1
+    1049:	f2 e9 d1 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    104f:	90                   	nop
+    1050:	f3 0f 1e fa          	endbr64 
+    1054:	68 02 00 00 00       	push   0x2
+    1059:	f2 e9 c1 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    105f:	90                   	nop
+    1060:	f3 0f 1e fa          	endbr64 
+    1064:	68 03 00 00 00       	push   0x3
+    1069:	f2 e9 b1 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    106f:	90                   	nop
+    1070:	f3 0f 1e fa          	endbr64 
+    1074:	68 04 00 00 00       	push   0x4
+    1079:	f2 e9 a1 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    107f:	90                   	nop
+    1080:	f3 0f 1e fa          	endbr64 
+    1084:	68 05 00 00 00       	push   0x5
+    1089:	f2 e9 91 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    108f:	90                   	nop
+    1090:	f3 0f 1e fa          	endbr64 
+    1094:	68 06 00 00 00       	push   0x6
+    1099:	f2 e9 81 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    109f:	90                   	nop
+    10a0:	f3 0f 1e fa          	endbr64 
+    10a4:	68 07 00 00 00       	push   0x7
+    10a9:	f2 e9 71 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    10af:	90                   	nop
+    10b0:	f3 0f 1e fa          	endbr64 
+    10b4:	68 08 00 00 00       	push   0x8
+    10b9:	f2 e9 61 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    10bf:	90                   	nop
+    10c0:	f3 0f 1e fa          	endbr64 
+    10c4:	68 09 00 00 00       	push   0x9
+    10c9:	f2 e9 51 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    10cf:	90                   	nop
+    10d0:	f3 0f 1e fa          	endbr64 
+    10d4:	68 0a 00 00 00       	push   0xa
+    10d9:	f2 e9 41 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    10df:	90                   	nop
+    10e0:	f3 0f 1e fa          	endbr64 
+    10e4:	68 0b 00 00 00       	push   0xb
+    10e9:	f2 e9 31 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    10ef:	90                   	nop
+    10f0:	f3 0f 1e fa          	endbr64 
+    10f4:	68 0c 00 00 00       	push   0xc
+    10f9:	f2 e9 21 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    10ff:	90                   	nop
+    1100:	f3 0f 1e fa          	endbr64 
+    1104:	68 0d 00 00 00       	push   0xd
+    1109:	f2 e9 11 ff ff ff    	bnd jmp 1020 <_init+0x20>
+    110f:	90                   	nop
+[?2004hbash-5.1$ [7mgdb -q ./bin/lab_partial_pie_nx[27m[C[C[C[C[C[C[C[C[C[Cgdb -q ./bin/lab_partial_pie_nx
+[?2004l[31m[1mpwndbg: [0m[31m[0m[91mloaded 194 pwndbg commands. Type [35mpwndbg [filter][0m[91m for a list.[0m
+[31m[1mpwndbg: [0m[31m[0m[91mcreated 11 GDB functions (can be used with print/break). Type [35mhelp function[0m[91m to see them.[0m
+Reading symbols from [32m./bin/lab_partial_pie_nx[m...
+[31m[1m------- tip of the day[0m[31m[0m[91m (disable with [35mset show-tips off[0m[91m)[0m[31m[1m -------[0m[31m[0m
+Use Pwndbg's [33mconfig[0m and [33mtheme[0m commands to tune its configuration and theme colors!
+[?2004h[31m[1mpwndbg> [0m[31m[0mstart
+[?2004lTemporary breakpoint 1 at [34m0x163d[m: file [32mlab160.c[m, line 84.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "[32m/lib/x86_64-linux-gnu/libthread_db.so.1[m".
+
+Temporary breakpoint 1, [33mmain[m ([36margc[m=0x1, [36margv[m=0x7fffffffe0a8) at [32mlab160.c[m:84
+84	    [01msetvbuf[m[31m([mstdout[31m,[m NULL[31m,[m _IONBF[31m,[m [35m0[m[31m);[m
+LEGEND: [33mSTACK[0m | [34mHEAP[0m | [31mCODE[0m | [35mDATA[0m | [4m[31mWX[0m[4m[0m | [0mRODATA[0m
+[34m─────────────────────────────────────────────────────────────────────────[ LAST SIGNAL ]──────────────────────────────────────────────────────────────────────────[0m
+[33mBreakpoint hit at 0x55555555563d[0m
+[34m──────────────────────────────────────────────────────[ REGISTERS / show-flags off / show-compact-regs off ]──────────────────────────────────────────────────────[0m
+ [1mRAX [0m [31m0x555555555629 (main)[0m[0m ◂— [0m[38;5;148mendbr64[39m
+ [1mRBX [0m 0
+ [1mRCX [0m [0m0x555555557df0 (__do_global_dtors_aux_fini_array_entry)[0m[0m —▸ [0m[31m0x5555555552a0 (__do_global_dtors_aux)[0m[0m ◂— [0m[38;5;148mendbr64[39m
+ [1mRDX [0m [33m0x7fffffffe0b8[0m[0m —▸ [0m[33m0x7fffffffe36c[0m[0m ◂— [0m'SHELL=/bin/bash'
+ [1mRDI [0m 1
+ [1mRSI [0m [33m0x7fffffffe0a8[0m[0m —▸ [0m[33m0x7fffffffe32b[0m[0m ◂— [0m'/mnt/d/security-roadmap/Day101-160/Day160/bin/lab_partial_pie_nx'
+ [1mR8  [0m [35m0x7ffff7e1bf10 (initial+16)[0m[0m ◂— [0m4
+ [1mR9  [0m [31m0x7ffff7fc9040 (_dl_fini)[0m[0m ◂— [0m[38;5;148mendbr64[39m
+ [1mR10 [0m [0m0x7ffff7fc3908[0m[0m ◂— [0m0xd00120000000e
+ [1mR11 [0m [31m0x7ffff7fde660 (_dl_audit_preinit)[0m[0m ◂— [0m[38;5;148mendbr64[39m
+ [1mR12 [0m [33m0x7fffffffe0a8[0m[0m —▸ [0m[33m0x7fffffffe32b[0m[0m ◂— [0m'/mnt/d/security-roadmap/Day101-160/Day160/bin/lab_partial_pie_nx'
+ [1mR13 [0m [31m0x555555555629 (main)[0m[0m ◂— [0m[38;5;148mendbr64[39m
+ [1mR14 [0m [0m0x555555557df0 (__do_global_dtors_aux_fini_array_entry)[0m[0m —▸ [0m[31m0x5555555552a0 (__do_global_dtors_aux)[0m[0m ◂— [0m[38;5;148mendbr64[39m
+ [1mR15 [0m [35m0x7ffff7ffd040 (_rtld_global)[0m[0m —▸ [0m[35m0x7ffff7ffe2e0[0m[0m —▸ [0m[0m0x555555554000[0m[0m ◂— [0m0x10102464c457f
+ [1mRBP [0m [33m0x7fffffffdf90[0m[0m ◂— [0m1
+ [1mRSP [0m [33m0x7fffffffdf70 {argv}[0m[0m —▸ [0m[33m0x7fffffffe0a8[0m[0m —▸ [0m[33m0x7fffffffe32b[0m[0m ◂— [0m'/mnt/d/security-roadmap/Day101-160/Day160/bin/lab_partial_pie_nx'
+ [1mRIP [0m [31m0x55555555563d (main+20)[0m[0m ◂— [0m[38;5;148mmov[39m[38;5;15m [39m[38;5;81mrax[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mqword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrip[39m[38;5;15m [39m[38;5;15m+[39m[38;5;15m [39m[38;5;141m0x2a5c[39m[38;5;15m][39m
+[34m───────────────────────────────────────────────────────────────[ DISASM / x86-64 / set emulate on ]───────────────────────────────────────────────────────────────[0m
+ ► [1m[32m0x55555555563d[0m[1m[0m [1m[32m<main+20> [0m[1m[0m   [1m[32m[38;5;148mmov[39m[38;5;15m    [39m[38;5;81mrax[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mqword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrip[39m[38;5;15m [39m[38;5;15m+[39m[38;5;15m [39m[38;5;141m0x2a5c[39m[38;5;15m][39m[0m[1m[0m     [31m[1mRAX[0m[31m[0m, [[35mstdout@GLIBC_2.2.5[0m] => [35m0x7ffff7e1b780 (_IO_2_1_stdout_)[0m[0m ◂— [0m0xfbad2084
+   [0m0x555555555644[0m [0m<main+27> [0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mecx[39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m0[39m                            [31m[1mECX[0m[31m[0m => 0
+   [0m0x555555555649[0m [0m<main+32> [0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81medx[39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m2[39m                            [31m[1mEDX[0m[31m[0m => 2
+   [0m0x55555555564e[0m [0m<main+37> [0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mesi[39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m0[39m                            [31m[1mESI[0m[31m[0m => 0
+   [0m0x555555555653[0m [0m<main+42> [0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mrdi[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mrax[39m                          [31m[1mRDI[0m[31m[0m => [35m0x7ffff7e1b780 (_IO_2_1_stdout_)[0m[0m ◂— [0m0xfbad2084
+   [0m0x555555555656[0m [0m<main+45> [0m   [38;5;148m[1mcall[0m[39m[38;5;15m   [39m[38;5;141m[31msetvbuf@plt[0m[39m                 <[31msetvbuf@plt[0m>
+ 
+   [0m0x55555555565b[0m [0m<main+50> [0m   [38;5;148mcmp[39m[38;5;15m    [39m[38;5;81mdword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrbp[39m[38;5;15m [39m[38;5;15m-[39m[38;5;15m [39m[38;5;141m0x14[39m[38;5;15m][39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m1[39m
+   [0m0x55555555565f[0m [0m<main+54> [0m   [38;5;148m[1mjg[0m[39m[38;5;15m     [39m[38;5;141m[31mmain+103[0m[39m                    <[31mmain+103[0m>
+ 
+   [0m0x555555555661[0m [0m<main+56> [0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mrax[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mqword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrbp[39m[38;5;15m [39m[38;5;15m-[39m[38;5;15m [39m[38;5;141m0x20[39m[38;5;15m][39m
+   [0m0x555555555665[0m [0m<main+60> [0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mrdx[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mqword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrax[39m[38;5;15m][39m
+   [0m0x555555555668[0m [0m<main+63> [0m   [38;5;148mmov[39m[38;5;15m    [39m[38;5;81mrax[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mqword[39m[38;5;15m [39m[38;5;81mptr[39m[38;5;15m [39m[38;5;15m[[39m[38;5;81mrip[39m[38;5;15m [39m[38;5;15m+[39m[38;5;15m [39m[38;5;141m0x2a51[39m[38;5;15m][39m     [31m[1mRAX[0m[31m[0m, [[35mstderr@GLIBC_2.2.5[0m]
+[34m────────────────────────────────────────────────────────────────────────[ SOURCE (CODE) ]─────────────────────────────────────────────────────────────────────────[0m
+In file: /mnt/d/security-roadmap/Day101-160/Day160/lab160.c:84
+   78 [38;5;15m        [39m[38;5;15m_exit[39m[38;5;15m([39m[38;5;141m0[39m[38;5;15m)[39m[38;5;15m;[39m
+   79 [38;5;15m    [39m[38;5;15m}[39m
+   80 [38;5;15m    [39m[38;5;15mreport_child[39m[38;5;15m([39m[38;5;186m"[39m[38;5;186mgot_same_value_write[39m[38;5;186m"[39m[38;5;15m,[39m[38;5;15m [39m[38;5;15mpid[39m[38;5;15m)[39m[38;5;15m;[39m
+   81 [38;5;15m}[39m
+   82 
+   83 [38;5;81mint[39m[38;5;15m [39m[38;5;148mmain[39m[38;5;15m([39m[38;5;81mint[39m[38;5;15m [39m[38;5;15margc[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81mchar[39m[38;5;15m [39m[38;5;204m*[39m[38;5;204m*[39m[38;5;15margv[39m[38;5;15m)[39m[38;5;15m [39m[38;5;15m{[39m
+[1m[32m ► 84 [38;5;15m    [39m[38;5;15msetvbuf[39m[38;5;15m([39m[38;5;15mstdout[39m[38;5;15m,[39m[38;5;15m [39m[38;5;15mNULL[39m[38;5;15m,[39m[38;5;15m [39m[38;5;15m_IONBF[39m[38;5;15m,[39m[38;5;15m [39m[38;5;141m0[39m[38;5;15m)[39m[38;5;15m;[39m[0m[1m[0m
+   85 [38;5;15m    [39m[38;5;81mif[39m[38;5;15m [39m[38;5;15m([39m[38;5;15margc[39m[38;5;15m [39m[38;5;204m<[39m[38;5;15m [39m[38;5;141m2[39m[38;5;15m)[39m[38;5;15m [39m[38;5;15m{[39m
+   86 [38;5;15m        [39m[38;5;15mfprintf[39m[38;5;15m([39m[38;5;15mstderr[39m[38;5;15m,[39m
+   87 [38;5;15m                [39m[38;5;186m"[39m[38;5;186musage: %s addr | stack | got <main_sym_value> <puts_JUMP_SLOT_offset>[39m[38;5;141m\n[39m[38;5;186m"[39m[38;5;15m,[39m
+   88 [38;5;15m                [39m[38;5;15margv[39m[38;5;15m[[39m[38;5;141m0[39m[38;5;15m][39m[38;5;15m)[39m[38;5;15m;[39m
+   89 [38;5;15m        [39m[38;5;81mreturn[39m[38;5;15m [39m[38;5;141m2[39m[38;5;15m;[39m
+   90 [38;5;15m    [39m[38;5;15m}[39m
+   91 [38;5;15m    [39m[38;5;81mif[39m[38;5;15m [39m[38;5;15m([39m[38;5;15mstrcmp[39m[38;5;15m([39m[38;5;15margv[39m[38;5;15m[[39m[38;5;141m1[39m[38;5;15m][39m[38;5;15m,[39m[38;5;15m [39m[38;5;186m"[39m[38;5;186maddr[39m[38;5;186m"[39m[38;5;15m)[39m[38;5;15m [39m[38;5;204m=[39m[38;5;204m=[39m[38;5;15m [39m[38;5;141m0[39m[38;5;15m [39m[38;5;204m&[39m[38;5;204m&[39m[38;5;15m [39m[38;5;15margc[39m[38;5;15m [39m[38;5;204m=[39m[38;5;204m=[39m[38;5;15m [39m[38;5;141m2[39m[38;5;15m)[39m[38;5;15m [39m[38;5;15m{[39m
+[34m────────────────────────────────────────────────────────────────────────────[ STACK ]─────────────────────────────────────────────────────────────────────────────[0m
+[0m00[0m[0m:[0m[0m0000[0m[0m│[0m[0m[0m [1mrsp[0m [33m0x7fffffffdf70 {argv}[0m[0m —▸ [0m[33m0x7fffffffe0a8[0m[0m —▸ [0m[33m0x7fffffffe32b[0m[0m ◂— [0m'/mnt/d/security-roadmap/Day101-160/Day160/bin/lab_partial_pie_nx'
+[0m01[0m[0m:[0m[0m0008[0m[0m│[0m[0m[0m-018 [33m0x7fffffffdf78[0m[0m ◂— [0m0x100000000
+[0m02[0m[0m:[0m[0m0010[0m[0m│[0m[0m[0m-010 [33m0x7fffffffdf80[0m[0m ◂— [0m0
+[0m03[0m[0m:[0m[0m0018[0m[0m│[0m[0m[0m-008 [33m0x7fffffffdf88[0m[0m ◂— [0m0
+[0m04[0m[0m:[0m[0m0020[0m[0m│[0m[0m[0m [1mrbp[0m [33m0x7fffffffdf90[0m[0m ◂— [0m1
+[0m05[0m[0m:[0m[0m0028[0m[0m│[0m[0m[0m+008 [33m0x7fffffffdf98[0m[0m —▸ [0m[31m0x7ffff7c29d90 (__libc_start_call_main+128)[0m[0m ◂— [0m[38;5;148mmov[39m[38;5;15m [39m[38;5;81medi[39m[38;5;15m,[39m[38;5;15m [39m[38;5;81meax[39m
+[0m06[0m[0m:[0m[0m0030[0m[0m│[0m[0m[0m+010 [33m0x7fffffffdfa0[0m[0m ◂— [0m0
+[0m07[0m[0m:[0m[0m0038[0m[0m│[0m[0m[0m+018 [33m0x7fffffffdfa8[0m[0m —▸ [0m[31m0x555555555629 (main)[0m[0m ◂— [0m[38;5;148mendbr64[39m
+[34m──────────────────────────────────────────────────────────────────────────[ BACKTRACE ]───────────────────────────────────────────────────────────────────────────[0m
+ ► 0   0x55555555563d main+20
+   1   0x7ffff7c29d90 __libc_start_call_main+128
+   2   0x7ffff7c29e40 __libc_start_main+128
+   3   0x555555555225 _start+37
+[34m──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[?2004h[32m[1mpwndbg> [0m[32m[0mrebase[K[K[K[K[K[Kx/gx $rebase()0)x)2)0)3)8)[1P)[1P)[1P)[1P)4)0)2)8)
+[?2004l[34m0x555555558028[m <[33mputs@got.plt[m>:	0x0000555555555050
+[?2004h[32m[1mpwndbg> [0m[32m[0m[7mx/6i 0x555555555050[27m[C[C[C[C[C[C[C[Cx/6i 0x555555555050
+[?2004l   [34m0x555555555050[m:	[32mendbr64[39;49;00m[37m [39;49;00m
+   [34m0x555555555054[m:	[32mpush[39;49;00m[37m   [39;49;00m[34m0x2[39;49;00m[37m[39;49;00m
+   [34m0x555555555059[m:	[32mbnd[39;49;00m[37m [39;49;00m[31mjmp[39;49;00m[37m [39;49;00m[34m0x555555555020[39;49;00m[37m[39;49;00m
+   [34m0x55555555505f[m:	[32mnop[39;49;00m[37m[39;49;00m
+   [34m0x555555555060[m:	[32mendbr64[39;49;00m[37m [39;49;00m
+   [34m0x555555555064[m:	[32mpush[39;49;00m[37m   [39;49;00m[34m0x3[39;49;00m[37m[39;49;00m
+[?2004h[32m[1mpwndbg> [0m[32m[0m[7mcall (void) marker()[27m[C[C[C[C[C[C[C[Ccall (void) marker()
+[?2004lLOCAL_MARKER
+[?2004h[32m[1mpwndbg> [0m[32m[0m[7mx/gx $rebase(0x4028)[27m[C[C[C[C[C[C[C[Cx/gx $rebase(0x4028)
+[?2004l[34m0x555555558028[m <[33mputs@got.plt[m>:	0x00007ffff7c80e10
+[?2004h[32m[1mpwndbg> [0m[32m[0mexit
+[?2004l[31mException occurred: Error: No selected thread. (<class 'gdb.error'>)[0m
+[35mFor more info invoke `[0m[33mset exception-verbose on[0m[35m` and rerun the command
+or debug it by yourself with `[0m[33mset exception-debugger on[0m[35m`[0m
+Python Exception <class 'gdb.error'>: No selected thread.
+[?2004hbash-5.1$ [7mnm -n bin/lab_full_pie_nx | grep ' main$'[27m[C[C[C[C[C[C[C[C[C[Cnm -n bin/lab_full_pie_nx | grep ' main$'
+[?2004l0000000000001629 T main
+[?2004hbash-5.1$ [7mreadelf -rW bin/lab_full_pie_nx | grep puts[27m[C[C[C[C[C[C[C[C[C[Creadelf -rW bin/lab_full_pie_nx | grep puts
+[?2004l0000000000003f78  0000000500000007 R_X86_64_JUMP_SLOT     0000000000000000 puts@GLIBC_2.2.5 + 0
+[?2004hbash-5.1$ [7mnm -n bin/lab_partial_pie_nx | grep ' main$'[27m[C[C[C[C[C[C[C[C[C[Cnm -n bin/lab_partial_pie_nx | grep ' main$'
+[?2004l0000000000001629 T main
+[?2004hbash-5.1$ [7mreadelf -rW bin/lab_partial_pie_nx | grep puts[27m[C[C[C[C[C[C[C[C[C[Creadelf -rW bin/lab_partial_pie_nx | grep puts
+[?2004l0000000000004028  0000000500000007 R_X86_64_JUMP_SLOT     0000000000000000 puts@GLIBC_2.2.5 + 0
+[?2004hbash-5.1$ [7m./bin/lab_full_pie_nx got 0x1629 0x3f78[27m[C[C[C[C[C[C[C[C[C[C./bin/lab_full_pie_nx got 0x1629 0x3f78
+[?2004lcalculated_load_base=0x57df7f508000
+puts_got_slot=0x57df7f50bf78
+got_same_value_write: signal 11 (Segmentation fault)
+[?2004hbash-5.1$ [7m./bin/lab_partial_pie_nx got 0x1629 0x4028[27m[C[C[C[C[C[C[C[C[C[C./bin/lab_partial_pie_nx got 0x1629 0x4028
+[?2004lcalculated_load_base=0x64e3545eb000
+puts_got_slot=0x64e3545ef028
+got_same_value_write: exit 0
+[?2004hbash-5.1$ [7mfor i in 1 2 3; do[27m
+[7m    ./bin/lab_full_pie_nx addr[27m
+[7mdone[27m[A[A[C[C[C[C[C[Cfor i in 1 2 3; do
+    ./bin/lab_full_pie_nx addr
+done
+[?2004lmain=0x6381125fd629 marker=0x6381125fd2e9
+main=0x56f0bbe60629 marker=0x56f0bbe602e9
+main=0x61d254b8d629 marker=0x61d254b8d2e9
+[?2004hbash-5.1$ [7mfor i in 1 2 3; do[27m
+[7m    ./bin/lab_full_nopie_nx addr[27m
+[7mdone[27m[A[A[C[C[C[C[C[Cfor i in 1 2 3; do
+    ./bin/lab_full_nopie_nx addr
+done
+[?2004lmain=0x4015d8 marker=0x4012d6
+main=0x4015d8 marker=0x4012d6
+main=0x4015d8 marker=0x4012d6
+[?2004hbash-5.1$ [7mfor binary in lab_full_pie_nx lab_full_nopie_nx; do[27m
+[7m    for i in 1 2 3; do[27m
+[7m        ./bin/$binary addr[27m
+[7m    done[27m
+[7mdone[27m[A[A[A[A[C[C[C[C[C[Cfor binary in lab_full_pie_nx lab_full_nopie_nx; do
+    for i in 1 2 3; do
+        ./bin/$binary addr
+    done
+done
+[?2004lmain=0x58334fb16629 marker=0x58334fb162e9
+main=0x5d63de6c7629 marker=0x5d63de6c72e9
+main=0x654a22817629 marker=0x654a228172e9
+main=0x4015d8 marker=0x4012d6
+main=0x4015d8 marker=0x4012d6
+main=0x4015d8 marker=0x4012d6
+[?2004hbash-5.1$ [7m./bin/lab_full_pie_nx stack[27m[C[C[C[C[C[C[C[C[C[C./bin/lab_full_pie_nx stack
+[?2004lstack_probe: signal 11 (Segmentation fault)
+[?2004hbash-5.1$ [7m./bin/lab_full_pie_execstack stack[27m[C[C[C[C[C[C[C[C[C[C./bin/lab_full_pie_execstack stack
+[?2004lstack_probe: exit 0
+[?2004hbash-5.1$ [7mreadelf -lW bin/lab_full_pie_nx | grep GNU_STACK[27m[C[C[C[C[C[C[C[C[C[Creadelf -lW bin/lab_full_pie_nx | grep GNU_STACK
+[?2004l  GNU_STACK      0x000000 0x0000000000000000 0x0000000000000000 0x000000 0x000000 RW  0x10
+[?2004hbash-5.1$ [7mreadelf -lW bin/lab_full_pie_execstack | grep GNU_STACK[27m[C[C[C[C[C[C[C[C[C[Creadelf -lW bin/lab_full_pie_execstack | grep GNU_STACK
+[?2004l  GNU_STACK      0x000000 0x0000000000000000 0x0000000000000000 0x000000 0x000000 RWE 0x10
+[?2004hbash-5.1$ exit
+[?2004lexit
+
+Script done on 2026-11-26 16:38:01+09:00 [COMMAND_EXIT_CODE="0"]
