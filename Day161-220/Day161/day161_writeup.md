@@ -182,6 +182,14 @@ PROOF_OK: gated control-flow verified
 
 판정: 보고된 동일 로컬 프로세스가 `PROOF_OK: gated control-flow verified`를 출력하고 exit code 0으로 종료했다. 이는 **최초 로컬 성공 1회 보고**이며 `frame accepted`만으로 성공 취급하지 않았다. `trace[0]=0x5903fcdd528d` 및 정적 offset `0x128d`에서 `PIE Base=0x5903fcdd4000` 계산과 일치. 학생은 Ghidra 분석을 통해 입력 취약점·ROP 게이트 조건·session 연산을 스스로 해석했지만 실제 `solve.py` 원문과 stdout/stderr의 원격 교차 확인은 아직 없다. **Day161 완료 아님**: 20회 별도 프로세스 재현, 단일 조건만 변경한 실패 비교, W07 실패 매트릭스·CS·D+7 복습, 원본 증거 및 Write-up 검증 남음.
 
+### 20회 반복 실행 성공률 — 학생 보고 (2026-11-27)
+
+학생 원문: `20번 전부 성공`.
+
+- 기록상 **20/20회 성공(100%)은 학생의 요약 보고**이며, 각 trial의 실제 stdout, 프로세스 exit status, 중간 실패·재시도 여부를 담은 `day161_trials_raw.txt` 또는 `day161_trials.csv`는 아직 Git 원본으로 확인하지 않았다.
+- 이전 1회 로컬 `PROOF_OK: gated control-flow verified` 및 exit 0 스냅샷과 함께 재현성의 강한 긍정 신호로 평가. 다만 새로운 프로세스마다 PIE/ASLR 및 session 변화를 처리했는지 각 trial 원본을 통한 검증은 아직 남음.
+- 후속: **원래 성공 경로를 보존**하고 정확히 한 조건(`RDX=0x68d`에서 다른 값으로 변경)만 바꾸어 실패 분기를 검증. 사전 예상 및 실제 출력/종료 상태를 기록. 이후 CS·Day156 D+7 지연복습, 코드와 원본 로그/트라이얼 CSV 제출 및 평가 완료 기준 점검.
+
 ## 3. 다음 확인
 
 - 학생이 처음 분석한 `file`, `checksec`, `readelf` 결과 및 2~3회 독립 실행 출력 제출.
