@@ -48,11 +48,11 @@ git pull --ff-only
 
 - Last completed: **2026-11-26 — Day160 / FINAL W07 4/5 완료**. [Day160 write-up](../Day101-160/Day160/day160_writeup.md), [학생 원본 터미널 로그](../Day101-160/Day160/day160_session.log).
 - Active plan: [Binary Exploitation FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276 (124개 일일 과제).
-- Plan position: **Day160 완료. 다음 Day161 / FINAL W07 5/5 미시작**.
+- Plan position: **Day161 / FINAL W07 5/5 진행 시작 (2026-11-27, 미완료)**.
 - Main: 동일 C 소스의 4조건 비교(Full/Partial RELRO, PIE ON/OFF, NX ON/OFF)를 학생이 직접 수행. Full의 puts JUMP_SLOT `0x3f78` same-value write → SIGSEGV(11), Partial의 `0x4028` → exit 0. Partial puts GOT 지연 바인딩은 PLT 스텁 `0x555555555050` → libc puts `0x7ffff7c80e10`으로 실제 갱신됨. PIE ON 3회 main 주소 변동과 main-marker 오프셋 `0x340` 불변; PIE OFF 3회 main `0x4015d8`, 차이 `0x302` 고정. NX ON 스택 1B RET → signal 11, execstack → exit 0, ELF `GNU_STACK RW/RWE` 근거 대조.
 - CS/review: Full RELRO는 GOT 등 `GNU_RELRO` 영역을 쓰기 금지하며 스택의 saved RIP는 별도라는 점 설명(학생의 "GOT만" 표현 교정). Day043/050 변형 `pop rbx; pop r12; ret` + `pop rdi; ret`의 `RSP%16=0→8→8`을 무힌트 정답, 추가 ret 불필요. Day158 D+2: 호출 전 PLT 내부 GOT 값을 libc leak으로 오판하지 않고 실제 puts 주소 `0x7ffff7c80e10 - 0x80e10=0x7ffff7c00000` 계산·파생 주소 오류 설명 독립 통과.
 - Git evidence: 학생 원본 커밋 **`31380fde92d53b855ddb06ae55cb67a2b6906139`**에서 `Day101-160/Day160/day160_session.log` (blob `64ad52375320ddd10f9adffa89a3a2051ee05346`) 확인. 시작 15:56:01, 종료 16:38:01 KST; `script` COMMAND_EXIT_CODE=0. 모든 주요 입력 명령과 원시 출력 원격 Git에서 확인; GDB 종료 시 pwndbg `No selected thread` 예외는 별도 기재. 교사 final write-up commit `ac6c1755b3714517e655472113a66b66c4a448f7`. 원본 빌드 결과는 학생 산출물이지만 빌드 실행 소스는 교사 제공이므로 독립 바이너리 취약점 발굴로 주장하지 않는다.
-- Next task: **Day161 / FINAL W07 5/5**, 최종 엑셀의 정확한 범위와 주간 통합 게이트 확인한 뒤 새 학습 시작. Day160 추가 재실행은 필요 없다.
+- Next task: **Day161 / FINAL W07 5/5 블라인드 평가**. 최종 엑셀 원문 메인: '미지의 중급 이상 문제 블라인드: leak→주소 해석→통제된 기능 목표 달성, 재실행 성공률 측정'. 주간 W07 게이트: 미지 문제의 주소·정렬·보호 조건 독립 판정, 최소 한 번 로컬 성공 또는 불가능성 명확 입증, 누출 유효성·ROP 실패 매트릭스·재현 스크립트. 신규 [Day161 평가 README](../Day161-220/Day161/README.md), [복원 스크립트](../Day161-220/Day161/unpack.sh), 기록 스크립트, stripped ELF를 제공. 먼저 사용자가 바이너리 복원/독립 기초 관찰 및 최초 가설 제출. 교사 쪽에서 숨은 정답/주소를 선제 공개하지 않음. CS 스택 공간·주소·인자 레지스터 무힌트 구술과 Day043/050 정렬 반례, Day156 D+7 지연복습 예정. 채팅과 학생 원본 Git 증거 확인 전 완료 불가.
 - Teacher rule: 질문·힌트·사용자 원본 로그·교사 작성 자료의 출처를 분리하고 완료한 내용을 의미 없이 반복하지 않는다.
 
 ---
@@ -1171,3 +1171,10 @@ git pull --ff-only
 - ELF 정적 플래그 Full/Partial NOW 구분, GNU_RELRO, GNU_STACK RW/RWE, GDB puts GOT PLT 스텁→libc puts 주소 갱신, GOT Full SIGSEGV vs Partial exit 0, PIE ON/OFF 반복 주소, NX ON SIGSEGV vs NX OFF exit 0 모두 원시 Git 로그와 대화 제출 내용 일치.
 - CS: Full RELRO의 GNU_RELRO 대상과 스택 saved RIP 차이 설명(범위 표현 보정). Day043/050 정렬 변경 조건 무힌트 정답. Day158 D+2 잘못된 주소 출처를 필터링하고 올바른 libc base 계산 무힌트 통과. 이러한 개념 복습은 채팅 증거이며 콘솔 로그의 실측으로 바꾸지 않음.
 - [완료 Write-up](../Day101-160/Day160/day160_writeup.md) 교사 커밋 `ac6c1755b3714517e655472113a66b66c4a448f7`. **Day160 완료, Last completed Day160, 다음 Day161 / FINAL W07 5/5.**
+
+
+### 2026-11-27 — Day161 / FINAL W07 5/5 시작 (블라인드 평가, 미완료)
+- 최종 엑셀 `01_일일124` 실제 Day161 행과 `02_주간25` W07 원문 직접 확인. 블라인드 미지 중급 이상 ELF에서 **leak→주소 해석→로컬 통제 기능**, 성공률 재측정, 독립 주소/정렬/보호 판정과 재현 자료·실패 매트릭스가 핵심.
+- [Day161 교육용 평가 패키지](../Day161-220/Day161/README.md)와 stripped PIE ELF ASCII 인코딩, SHA256 검증 `unpack.sh`, append 기록 `record.sh`을 교사 준비 및 Git main 커밋. 바이너리의 소스, 정확한 오프셋, 의도된 입력은 사용자에게 제공하지 않음. 교사 로컬에서 빌드·교육용 목표의 여러 시험 실행을 확인했으나 **학생 독립 성공 증거로 간주하지 않음**.
+- 원본 유효 SHA256: `c6f57ee36ab304cb393b61c94e781e289fb7f4c91eaefbd6945f127e85034183`; GLIBC 최고 요구 버전 2.34, 실행 환경 Linux amd64. Day161 학습은 학생 초기 분석 이전, 증거 없음. 완료 전까지 Last completed Day160 유지.
+- 오늘 지연복습 예정: Day156(완료 11/20) D+7 ABI·스택 경계. 과거 Day043/050의 정렬 원리 또한 새 조건으로 주간 구술; 이미 맞춘 문제를 같은 문항으로 반복하지 않음.
