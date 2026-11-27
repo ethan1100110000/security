@@ -164,6 +164,24 @@ void FUN_001011a9(void)
 
 다음 교사 질문: `pop rdx; pop r13; ret`의 스택 슬롯 배치, `RSP` 모듈러 16 변화, 다른 가젯까지 포함한 최종 진입 정렬을 학생이 직접 설명.
 
+### 학생 자체 구현 첫 로컬 성공 보고 (2026-11-27)
+
+학생이 직접 작성 중인 pwntools 실행 결과를 다음과 같이 제출함 (**채팅으로 제출한 출력, 학생 원본 `solve.py` 및 `day161_session.log`의 Git 증거는 아직 확인 전**):
+
+```text
+0x2c809b15f48cb6f
+0x5903fcdd528d
+0x5903fcdd4000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[+] Receiving all data: Done (54B)
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 621)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+```
+
+판정: 보고된 동일 로컬 프로세스가 `PROOF_OK: gated control-flow verified`를 출력하고 exit code 0으로 종료했다. 이는 **최초 로컬 성공 1회 보고**이며 `frame accepted`만으로 성공 취급하지 않았다. `trace[0]=0x5903fcdd528d` 및 정적 offset `0x128d`에서 `PIE Base=0x5903fcdd4000` 계산과 일치. 학생은 Ghidra 분석을 통해 입력 취약점·ROP 게이트 조건·session 연산을 스스로 해석했지만 실제 `solve.py` 원문과 stdout/stderr의 원격 교차 확인은 아직 없다. **Day161 완료 아님**: 20회 별도 프로세스 재현, 단일 조건만 변경한 실패 비교, W07 실패 매트릭스·CS·D+7 복습, 원본 증거 및 Write-up 검증 남음.
+
 ## 3. 다음 확인
 
 - 학생이 처음 분석한 `file`, `checksec`, `readelf` 결과 및 2~3회 독립 실행 출력 제출.
