@@ -205,6 +205,14 @@ PROOF_OK: gated control-flow verified
 - 이전 `20/20` 학생 보고와 함께 재현성 및 실패 분기 이해를 긍정 평가하되, 20개 개별 trial/학생 직접 작성 `solve.py`/원본 `day161_session.log`의 Git 증거 확인은 최종 완료 전에 필요.
 - 후속: Day156 D+7 지연복습으로 SysV ABI의 frame pointer 없는 함수에서 인자 스택 위치, 중첩 call 정렬, callee-saved `RBX` 유지 여부를 새 예제로 질문 예정. 문제는 교사가 제시하고 답은 학생이 무힌트 제출.
 
+### Day156 D+7 ABI 지연복습 — 첫 무힌트 답변 (2026-11-27)
+
+문제: 프레임 포인터 없이 함수 진입 `RSP=0x1008`; `push rbx; sub rsp,0x20; ...; call helper; add rsp,0x20; pop rbx; ret`. 7/8번째 정수 인자 상대 위치, `call` 직전 정렬, callee-saved `RBX` 위반/복구 설명.
+
+학생 원문: `rsp + 0x10 , 0x18인가 2. 0 만족 3. 그 뭐냐 이름이 레지스터 보존 어쩌구 기존 rbx의 값을 스택에 넣어놓고 함수에서 rbx사용 끝날때 스택에 있던 기존값을 다시 rbx에 넣음`.
+
+판정: **① 오답**. `0x10/0x18`은 함수 초입 정렬·push·sub 변화 이후의 현재 `RSP` 기준으로 맞지 않음; 정확한 상대 offset은 `+0x30/+0x38` (callee entry `RSP+8/+16`, 현재 `RSP=0xfe0`). 학생에게 처음에는 정답 offset을 전달하지 않고, `0x1008→0x1000→0xfe0`와 최초 복귀주소 슬롯을 기준으로 새로 계산하게 함. **② 정답:** `call` 직전 `RSP=0xfe0`, `RSP%16=0`. **③ 개념 정답, 명칭 미회상:** `RBX` callee-saved 레지스터, 호출받은 `helper`가 이를 복구하지 않고 바꾸면 ABI 위반. 바깥 함수의 `push/pop`은 자신의 호출자에게 보여 줄 `RBX` 보존이며 helper의 위반을 정당화하는 것은 아님. 학생 재계산 및 새로운 조건 재평가 전까지 **Day156 D+7 복습 미통과(① 교정 중)**.
+
 ## 3. 다음 확인
 
 - 학생이 처음 분석한 `file`, `checksec`, `readelf` 결과 및 2~3회 독립 실행 출력 제출.
