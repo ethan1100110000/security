@@ -122,6 +122,34 @@ void FUN_001011a9(void)
 학생 보고: Ghidra에서 `FUN_001011a9`의 참조를 열자 참조 함수가 `0x1227`로 나타났지만, 학생이 앞서 본 `FUN_00101227`의 디컴파일에는 `FUN_001011d4(1)`만 있어 성공 함수 참조가 보이지 않았음.
 
 판정: **모순을 아직 해결하지 않음**. Ghidra의 함수 소속(XREF origin), 참조 종류(`CALL`, `JUMP`, `DATA` 등), 참조가 시작되는 **정확한 명령어 주소**와 instruction bytes가 필요하다. 디컴파일러는 호출 불가능하다고 추정한 코드(특히 `_exit` 같은 noreturn 호출 뒤)를 생략할 수 있으므로, Listing 디스어셈블리와 raw `objdump -d`를 대조할 것. 단지 XREF가 있다고 해서 `0x1227` 정상 진입에서 성공에 도달함을 의미하지 않음. 교사는 정답 경로를 공개하지 않고 학생에게 해당 XREF의 실제 참조 위치·명령어를 먼저 확인하도록 안내.
+### 학생이 Listing에서 숨겨진 성공 분기 독립 발견 — `0x1227` (2026-11-27)
+
+학생이 Ghidra Listing 원문으로 제출한 주요 명령:
+
+```asm
+00101227 ENDBR64
+0010122b MOV RAX,RSP
+0010122e AND EAX,0xf
+00101231 CMP EAX,0x8
+00101234 JNZ 00101266
+00101236 LEA RAX,[s_THE-BLIND-CHECKPOINT_00102020]
+0010123d CMP RDI,RAX
+00101240 JNZ 00101270
+00101242 MOV RAX,qword ptr [DAT_00104160]
+00101249 ROL RAX,0x9
+0010124d XOR RAX,0x3a7b19
+00101253 CMP RSI,RAX
+00101256 JNZ 00101270
+00101258 CMP RDX,0x68d
+0010125f JNZ 00101270
+00101261 JMP FUN_001011a9
+-- Flow Override: CALL_RETURN (CALL_TERMINATOR)
+```
+
+이는 학생이 **이전에 보았던 디컴파일 `FUN_00101227(){FUN_001011d4(1);return;}`의 불완전한 요약을 반증**하는 정적 증거. `0x1227`은 단순 실패용 함수가 아니라 조건부 검증 게이트의 진입점으로, `RSP&0xf==8`, `RDI==실제 런타임 문자열 주소 (PIE+0x2020)`, `RSI==rol64(*(uint64_t*)(PIE+0x4160),9)^0x3a7b19`, `RDX==0x68d` 네 조건을 모두 통과하면 직접 `jmp` `0x11a9` 성공 함수로 연결됨. `LEA`는 문자열 **값이 아닌 주소** 비교임. **이 판정은 교사의 Listing 해석이고 학생은 Listing 발견까지 독립 수행했으며 네 조건을 본인 언어로 설명하는 구술 아직 미제출.**
+
+참고로 해당 Listing에는 Ghidra의 `Flow Override: CALL_RETURN (CALL_TERMINATOR)` 문구가 있으므로 Decompiler에서 조건들을 누락한 원인과 연관된 설정/추정인지 확인할 가치 있음. 실제 동적 게이트 통과와 로컬 PROOF_OK는 아직 미제출. 다음 학생 단계: 가장 어려운 미확인 변수가 `DAT_00104160`이 어디서 채워지는지와 `session` 출력과의 관계, 그리고 `ret` 기반 진입 시 RSP 정렬을 독립 확인하는 것. 교사는 완성 가젯·페이로드·정답 스크립트를 공개하지 않는다.
+
 ## 3. 다음 확인
 
 - 학생이 처음 분석한 `file`, `checksec`, `readelf` 결과 및 2~3회 독립 실행 출력 제출.
