@@ -1,0 +1,30 @@
+Script started on 2026-11-27 14:36:07+09:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="133" LINES="47"]
+[?2004hbash-5.1$ [7mfile ./day161_blind.elf[27m[C[C[C[C[C[C[C[C[C[Cfile ./day161_blind.elf
+[?2004l./day161_blind.elf: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=0993e5fcab77a360aaaf3e414aa3735d9b953e63, for GNU/Linux 3.2.0, stripped
+[?2004hbash-5.1$ [7mchecksec --file=./day161_blind.elf[27m[C[C[C[C[C[C[C[C[C[Cchecksec --file=./day161_blind.elf
+[?2004l[[1m[34m*[m] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      [32mFull RELRO[m
+    Stack:      [31mNo canary found[m
+    NX:         [32mNX enabled[m
+    PIE:        [32mPIE enabled[m
+[?2004hbash-5.1$ [7mreadelf -lW ./day161_blind.elf \[27m
+[7m    | grep -E 'LOAD|GNU_RELRO|GNU_STACK'[27m[A[C[C[C[C[C[C[C[C[C[Creadelf -lW ./day161_blind.elf \
+    | grep -E 'LOAD|GNU_RELRO|GNU_STACK'
+[?2004l  LOAD           0x000000 0x0000000000000000 0x0000000000000000 0x000888 0x000888 R   0x1000
+  LOAD           0x001000 0x0000000000001000 0x0000000000001000 0x0004ed 0x0004ed R E 0x1000
+  LOAD           0x002000 0x0000000000002000 0x0000000000002000 0x0002f4 0x0002f4 R   0x1000
+  LOAD           0x002d78 0x0000000000003d78 0x0000000000003d78 0x000298 0x0003f0 RW  0x1000
+  GNU_STACK      0x000000 0x0000000000000000 0x0000000000000000 0x000000 0x000000 RW  0x10
+  GNU_RELRO      0x002d78 0x0000000000003d78 0x0000000000003d78 0x000288 0x000288 R   0x1
+[?2004hbash-5.1$ [7mprintf 'AAAA' | ./day161_blind.elf[27m[C[C[C[C[C[C[C[C[C[Cprintf 'AAAA' | ./day161_blind.elf
+[?2004lsession=0x02df2f4577c8c93a
+trace[0]=0x5be72258428d
+trace[1]=0x790e07280e10
+trace[2]=0x4227
+one opaque packet (max 208 bytes; CR/LF rejected)
+frame accepted
+[?2004hbash-5.1$ [Kbash-5.1$ [Kbash-5.1$ [Kbash-5.1$ [Kbash-5.1$ [Kbash-5.1$ [Kbash-5.1$ [Kbash-5.1$ [Kbash-5.1$ exit
+[?2004lexit
+
+Script done on 2026-11-27 14:40:22+09:00 [COMMAND_EXIT_CODE="0"]

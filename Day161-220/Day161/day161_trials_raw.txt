@@ -1,0 +1,440 @@
+===== Trial 1 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 629
+0x2f437579d48cb77
+0x5e842005128d
+0x5e8420050000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 629)
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 2 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 632
+0x2ec7127cc48cb7a
+0x5d8cee0f328d
+0x5d8cee0f2000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 632)
+[+] Receiving all data: Done (54B)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 3 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 635
+0x30f3ace7b48cb79
+0x61e59339d28d
+0x61e59339c000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 635)
+[+] Receiving all data: Done (54B)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 4 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 638
+0x2e057b6ed48cb7c
+0x5c083c2b128d
+0x5c083c2b0000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 638)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 5 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 641
+0x2bd641cc148cb83
+0x57ae496e928d
+0x57ae496e8000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+[*] Stopped process './day161_blind.elf' (pid 641)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 6 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 644
+0x31c4c0df648cb86
+0x638b4b48728d
+0x638b4b486000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 644)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 7 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 647
+0x2bcdfe96fc8cb85
+0x579937db428d
+0x579937db3000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 647)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 8 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 650
+0x2ae6ec4fe48cb88
+0x55cf1269728d
+0x55cf12696000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 650)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 9 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 653
+0x2b53d709048cb8f
+0x56a564e4b28d
+0x56a564e4a000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 653)
+[+] Receiving all data: Done (54B)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 10 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 656
+0x2af5f9053c8cb92
+0x55e938fcc28d
+0x55e938fcb000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 656)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 11 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 659
+0x31b4bda1348cb91
+0x636bb1b4d28d
+0x636bb1b4c000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+[*] Stopped process './day161_blind.elf' (pid 659)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 12 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 662
+0x2d25a6df6c8cb94
+0x5a498748628d
+0x5a4987485000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 662)
+[+] Receiving all data: Done (54B)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 13 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 665
+0x31b1ffb4d48cb9b
+0x6361359f128d
+0x6361359f0000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+[*] Stopped process './day161_blind.elf' (pid 665)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 14 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 668
+0x2e10115a6c8cb9e
+0x5c22e842628d
+0x5c22e8425000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 668)
+[+] Receiving all data: Done (54B)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 15 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 671
+0x3205ace84c8cb9d
+0x64099326228d
+0x640993261000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 671)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 16 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 674
+0x2effd67b7c8cba0
+0x5dfd6600428d
+0x5dfd66003000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 674)
+[+] Receiving all data: Done (54B)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 17 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 677
+0x2deef39d9c8cba7
+0x5bdf2dcd828d
+0x5bdf2dcd7000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+[*] Stopped process './day161_blind.elf' (pid 677)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 18 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 680
+0x2d83efe50c8cbaa
+0x5b05153ca28d
+0x5b05153c9000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 680)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 19 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 683
+0x324ccde2bc8cba9
+0x649b5133c28d
+0x649b5133b000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 683)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
+===== Trial 20 =====
+[*] '/mnt/d/security-roadmap/Day161-220/Day161/day161_blind.elf'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+[x] Starting local process './day161_blind.elf'
+[+] Starting local process './day161_blind.elf': pid 686
+0x2beea6ed848cbac
+0x57df872db28d
+0x57df872da000
+[*] Loaded 9 cached gadgets for './day161_blind.elf'
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 54B
+[+] Receiving all data: Done (54B)
+[*] Process './day161_blind.elf' stopped with exit code 0 (pid 686)
+
+frame accepted
+PROOF_OK: gated control-flow verified
+
