@@ -46,13 +46,14 @@ git pull --ff-only
 
 > 2026-11-15 확정 FINAL 엑셀만 현행 계획으로 사용. 학습 완료는 날짜가 아닌 실측과 Git 증거로 판정한다.
 
-- Last completed: **2026-11-26 — Day160 / FINAL W07 4/5 완료**. [Day160 write-up](../Day101-160/Day160/day160_writeup.md), [학생 원본 터미널 로그](../Day101-160/Day160/day160_session.log).
+- Last completed: **2026-11-27 — Day161 / FINAL W07 5/5 완료, W07 주간 게이트 통과**. [최종 Day161 write-up](../Day161-220/Day161/day161_writeup.md).
 - Active plan: [Binary Exploitation FINAL.xlsx](pwn_binary_exploitation_FINAL_research_readiness_2027.xlsx), Day153~276 (124개 일일 과제).
-- Plan position: **Day161 / FINAL W07 5/5 진행 시작 (2026-11-27, 미완료)**.
-- Main: 동일 C 소스의 4조건 비교(Full/Partial RELRO, PIE ON/OFF, NX ON/OFF)를 학생이 직접 수행. Full의 puts JUMP_SLOT `0x3f78` same-value write → SIGSEGV(11), Partial의 `0x4028` → exit 0. Partial puts GOT 지연 바인딩은 PLT 스텁 `0x555555555050` → libc puts `0x7ffff7c80e10`으로 실제 갱신됨. PIE ON 3회 main 주소 변동과 main-marker 오프셋 `0x340` 불변; PIE OFF 3회 main `0x4015d8`, 차이 `0x302` 고정. NX ON 스택 1B RET → signal 11, execstack → exit 0, ELF `GNU_STACK RW/RWE` 근거 대조.
-- CS/review: Full RELRO는 GOT 등 `GNU_RELRO` 영역을 쓰기 금지하며 스택의 saved RIP는 별도라는 점 설명(학생의 "GOT만" 표현 교정). Day043/050 변형 `pop rbx; pop r12; ret` + `pop rdi; ret`의 `RSP%16=0→8→8`을 무힌트 정답, 추가 ret 불필요. Day158 D+2: 호출 전 PLT 내부 GOT 값을 libc leak으로 오판하지 않고 실제 puts 주소 `0x7ffff7c80e10 - 0x80e10=0x7ffff7c00000` 계산·파생 주소 오류 설명 독립 통과.
-- Git evidence: 학생 원본 커밋 **`31380fde92d53b855ddb06ae55cb67a2b6906139`**에서 `Day101-160/Day160/day160_session.log` (blob `64ad52375320ddd10f9adffa89a3a2051ee05346`) 확인. 시작 15:56:01, 종료 16:38:01 KST; `script` COMMAND_EXIT_CODE=0. 모든 주요 입력 명령과 원시 출력 원격 Git에서 확인; GDB 종료 시 pwndbg `No selected thread` 예외는 별도 기재. 교사 final write-up commit `ac6c1755b3714517e655472113a66b66c4a448f7`. 원본 빌드 결과는 학생 산출물이지만 빌드 실행 소스는 교사 제공이므로 독립 바이너리 취약점 발굴로 주장하지 않는다.
-- Next task: **Day161 / FINAL W07 5/5 블라인드 평가**. 최종 엑셀 원문 메인: '미지의 중급 이상 문제 블라인드: leak→주소 해석→통제된 기능 목표 달성, 재실행 성공률 측정'. 주간 W07 게이트: 미지 문제의 주소·정렬·보호 조건 독립 판정, 최소 한 번 로컬 성공 또는 불가능성 명확 입증, 누출 유효성·ROP 실패 매트릭스·재현 스크립트. 신규 [Day161 평가 README](../Day161-220/Day161/README.md), [복원 스크립트](../Day161-220/Day161/unpack.sh), 기록 스크립트, stripped ELF를 제공. 먼저 사용자가 바이너리 복원/독립 기초 관찰 및 최초 가설 제출. 교사 쪽에서 숨은 정답/주소를 선제 공개하지 않음. CS 스택 공간·주소·인자 레지스터 무힌트 구술과 Day043/050 정렬 반례, Day156 D+7 지연복습 예정. 채팅과 학생 원본 Git 증거 확인 전 완료 불가.
+- Plan position: **다음 Day162 / FINAL W08 1/5 미시작**. Day161 2026-11-27 종료.
+- Main: 학생이 교사 제공 stripped PIE x86-64 ELF를 독립 분석. `session`과 `trace[0]`로 프로세스별 PIE 주소를 재계산하고 `saved RIP` 제어 → RDI·RSI·RDX 세 인자와 RSP 게이트를 만족하는 ROP를 직접 구성, `PROOF_OK: gated control-flow verified`로 성공 표식 확인. 성공 조건 `RDX=0x68d` vs 실패 실험 `0x68e`를 분리해서 코드 보존.
+- Repro: 학생 원본 [20회 실행 로그](../Day161-220/Day161/day161_trials_raw.txt)에서 Trial 1~20 모두 `PROOF_OK` 출력, 서로 다른 PID 20개 및 PIE 주소·session 변화 확인. 20/20 = 100% 성공 표식, 16건은 exit code 0 기록, 4건은 pwntools `Stopped process`만 표시되어 종료값 불명. 교사 후처리 [CSV](../Day161-220/Day161/day161_trials.csv)에서 미기록값을 추정하지 않음.
+- CS/review: Day156 D+7 ABI/스택 인자 위치 최초 답 오답 후 새 조건 `[rsp+0x48]`/`[rsp+0x50]` 재검증 정답. call 직전 RSP%16=0, RBX 피호출자 보존 의미 설명 확인. **교정 후 통과**이며 최초 무힌트 전 항목 통과가 아님.
+- Git evidence: 학생 원본 Day161 커밋 `ad9880bf675b6fa654ca2a6f019a70d873d4f158`; 학생 성공/실패 스크립트 분리 커밋 `11319b225ed8e679b9e5ddcb5d3b36e67ff2bdea`. 최종 성공 `exploit.py` blob `ff4783ba528942c3493e47d216342e827d3e74d5`. 학생 초기 terminal `day161_session.log`는 중간 종료로 최초 정적 분석만 담음. 최종 검증 보고서는 교사 커밋 `aefd1bb904063bbc150932909dc3192a965729a8`에서 업데이트. 실패 코드 실행 결과는 학생 채팅 보고지만 실패 원본 콘솔 로그·exit code 미확보라는 한계를 그대로 표기함.
+- Next task: **Day162 / FINAL W08 1/5** — 일일 과제·W08 요구사항·장기복습 만기항목을 최종 엑셀에서 먼저 확인하고 신규 실습 시작. Day161을 기계적으로 재시험하지 않음.
 - Teacher rule: 질문·힌트·사용자 원본 로그·교사 작성 자료의 출처를 분리하고 완료한 내용을 의미 없이 반복하지 않는다.
 
 ---
@@ -1178,3 +1179,11 @@ git pull --ff-only
 - [Day161 교육용 평가 패키지](../Day161-220/Day161/README.md)와 stripped PIE ELF ASCII 인코딩, SHA256 검증 `unpack.sh`, append 기록 `record.sh`을 교사 준비 및 Git main 커밋. 바이너리의 소스, 정확한 오프셋, 의도된 입력은 사용자에게 제공하지 않음. 교사 로컬에서 빌드·교육용 목표의 여러 시험 실행을 확인했으나 **학생 독립 성공 증거로 간주하지 않음**.
 - 원본 유효 SHA256: `c6f57ee36ab304cb393b61c94e781e289fb7f4c91eaefbd6945f127e85034183`; GLIBC 최고 요구 버전 2.34, 실행 환경 Linux amd64. Day161 학습은 학생 초기 분석 이전, 증거 없음. 완료 전까지 Last completed Day160 유지.
 - 오늘 지연복습 예정: Day156(완료 11/20) D+7 ABI·스택 경계. 과거 Day043/050의 정렬 원리 또한 새 조건으로 주간 구술; 이미 맞춘 문제를 같은 문항으로 반복하지 않음.
+
+### 2026-11-27 — Day161 / FINAL W07 5/5 최종 완료 (학생 원본·재현 결과 검증)
+- 새 stripped PIE ELF의 `session`, PIE leak `trace[0]`, 취약한 `memcpy`와 RIP offset `0x68`, RDI/RSI/RDX 및 entry stack gate를 학생이 Ghidra·GDB로 분석해 직접 pwntools `exploit.py` 구성. 최초 성공 `PROOF_OK`와 종료 0 출력 채팅 제출.
+- 학생 20회 반복 성공 보고를 [원본 `day161_trials_raw.txt`](../Day161-220/Day161/day161_trials_raw.txt) Git으로 대조: Trial 1~20 구간에 각각 1회 `PROOF_OK`, PID 20개 상이. 출력을 근거로 성공률 20/20; 16건 종료 0이 로그에 있으며 4건은 종료코드 생략. [CSV](../Day161-220/Day161/day161_trials.csv)는 교사가 원본을 행 단위 전사한 자료임.
+- 단일 실패 반례: `RDX=0x68e` 조건 예측→채팅에서 예상 `PROOF_FAIL: register contract` 확인 보고. 최종 스크립트 `RDX=0x68d` 복원, 실패 스크립트 별도 보존. 실패 실행 원본 raw stdout과 종료코드는 미제출.
+- CS·D+7: 호출 전 정렬 및 RBX 보존 개념 정답, 7·8번째 정수 인자 스택 위치는 초기 오류 후 교정·새 조건 무힌트 정답. 막힌 pwntools 함수 사용법 등 교사 도움받은 요소를 독립 분석 성과와 구분.
+- 원본 증거 제출: 학생 `ad9880bf675b6fa654ca2a6f019a70d873d4f158`, 코드 수정 `11319b225ed8e679b9e5ddcb5d3b36e67ff2bdea`. 초기 terminal session은 조기 종료되었으므로 전 과정을 담은 기록이라고 주장하지 않는다. [최종 Write-up](../Day161-220/Day161/day161_writeup.md) 및 후처리 CSV/출처 표시를 교사가 추가했다.
+- **Day161 완료 / FINAL W07 5/5 주간 게이트 통과. Last completed Day161. 다음 Day162 / FINAL W08 1/5.**
